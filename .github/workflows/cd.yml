@@ -6,7 +6,7 @@ on:
       - master
 
 jobs:
-  test:
+  deploy:
 
     runs-on: ubuntu-latest
 
@@ -32,6 +32,15 @@ jobs:
 
     - name: Deploy
       run: |
+        git fetch origin gh-pages
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
-        npm run deploy
+        npm run deploy -- --no-push
+        git checkout gh-pages
+    
+    - name: Push changes
+      uses: ad-m/github-push-action@master
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        branch: gh-pages
+
