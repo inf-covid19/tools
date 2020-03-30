@@ -54,7 +54,9 @@
 }
 
 .Editor--saved-charts-container {
+  padding: 20px;
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   margin-bottom: 20px;
+  grid-gap: 2em;
 }
