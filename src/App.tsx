@@ -1,4 +1,4 @@
-import React from "react";
+import React, { Fragment } from "react";
 import * as d3 from "d3";
 import "./App.css";
 import Chart from "react-apexcharts";
@@ -7,6 +7,9 @@ import sortBy from "lodash/sortBy";
 import last from "lodash/last";
 import { COUNTRIES } from "./countries";
 import Loader from "./Loader";
+import LogoUFRGS from "./assets/ufrgs.png";
+import LogoINF from "./assets/ufrgs-inf.png";
+import { forceManyBody } from "d3";
 
 const DEFAULT_COUNTRIES = [
   "Brazil",
@@ -27,8 +30,30 @@ const DEFAULT_COUNTRIES = [
   "Peru"
 ];
 
+const DATA_SOURCES = [
+  {
+    name: "ECDC",
+    url:
+      "https://www.ecdc.europa.eu/en/publications-data/download-todays-data-geographic-distribution-covid-19-cases-worldwide"
+  },
+  { name: "Brasil.IO", url: "https://brasil.io/dataset/covid19/caso" },
+  {
+    name: "PHAS",
+    url:
+      "https://www.folkhalsomyndigheten.se/smittskydd-beredskap/utbrott/aktuella-utbrott/covid-19/aktuellt-epidemiologiskt-lage"
+  },
+  { name: "NY Times", url: "https://github.com/nytimes/covid-19-data" },
+  { name: "ISC", url: "https://covid19.isciii.es/" },
+  {
+    name: "PHE",
+    url:
+      "https://www.gov.uk/government/publications/covid-19-track-coronavirus-cases"
+  }
+];
+
 class App extends React.Component {
   state = {
+    lastUpdate: new Date(2020, 2, 29),
     countries: {},
     selectedCountries: {} as any,
     config: {
@@ -46,7 +71,7 @@ class App extends React.Component {
         enabled: false
       },
       title: {
-        text: "Where are the most new coronavirus cases?",
+        text: "Heatmap of Coronavirus Data",
         style: {
           fontSize: "20px"
         }
@@ -169,6 +194,19 @@ class App extends React.Component {
         loading: false
       }));
     });
+    fetch("https://api.github.com/repos/inf-covid19/tools/branches/master")
+      .then(response => {
+        response.json().then(json => {
+          console.log(json);
+          this.setState({
+            lastUpdate: new Date(json.commit.commit.author.date)
+          });
+        });
+      })
+      .catch(error => {
+        console.log(error);
+      });
+    //
   }
 
   handleCumulativeChange = (e: any) => {
@@ -206,7 +244,14 @@ class App extends React.Component {
   };
 
   render() {
-    const { options, series, config, selectedCountries, loading } = this.state;
+    const {
+      options,
+      series,
+      config,
+      selectedCountries,
+      loading,
+      lastUpdate
+    } = this.state;
 
     if (loading) {
       return <Loader />;
@@ -220,8 +265,15 @@ class App extends React.Component {
     return (
       <div className="App">
         <header className="App-header">
-          <h1>COVID-19 Tools</h1>
-          <p>A set of configurable tools around COVID-19 data.</p>
+          <img src={LogoUFRGS} height="100" alt="logo UFRGS" />{" "}
+          <div style={{ margin: "0 2em" }}>
+            <h1>COVID-19 Analysis Tools</h1>
+            <p>
+              A set of configurable tools around COVID-19 data.
+              <br />
+            </p>
+          </div>
+          <img src={LogoINF} height="100" alt="logo UFRGS-INF" />
         </header>
         <div className="container">
           <div id="chart">
@@ -230,7 +282,6 @@ class App extends React.Component {
               series={sortedSeries}
               type="heatmap"
               height={600}
-              // width={2000}
             />
           </div>
           <div className="App-Toolbar">
@@ -264,7 +315,6 @@ class App extends React.Component {
             </div>
 
             <div className="App-Toolbar--field">
-              <div className="App-Toolbar--field--title">Show data labels</div>
               <label>
                 <input
                   type="checkbox"
@@ -282,14 +332,11 @@ class App extends React.Component {
                     }))
                   }
                 />{" "}
-                Enabled
+                <strong>Show data labels</strong>
               </label>
             </div>
 
             <div className="App-Toolbar--field">
-              <div className="App-Toolbar--field--title">
-                Use comulative values
-              </div>
               <label>
                 <input
                   type="checkbox"
@@ -297,11 +344,13 @@ class App extends React.Component {
                   checked={config.isCumulative}
                   onChange={this.handleCumulativeChange}
                 />{" "}
-                Enabled
+                <strong>Use comulative values</strong>
               </label>
             </div>
             <div className="App-Toolbar--field">
-              <div className="App-Toolbar--field--title">Metric</div>
+              <div className="App-Toolbar--field--title">
+                Choose cases or deaths
+              </div>
               <select
                 name="metric"
                 onChange={({ target }) => {
@@ -323,7 +372,9 @@ class App extends React.Component {
             </div>
 
             <div className="App-Toolbar--field">
-              <div className="App-Toolbar--field--title">Amount of days</div>
+              <div className="App-Toolbar--field--title">
+                How many past days would you like to see?
+              </div>
               <input
                 type="number"
                 name="interval"
@@ -367,6 +418,23 @@ class App extends React.Component {
             </div>
           </div>
         </div>
+        <footer>
+          <span>
+            {DATA_SOURCES.map((src: any, index) => (
+              <Fragment key={src.url}>
+                <a target="_blank" href={src.url}>
+                  {src.name}
+                </a>
+                {index < DATA_SOURCES.length - 2
+                  ? ", "
+                  : index != DATA_SOURCES.length - 1
+                  ? " and "
+                  : ""}
+              </Fragment>
+            ))}
+            . Last updated at {fns.format(lastUpdate, "PPpp")}.
+          </span>
+        </footer>
       </div>
     );
   }
