@@ -344,7 +344,7 @@ class App extends React.Component {
                   checked={config.isCumulative}
                   onChange={this.handleCumulativeChange}
                 />{" "}
-                <strong>Use comulative values</strong>
+                <strong>Use cumulative values</strong>
               </label>
             </div>
             <div className="App-Toolbar--field">
