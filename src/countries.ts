@@ -1,4 +1,4 @@
-export const COUNTRIES: any = {
+export const COUNTRIES : Record<string, string> = {
   Afghanistan: "afghanistan.csv",
   Angola: "angola.csv",
   Albania: "albania.csv",
