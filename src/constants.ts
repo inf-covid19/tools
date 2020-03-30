@@ -2,7 +2,7 @@ export const DEFAULT_TITLE = 'Heatmap of Coronavirus Data';
 
 export const DEFAULT_METRIC = "cases";
 export const DEFAULT_SHOW_DATA_LABELS = false;
-export const DEFAULT_IS_CUMULATIVE = false;
+export const DEFAULT_IS_CUMULATIVE = true;
 
 export const DEFAULT_DAY_INTERVAL = 30;
 

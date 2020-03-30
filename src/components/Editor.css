@@ -1,0 +1,60 @@
+.Editor-container {
+  display: flex;
+}
+
+.Editor-container #chart {
+  flex: 1;
+}
+
+.Editor-container #chart > div {
+  border-radius: 5px;
+  padding: 20px;
+  border: 1px solid #d0d0d0;
+  position: absolute;
+  top: 50%;
+  left: 20px;
+  right: 0;
+  transform: translateY(-50%);
+}
+
+.Editor-Toolbar *,
+.Editor-Toolbar *::before,
+.Editor-Toolbar *::after {
+  box-sizing: border-box;
+}
+
+.Editor-container .Editor-Toolbar {
+  text-align: left;
+  width: 20em;
+  padding: 20px;
+}
+
+.Editor-Toolbar--field {
+  margin-bottom: 20px;
+}
+
+.Editor-Toolbar--field--title {
+  font-weight: 600;
+  font-size: 1.7vmin;
+  margin-bottom: 7px;
+}
+
+.Editor-Toolbar--field select,
+.Editor-Toolbar--field input[type="number"],
+.Editor-Toolbar--field input[type="text"] {
+  width: 100%;
+  /* height: 2em; */
+  font-size: 1.5vmin;
+  padding: 5px 3px;
+}
+
+.Editor-container .Editor-Toolbar .countries {
+  overflow-y: scroll;
+  height: 30vmin;
+}
+
+.Editor--saved-charts-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  margin-bottom: 20px;
+}

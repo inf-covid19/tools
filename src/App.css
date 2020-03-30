@@ -19,70 +19,8 @@
   margin: 0 0 30px;
 }
 
-.App-link {
-  color: #61dafb;
-}
-
-.container {
-  display: flex;
-}
-
-.container #chart {
-  flex: 1;
-}
-
-.container #chart > div {
-  border-radius: 5px;
-  padding: 20px;
-  border: 1px solid #d0d0d0;
-  position: absolute;
-  top: 50%;
-  left: 20px;
-  right: 0;
-  transform: translateY(-50%);
-}
-
-.App-Toolbar *,
-.App-Toolbar *::before,
-.App-Toolbar *::after {
-  box-sizing: border-box;
-}
-
-.container .App-Toolbar {
-  text-align: left;
-  width: 20em;
-  padding: 20px;
-}
-
-.App-Toolbar--field {
-  margin-bottom: 20px;
-}
-
-.App-Toolbar--field--title {
-  font-weight: 600;
-  font-size: 1.7vmin;
-  margin-bottom: 7px;
-}
-
-.App-Toolbar--field select,
-.App-Toolbar--field input[type="number"],
-.App-Toolbar--field input[type="text"] {
-  width: 100%;
-  /* height: 2em; */
-  font-size: 1.5vmin;
-  padding: 5px 3px;
-}
-
-.container .App-Toolbar .countries {
-  overflow-y: scroll;
-  height: 30vmin;
-}
-
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.App footer {
+  font-size: 0.8em;
+  padding: 2em 0;
+  color: #0d0d0d;
 }
