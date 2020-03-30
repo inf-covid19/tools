@@ -35,12 +35,4 @@ jobs:
         git fetch origin gh-pages
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
-        npm run deploy -- --no-push
-        git checkout gh-pages
-    
-    - name: Push changes
-      uses: ad-m/github-push-action@master
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        branch: gh-pages
-
+        npm run deploy -- --repo="https://${GITHUB_ACTOR}:${{ secrets.GITHUB_TOKEN }}@github.com/${GITHUB_REPOSITORY}.git" --silent
