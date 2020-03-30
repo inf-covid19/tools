@@ -420,14 +420,15 @@ class App extends React.Component {
         </div>
         <footer>
           <span>
+            Sources:{" "}
             {DATA_SOURCES.map((src: any, index) => (
               <Fragment key={src.url}>
-                <a target="_blank" href={src.url}>
+                <a rel="noopener noreferrer" target="_blank" href={src.url}>
                   {src.name}
                 </a>
                 {index < DATA_SOURCES.length - 2
                   ? ", "
-                  : index != DATA_SOURCES.length - 1
+                  : index < DATA_SOURCES.length - 1
                   ? " and "
                   : ""}
               </Fragment>
