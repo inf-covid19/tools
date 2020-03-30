@@ -46,7 +46,10 @@ class App extends React.Component {
         enabled: false
       },
       title: {
-        text: "Where are the most new coronavirus cases?"
+        text: "Where are the most new coronavirus cases?",
+        style: {
+          fontSize: "20px"
+        }
       },
       plotOptions: {
         heatmap: {
@@ -217,50 +220,134 @@ class App extends React.Component {
     return (
       <div className="App">
         <header className="App-header">
-          <h2>COVID19 Analysis</h2>
-          <div className="container">
-            <div id="chart">
-              <Chart
-                options={options}
-                series={sortedSeries}
-                type="heatmap"
-                height={600}
+          <h1>COVID-19 Tools</h1>
+          <p>A set of configurable tools around COVID-19 data.</p>
+        </header>
+        <div className="container">
+          <div id="chart">
+            <Chart
+              options={options}
+              series={sortedSeries}
+              type="heatmap"
+              height={600}
+              // width={2000}
+            />
+          </div>
+          <div className="App-Toolbar">
+            <div
+              style={{
+                fontWeight: 300,
+                fontSize: "2.5vmin",
+                marginBottom: "10px"
+              }}
+            >
+              Options
+            </div>
+
+            <div className="App-Toolbar--field">
+              <div className="App-Toolbar--field--title">Title</div>
+              <input
+                type="text"
+                defaultValue={options.title.text}
+                onBlur={({ target }) =>
+                  this.setState(({ options }: any) => ({
+                    options: {
+                      ...options,
+                      title: {
+                        ...options.title,
+                        text: target.value
+                      }
+                    }
+                  }))
+                }
               />
             </div>
-            <div className="App-Toolbar">
+
+            <div className="App-Toolbar--field">
+              <div className="App-Toolbar--field--title">Show data labels</div>
               <label>
-                Is cumulative?
+                <input
+                  type="checkbox"
+                  name="showValues"
+                  checked={options.dataLabels.enabled}
+                  onChange={({ target }) =>
+                    this.setState(({ options }: any) => ({
+                      options: {
+                        ...options,
+                        dataLabels: {
+                          ...options.dataLabels,
+                          enabled: target.checked
+                        }
+                      }
+                    }))
+                  }
+                />{" "}
+                Enabled
+              </label>
+            </div>
+
+            <div className="App-Toolbar--field">
+              <div className="App-Toolbar--field--title">
+                Use comulative values
+              </div>
+              <label>
                 <input
                   type="checkbox"
                   name="isCumulative"
                   checked={config.isCumulative}
                   onChange={this.handleCumulativeChange}
-                />
+                />{" "}
+                Enabled
               </label>
-              <br />
-              <label>
-                Metric:{" "}
-                <select
-                  name="metric"
-                  onChange={({ target }) => {
-                    this.setState(
-                      ({ config }: any) => ({
-                        config: {
-                          ...config,
-                          metric: target.value
-                        }
-                      }),
-                      this.updateAllCharts
-                    );
-                  }}
-                  value={config.metric}
-                >
-                  <option value="cases">Cases</option>
-                  <option value="deaths">Deaths</option>
-                </select>
-              </label>
-              <br />
-              <br />
+            </div>
+            <div className="App-Toolbar--field">
+              <div className="App-Toolbar--field--title">Metric</div>
+              <select
+                name="metric"
+                onChange={({ target }) => {
+                  this.setState(
+                    ({ config }: any) => ({
+                      config: {
+                        ...config,
+                        metric: target.value
+                      }
+                    }),
+                    this.updateAllCharts
+                  );
+                }}
+                value={config.metric}
+              >
+                <option value="cases">Cases</option>
+                <option value="deaths">Deaths</option>
+              </select>
+            </div>
+
+            <div className="App-Toolbar--field">
+              <div className="App-Toolbar--field--title">Amount of days</div>
+              <input
+                type="number"
+                name="interval"
+                min={7}
+                max={90}
+                defaultValue={config.dayInterval}
+                onBlur={({ target }) =>
+                  this.setState(
+                    ({ config }: any) =>
+                      parseInt(target.value) > 0
+                        ? {
+                            config: {
+                              ...config,
+                              dayInterval: target.value
+                            }
+                          }
+                        : undefined,
+                    () => this.updateAllCharts()
+                  )
+                }
+              />
+            </div>
+            <div className="App-Toolbar--field">
+              <div className="App-Toolbar--field--title">Countries</div>
               <div className="countries">
                 {Object.keys(COUNTRIES).map((country: any) => (
                   <div key={country}>
@@ -279,7 +366,7 @@ class App extends React.Component {
               </div>
             </div>
           </div>
-        </header>
+        </div>
       </div>
     );
   }

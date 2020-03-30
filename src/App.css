@@ -2,33 +2,25 @@
   text-align: center;
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
-}
-
 .App-header {
-  min-height: 100vh;
   display: flex;
   padding: 0 5em;
   flex-direction: column;
-  /* align-items: center; */
+  align-items: center;
   justify-content: center;
-  font-size: calc(10px + 2vmin);
+}
+
+.App-header h1 {
+  margin-bottom: 10px;
+}
+
+.App-header p {
+  font-weight: 300;
+  margin: 0 0 30px;
 }
 
 .App-link {
   color: #61dafb;
-}
-
-.App-Toolbar {
-  font-size: 0.6em;
 }
 
 .container {
@@ -38,14 +30,52 @@
 .container #chart {
   flex: 1;
 }
+
+.container #chart > div {
+  border-radius: 5px;
+  padding: 20px;
+  border: 1px solid #d0d0d0;
+  position: absolute;
+  top: 50%;
+  left: 20px;
+  right: 0;
+  transform: translateY(-50%);
+}
+
+.App-Toolbar *,
+.App-Toolbar *::before,
+.App-Toolbar *::after {
+  box-sizing: border-box;
+}
+
 .container .App-Toolbar {
   text-align: left;
-  width: 15em;
+  width: 20em;
+  padding: 20px;
+}
+
+.App-Toolbar--field {
+  margin-bottom: 20px;
+}
+
+.App-Toolbar--field--title {
+  font-weight: 600;
+  font-size: 1.7vmin;
+  margin-bottom: 7px;
+}
+
+.App-Toolbar--field select,
+.App-Toolbar--field input[type="number"],
+.App-Toolbar--field input[type="text"] {
+  width: 100%;
+  /* height: 2em; */
+  font-size: 1.5vmin;
+  padding: 5px 3px;
 }
 
 .container .App-Toolbar .countries {
   overflow-y: scroll;
-  height: 55vmin;
+  height: 30vmin;
 }
 
 @keyframes App-logo-spin {
