@@ -14,7 +14,7 @@ type HeatmapChartProps  = Omit<Props, 'options' | 'series' | 'type'> & {
   selectedCountries: Record<string, boolean>;
 };
 
-export default function HeatmapChart(props: HeatmapChartProps) {
+function HeatmapChart(props: HeatmapChartProps, ref: React.Ref<any>) {
   const { title, metric, showDataLabels, isCumulative, dayInterval, selectedCountries, ...rest } = props;
 
   const timeline = useMemo(
@@ -115,6 +115,9 @@ export default function HeatmapChart(props: HeatmapChartProps) {
   }
 
   return (
-      <ReactApexChart options={chartOptions} series={sortedSeries} type="heatmap" {...rest} />
+      <ReactApexChart ref={ref} options={chartOptions} series={sortedSeries} type="heatmap" {...rest} />
   );
 }
+
+
+export default React.forwardRef(HeatmapChart);

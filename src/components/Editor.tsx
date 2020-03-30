@@ -1,18 +1,20 @@
-import React, { useState } from "react";
+import React, { useState ,useRef} from "react";
 import { DEFAULT_COUNTRIES, DEFAULT_DAY_INTERVAL, DEFAULT_IS_CUMULATIVE, DEFAULT_METRIC, DEFAULT_SHOW_DATA_LABELS, DEFAULT_TITLE } from "../constants";
 import { COUNTRIES } from "../countries";
 import "./Editor.css";
 import HeatmapChart from "./HeatmapChart";
 import ListDescriptor from "./ListDescriptor";
+import ReactApexChart from "react-apexcharts";
 
 type MetricType = "cases" | "deaths";
 type SelectedCountriesMap = Record<string, boolean>;
 
 const STORAGE_KEY = "covid19-tools.editor.savedCharts";
 
-const IS_SAVED_CHARTS_ENABLED = false;
+const IS_SAVED_CHARTS_ENABLED = true;
 
 function getSavedCharts(): {
+  dataURI: string,
   metric: MetricType;
   isCumulative: boolean;
   showDataLabels: boolean;
@@ -32,6 +34,7 @@ function getSavedCharts(): {
 function App() {
   const [savedCharts, setSavedCharts] = useState(getSavedCharts());
 
+  const chartRef = useRef<any>(null);
   const [metric, setMetric] = useState<MetricType>(DEFAULT_METRIC);
   const [isCumulative, setIsCumulative] = useState(DEFAULT_IS_CUMULATIVE);
   const [showDataLabels, setShowDataLabels] = useState(DEFAULT_SHOW_DATA_LABELS);
@@ -44,6 +47,7 @@ function App() {
       <div className="Editor-container">
         <div id="chart">
           <HeatmapChart
+            ref={chartRef}
             height={600}
             isCumulative={isCumulative}
             title={title}
@@ -119,19 +123,22 @@ function App() {
           {IS_SAVED_CHARTS_ENABLED && (
             <button
               onClick={() => {
-                const newSavedCharts = [
-                  ...savedCharts,
-                  {
-                    metric,
-                    title,
-                    isCumulative,
-                    selectedCountries,
-                    dayInterval,
-                    showDataLabels,
-                  },
-                ];
-                setSavedCharts(newSavedCharts);
-                setImmediate(() => localStorage.setItem(STORAGE_KEY, JSON.stringify(newSavedCharts)));
+                chartRef.current?.chart.dataURI().then(({ imgURI }: any) => {
+                  const newSavedCharts = [
+                    ...savedCharts,
+                    {
+                      dataURI: imgURI,
+                      metric,
+                      title,
+                      isCumulative,
+                      selectedCountries,
+                      dayInterval,
+                      showDataLabels,
+                    },
+                  ];
+                  setSavedCharts(newSavedCharts);
+                  setImmediate(() => localStorage.setItem(STORAGE_KEY, JSON.stringify(newSavedCharts)));
+                })
               }}
             >
               Save
@@ -146,6 +153,10 @@ function App() {
             {savedCharts.map((item, index) => {
               return (
                 <div key={index} className="Editor--saved-charts-container--item">
+                  <img alt={item.title} style={{
+                    width: '100%',
+                    objectFit: 'contain'
+                  }} src={item.dataURI}></img>
                   <h5>{item.title}</h5>
                   <div>
                     <div>{item.isCumulative ? `✓ Cumulative ${item.metric}` : `✓ Daily ${item.metric}`}</div>
@@ -166,7 +177,8 @@ function App() {
                     }}
                   >
                     Load
-                  </button>
+                  </button>{" "}
+                  <a href="#" onClick={() => setSavedCharts(savedCharts.filter((_, idx) => index !== idx))}>Remove</a>
                 </div>
               );
             })}
