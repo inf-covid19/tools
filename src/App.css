@@ -8,6 +8,15 @@
   /* flex-direction: column; */
   align-items: center;
   justify-content: center;
+
+  
+}
+
+.App-header > div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
 
 .App-header h1 {
@@ -16,7 +25,7 @@
 
 .App-header p {
   font-weight: 300;
-  margin: 0 0 30px;
+  margin: 0;
 }
 
 .App footer {

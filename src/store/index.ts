@@ -2,10 +2,10 @@ import { differenceInHours } from "date-fns";
 import { csv } from "d3";
 import { COUNTRIES } from "../countries";
 
-const STORAGE_KEY = "covid19-tools.api.cache";
+const STORAGE_KEY = "covid19-tools.api.cacheV2";
 
 export const getRegionData = (regionId: string) => {
-  return withCache(regionId, () => csv(`https://raw.githubusercontent.com/inf-covid19/covid19-data/master/data/countries/${COUNTRIES[regionId]}`));
+  return withCache(regionId, () => csv(`https://raw.githubusercontent.com/inf-covid19/covid19-data/master/data/countries/${COUNTRIES[regionId]}?v=2`));
 };
 
 function initializeCache() {
