@@ -1,25 +1,21 @@
 import React, { useMemo } from "react";
 import useRegionData from "../hooks/useRegionData";
-import { eachDayOfInterval, subDays, format } from "date-fns";
+import { eachDayOfInterval, subDays, format, startOfDay, parse, differenceInDays } from "date-fns";
 import sortBy from "lodash/sortBy";
 import last from "lodash/last";
 import ReactApexChart, { Props } from "react-apexcharts";
-import * as d3 from "d3";
 import { Loader } from "semantic-ui-react";
+import { ChartOptions } from "./Editor";
+import numeral from "numeral";
+import * as d3 from "d3";
 
+const ordinalFormattter = (n: number) => numeral(n).format("Oo");
 const numberFormatter = d3.format(".2s");
 
-type HeatmapChartProps = Omit<Props, "options" | "series" | "type"> & {
-  title: string;
-  metric: "cases" | "deaths";
-  showDataLabels: boolean;
-  isCumulative: boolean;
-  dayInterval: number;
-  selectedCountries: Record<string, boolean>;
-};
+type CustomizableChartProps = Omit<Props, "options" | "series" | "type"> & ChartOptions;
 
-function HeatmapChart(props: HeatmapChartProps, ref: React.Ref<any>) {
-  const { title, metric, showDataLabels, isCumulative, dayInterval, selectedCountries, ...rest } = props;
+function CustomizableChart(props: CustomizableChartProps, ref: React.Ref<any>) {
+  const { chartType = 'heatmap', title, metric, showDataLabels, isCumulative, dayInterval, selectedCountries, alignAt = 0, ...rest } = props;
 
   const timeline = useMemo(
     () =>
@@ -41,6 +37,45 @@ function HeatmapChart(props: HeatmapChartProps, ref: React.Ref<any>) {
 
     return Object.entries(data).map(([country, countryData]) => {
       let cumulativeValue = 0;
+
+      if (alignAt > 0) {
+        let prevDate: Date;
+
+        const normalizedData = countryData.reduceRight<any[]>((arr, curr) => {
+          let date = parse(curr["dateRep"] as string, "dd/MM/yyyy", startOfDay(new Date()));
+          const value = parseInt(curr[metric] || "0");
+
+          if (prevDate && differenceInDays(date, prevDate) > 1) {
+            const missingInterval = eachDayOfInterval({
+              start: prevDate,
+              end: date,
+            });
+            missingInterval.slice(1, missingInterval.length - 1).forEach(() => {
+              arr.push({
+                total: cumulativeValue,
+              });
+            });
+          }
+
+          cumulativeValue += value;
+          arr.push({
+            ...curr,
+            total: cumulativeValue,
+          });
+          prevDate = date;
+          return arr;
+        }, []);
+
+        return {
+          name: country,
+          data: normalizedData
+            .filter(v => v.total >= alignAt)
+            .map((v, index) => ({
+              x: index + 1,
+              y: isCumulative ? v.total : v[metric],
+            })),
+        };
+      }
 
       const countryDataByDate = countryData.reduceRight<Record<string, any>>((acc, curr) => {
         const value = parseInt(curr[metric] || "0");
@@ -69,7 +104,7 @@ function HeatmapChart(props: HeatmapChartProps, ref: React.Ref<any>) {
         data: countrySeries,
       };
     });
-  }, [data, loading, timeline, isCumulative, metric]);
+  }, [data, loading, timeline, isCumulative, metric, alignAt]);
 
   const sortedSeries = useMemo(() => {
     return sortBy(
@@ -97,13 +132,19 @@ function HeatmapChart(props: HeatmapChartProps, ref: React.Ref<any>) {
         y: {
           formatter: (value: string) => `${value} ${metric}`,
         },
+        x: {
+          formatter: alignAt > 0 ? (value: number) => `${ordinalFormattter(value)} day after ${alignAt >= 1000 ? numberFormatter(alignAt) : alignAt} ${metric}` : undefined,
+        },
       },
       xaxis: {
-        type: "datetime",
+        type: alignAt === 0 ? "datetime" : "numeric",
+        labels: {
+          formatter: alignAt > 0 ? ordinalFormattter : undefined,
+        },
       },
       dataLabels: {
         enabled: showDataLabels,
-        formatter: (value: number) => (value >= 1000 ? numberFormatter(value) : value),
+        formatter: (n: number) => (n >= 1000 ? numberFormatter(n) : n),
       },
       title: {
         text: title,
@@ -139,7 +180,7 @@ function HeatmapChart(props: HeatmapChartProps, ref: React.Ref<any>) {
         },
       },
     };
-  }, [title, metric, isCumulative, showDataLabels]);
+  }, [title, metric, isCumulative, showDataLabels, alignAt]);
 
   if (loading) {
     return (
@@ -149,7 +190,7 @@ function HeatmapChart(props: HeatmapChartProps, ref: React.Ref<any>) {
     );
   }
 
-  return <ReactApexChart ref={ref} options={chartOptions} series={sortedSeries} type="heatmap" {...rest} />;
+  return <ReactApexChart key={chartType} ref={ref} options={chartOptions} series={sortedSeries} type={chartType} {...rest} />;
 }
 
-export default React.forwardRef(HeatmapChart);
+export default React.forwardRef(CustomizableChart);
