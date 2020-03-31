@@ -7,20 +7,18 @@ import HeatmapChart from "./HeatmapChart";
 
 type MetricType = "cases" | "deaths";
 type SelectedCountriesMap = Record<string, boolean>;
+type Options = { metric: MetricType; isCumulative: boolean; showDataLabels: boolean; title: string; dayInterval: number; selectedCountries: SelectedCountriesMap };
 
-const STORAGE_KEY = "covid19-tools.editor.savedCharts";
+const SAVED_CHARTS_KEY = "covid19-tools.editor.savedCharts";
+const DEFAULTS_KEY = "covid19-tools.editor.defaults";
 
-function getSavedCharts(): {
-  dataURI: string;
-  metric: MetricType;
-  isCumulative: boolean;
-  showDataLabels: boolean;
-  title: string;
-  dayInterval: number;
-  selectedCountries: SelectedCountriesMap;
-}[] {
-  if (localStorage.hasOwnProperty(STORAGE_KEY)) {
-    const savedChartsJSON = localStorage.getItem(STORAGE_KEY);
+function getSavedCharts(): Array<
+  {
+    dataURI: string;
+  } & Options
+> {
+  if (localStorage.hasOwnProperty(SAVED_CHARTS_KEY)) {
+    const savedChartsJSON = localStorage.getItem(SAVED_CHARTS_KEY);
     if (savedChartsJSON) {
       return JSON.parse(savedChartsJSON);
     }
@@ -34,22 +32,50 @@ const countryOptions = Object.keys(COUNTRIES).map(country => ({
   text: country,
 }));
 
+const defaultsValues: Options = (() => {
+  const defaults = {
+    metric: DEFAULT_METRIC,
+    isCumulative: DEFAULT_IS_CUMULATIVE,
+    showDataLabels: DEFAULT_SHOW_DATA_LABELS,
+    title: DEFAULT_TITLE,
+    dayInterval: DEFAULT_DAY_INTERVAL,
+    selectedCountries: DEFAULT_COUNTRIES.reduce<SelectedCountriesMap>((acc, curr) => ({ ...acc, [curr]: true }), {}),
+  };
+
+  if (localStorage.hasOwnProperty(DEFAULTS_KEY)) {
+    const savedChartsJSON = localStorage.getItem(DEFAULTS_KEY);
+    if (savedChartsJSON) {
+      const parsedDefaults = JSON.parse(savedChartsJSON);
+      return {
+        ...defaults,
+        ...parsedDefaults,
+      };
+    }
+  }
+
+  return defaults;
+})();
+
 function App() {
   const [savedCharts, setSavedCharts] = useState(getSavedCharts());
 
   const chartRef = useRef<any>(null);
-  const [metric, setMetric] = useState<MetricType>(DEFAULT_METRIC);
-  const [isCumulative, setIsCumulative] = useState(DEFAULT_IS_CUMULATIVE);
-  const [showDataLabels, setShowDataLabels] = useState(DEFAULT_SHOW_DATA_LABELS);
-  const [title, setTitle] = useState(DEFAULT_TITLE);
-  const [dayInterval, setDayInterval] = useState(DEFAULT_DAY_INTERVAL);
-  const [selectedCountries, setSelectedCountries] = useState(DEFAULT_COUNTRIES.reduce<SelectedCountriesMap>((acc, curr) => ({ ...acc, [curr]: true }), {}));
+  const [metric, setMetric] = useState<MetricType>(defaultsValues.metric);
+  const [isCumulative, setIsCumulative] = useState(defaultsValues.isCumulative);
+  const [showDataLabels, setShowDataLabels] = useState(defaultsValues.showDataLabels);
+  const [title, setTitle] = useState(defaultsValues.title);
+  const [dayInterval, setDayInterval] = useState(defaultsValues.dayInterval);
+  const [selectedCountries, setSelectedCountries] = useState(defaultsValues.selectedCountries);
 
   const selectedCountryOptions = useMemo(() => Object.keys(selectedCountries).filter(k => selectedCountries[k]), [selectedCountries]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(savedCharts));
+    localStorage.setItem(SAVED_CHARTS_KEY, JSON.stringify(savedCharts));
   }, [savedCharts]);
+
+  useEffect(() => {
+    localStorage.setItem(DEFAULTS_KEY, JSON.stringify({ metric, isCumulative, showDataLabels, title, dayInterval, selectedCountries }));
+  }, [metric, isCumulative, showDataLabels, title, dayInterval, selectedCountries]);
 
   return (
     <div>
@@ -168,10 +194,14 @@ function App() {
                         <Card key={`${index}-${item.title}`} className="Editor--saved-charts--container--card">
                           <Image className="Editor--saved-charts--container--card--image" alt={item.title} wrapped ui={false} src={item.dataURI} />
                           <Card.Content>
-                            <Card.Header>{title}</Card.Header>
+                            <Card.Header>{item.title}</Card.Header>
                             <Card.Meta>{`${item.isCumulative ? "Total" : "Daily"} number of ${item.metric}`}</Card.Meta>
                           </Card.Content>
                           <Card.Content extra>
+                          <span className="right floated">
+       Past {item.dayInterval} days
+      </span>
+                            
                             <Icon name="map marker" />
                             {`${Object.keys(item.selectedCountries).filter(k => item.selectedCountries[k]).length} regions`}
                           </Card.Content>
