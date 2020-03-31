@@ -5,6 +5,7 @@ import sortBy from "lodash/sortBy";
 import last from "lodash/last";
 import ReactApexChart, { Props } from "react-apexcharts";
 import * as d3 from "d3";
+import { Loader } from "semantic-ui-react";
 
 const numberFormatter = d3.format(".2s");
 
@@ -80,7 +81,6 @@ function HeatmapChart(props: HeatmapChartProps, ref: React.Ref<any>) {
   const chartOptions = useMemo(() => {
     return {
       chart: {
-        type: "heatmap",
         toolbar: {
           tools: {
             download: true,
@@ -142,7 +142,11 @@ function HeatmapChart(props: HeatmapChartProps, ref: React.Ref<any>) {
   }, [title, metric, isCumulative, showDataLabels]);
 
   if (loading) {
-    return <div style={{ height: props.height, display: "flex", justifyContent: "center", alignItems: "center" }}>Loading...</div>;
+    return (
+      <div style={{ height: props.height, display: "flex", justifyContent: "center", alignItems: "center" }}>
+        <Loader active inline />
+      </div>
+    );
   }
 
   return <ReactApexChart ref={ref} options={chartOptions} series={sortedSeries} type="heatmap" {...rest} />;
