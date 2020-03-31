@@ -1,17 +1,14 @@
-import React, { useState, useRef } from "react";
+import React, { Fragment, useEffect, useMemo, useRef, useState } from "react";
+import { Button, Card, Checkbox, Form, Grid, Header, Icon, Image, Segment } from "semantic-ui-react";
 import { DEFAULT_COUNTRIES, DEFAULT_DAY_INTERVAL, DEFAULT_IS_CUMULATIVE, DEFAULT_METRIC, DEFAULT_SHOW_DATA_LABELS, DEFAULT_TITLE } from "../constants";
 import { COUNTRIES } from "../countries";
 import "./Editor.css";
 import HeatmapChart from "./HeatmapChart";
-import ListDescriptor from "./ListDescriptor";
-
 
 type MetricType = "cases" | "deaths";
 type SelectedCountriesMap = Record<string, boolean>;
 
 const STORAGE_KEY = "covid19-tools.editor.savedCharts";
-
-const IS_SAVED_CHARTS_ENABLED = true;
 
 function getSavedCharts(): {
   dataURI: string;
@@ -31,6 +28,12 @@ function getSavedCharts(): {
   return [];
 }
 
+const countryOptions = Object.keys(COUNTRIES).map(country => ({
+  key: country,
+  value: country,
+  text: country,
+}));
+
 function App() {
   const [savedCharts, setSavedCharts] = useState(getSavedCharts());
 
@@ -42,164 +45,175 @@ function App() {
   const [dayInterval, setDayInterval] = useState(DEFAULT_DAY_INTERVAL);
   const [selectedCountries, setSelectedCountries] = useState(DEFAULT_COUNTRIES.reduce<SelectedCountriesMap>((acc, curr) => ({ ...acc, [curr]: true }), {}));
 
+  const selectedCountryOptions = useMemo(() => Object.keys(selectedCountries).filter(k => selectedCountries[k]), [selectedCountries]);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(savedCharts));
+  }, [savedCharts]);
+
   return (
     <div>
-      <div className="Editor-container">
-        <div id="chart">
-          <HeatmapChart
-            ref={chartRef}
-            height={600}
-            isCumulative={isCumulative}
-            title={title}
-            metric={metric}
-            showDataLabels={showDataLabels}
-            dayInterval={dayInterval}
-            selectedCountries={selectedCountries}
-          />
-        </div>
-        <div className="Editor-Toolbar">
-          <div
-            style={{
-              fontWeight: 300,
-              fontSize: "2.5vmin",
-              marginBottom: "10px",
-            }}
-          >
-            Options
-          </div>
+      <Grid padded>
+        <Grid.Row>
+          <Grid.Column width={12}>
+            <Segment>
+              <HeatmapChart
+                ref={chartRef}
+                height={600}
+                isCumulative={isCumulative}
+                title={title}
+                metric={metric}
+                showDataLabels={showDataLabels}
+                dayInterval={dayInterval}
+                selectedCountries={selectedCountries}
+              />
+            </Segment>
+          </Grid.Column>
+          <Grid.Column width={4}>
+            <Segment style={{ height: "100%" }}>
+              <Form>
+                <Header>Options</Header>
+                <Form.Field>
+                  <label>Title</label>
+                  <input placeholder="Enter a title" type="text" defaultValue={title} onBlur={({ target }: any) => setTitle(target.value)} />
+                </Form.Field>
 
-          <div className="Editor-Toolbar--field">
-            <div className="Editor-Toolbar--field--title">Title</div>
-            <input type="text" defaultValue={title} onBlur={({ target }) => setTitle(target.value)} />
-          </div>
+                <Form.Select
+                  label="Choose total or daily values"
+                  value={isCumulative ? "total" : "daily"}
+                  onChange={(_, { value }) => setIsCumulative(value === "total")}
+                  options={[
+                    { key: "total", text: "Total", value: "total" },
+                    { key: "daily", text: "Daily", value: "daily" },
+                  ]}
+                />
 
-          <div className="Editor-Toolbar--field">
-            <label>
-              <input type="checkbox" name="showValues" checked={showDataLabels} onChange={({ target }) => setShowDataLabels(target.checked)} /> <strong>Show data labels</strong>
-            </label>
-          </div>
+                <Form.Select
+                  label="Choose cases or deaths"
+                  value={metric}
+                  onChange={(_, { value }) => setMetric(value as MetricType)}
+                  options={[
+                    { key: "cases", text: "Cases", value: "cases" },
+                    { key: "deaths", text: "Deaths", value: "deaths" },
+                  ]}
+                />
 
-          <div className="Editor-Toolbar--field">
-            <label>
-              <input type="checkbox" name="isCumulative" checked={isCumulative} onChange={({ target }) => setIsCumulative(target.checked)} /> <strong>Use cumulative values</strong>
-            </label>
-          </div>
-          <div className="Editor-Toolbar--field">
-            <div className="Editor-Toolbar--field--title">Choose cases or deaths</div>
-            <select name="metric" onChange={({ target }) => setMetric(target.value as MetricType)} value={metric}>
-              <option value="cases">Cases</option>
-              <option value="deaths">Deaths</option>
-            </select>
-          </div>
+                <Form.Field>
+                  <label>How many past days would you like to see?</label>
+                  <input
+                    type="number"
+                    placeholder="Enter a number"
+                    min="0"
+                    defaultValue={dayInterval}
+                    onBlur={({ target }: any) => setDayInterval(parseInt(target.value) || dayInterval)}
+                  />
+                </Form.Field>
 
-          <div className="Editor-Toolbar--field">
-            <div className="Editor-Toolbar--field--title">How many past days would you like to see?</div>
-            <input type="number" name="interval" min={7} max={90} defaultValue={dayInterval} onBlur={({ target }) => setDayInterval(parseInt(target.value) || dayInterval)} />
-          </div>
-          <div className="Editor-Toolbar--field">
-            <div className="Editor-Toolbar--field--title" style={{ display: "flex", justifyContent: "space-between" }}>
-              Countries
-              <a href="#" onClick={() => setSelectedCountries({})}>
-                Deselect all
-              </a>
-            </div>
-            <div className="countries">
-              {Object.keys(COUNTRIES).map((country: any) => {
-                const isSelected = !!selectedCountries[country];
-                return (
-                  <div key={country}>
-                    <label htmlFor={`check-${country}`}>
-                      <input
-                        id={`check-${country}`}
-                        type="checkbox"
-                        value={country}
-                        checked={isSelected}
-                        onChange={() => setSelectedCountries({ ...selectedCountries, [country]: !isSelected })}
-                      />
-                      {country}
-                    </label>
+                <Form.Select
+                  clearable
+                  label="Choose countries"
+                  value={selectedCountryOptions}
+                  onChange={(_, { value }) =>
+                    setSelectedCountries(curr => {
+                      const next = { ...curr };
+                      const invertedIndex = Object.fromEntries((value as string[]).map(k => [k, true]));
+                      Object.keys({ ...next, ...invertedIndex }).forEach(k => {
+                        next[k] = invertedIndex[k] || false;
+                      });
+                      return next;
+                    })
+                  }
+                  search
+                  multiple
+                  options={countryOptions}
+                />
+
+                <Form.Field>
+                  <Checkbox toggle checked={showDataLabels} onChange={() => setShowDataLabels(!showDataLabels)} label="Show data labels" />
+                </Form.Field>
+                <Button
+                  onClick={() => {
+                    chartRef.current?.chart.dataURI().then(({ imgURI }: any) => {
+                      const newSavedCharts = [
+                        ...savedCharts,
+                        {
+                          dataURI: imgURI,
+                          metric,
+                          title,
+                          isCumulative,
+                          selectedCountries,
+                          dayInterval,
+                          showDataLabels,
+                        },
+                      ];
+                      setSavedCharts(newSavedCharts);
+                    });
+                  }}
+                >
+                  Save
+                </Button>
+              </Form>
+            </Segment>
+          </Grid.Column>
+        </Grid.Row>
+        <Grid.Row>
+          <Grid.Column width={16}>
+            <Segment placeholder={savedCharts.length === 0}>
+              {savedCharts.length > 0 ? (
+                <Fragment>
+                  <Header as="h3">Saved Charts</Header>
+                  <div className="Editor--saved-charts--container">
+                    {savedCharts.map((item, index) => {
+                      return (
+                        <Card key={`${index}-${item.title}`} className="Editor--saved-charts--container--card">
+                          <Image className="Editor--saved-charts--container--card--image" alt={item.title} wrapped ui={false} src={item.dataURI} />
+                          <Card.Content>
+                            <Card.Header>{title}</Card.Header>
+                            <Card.Meta>{`${item.isCumulative ? "Total" : "Daily"} number of ${item.metric}`}</Card.Meta>
+                          </Card.Content>
+                          <Card.Content extra>
+                            <Icon name="map marker" />
+                            {`${Object.keys(item.selectedCountries).filter(k => item.selectedCountries[k]).length} regions`}
+                          </Card.Content>
+
+                          <Button.Group widths="2" attached="bottom">
+                            <Button
+                              primary
+                              onClick={() => {
+                                setMetric(item.metric);
+                                setIsCumulative(item.isCumulative);
+                                setShowDataLabels(item.showDataLabels);
+                                setTitle(item.title);
+                                setDayInterval(item.dayInterval);
+                                setSelectedCountries(item.selectedCountries);
+                              }}
+                            >
+                              Load
+                            </Button>
+
+                            <Button
+                              onClick={() => {
+                                setSavedCharts(savedCharts.filter((_, idx) => index !== idx));
+                              }}
+                            >
+                              Remove
+                            </Button>
+                          </Button.Group>
+                        </Card>
+                      );
+                    })}
                   </div>
-                );
-              })}
-            </div>
-          </div>
-          {IS_SAVED_CHARTS_ENABLED && (
-            <button
-              onClick={() => {
-                chartRef.current?.chart.dataURI().then(({ imgURI }: any) => {
-                  const newSavedCharts = [
-                    ...savedCharts,
-                    {
-                      dataURI: imgURI,
-                      metric,
-                      title,
-                      isCumulative,
-                      selectedCountries,
-                      dayInterval,
-                      showDataLabels,
-                    },
-                  ];
-                  setSavedCharts(newSavedCharts);
-                  setImmediate(() => localStorage.setItem(STORAGE_KEY, JSON.stringify(newSavedCharts)));
-                });
-              }}
-            >
-              Save
-            </button>
-          )}
-        </div>
-      </div>
-      {IS_SAVED_CHARTS_ENABLED && savedCharts.length > 0 && (
-        <div>
-          <h3>Saved charts</h3>
-          <div className="Editor--saved-charts-container">
-            {savedCharts.map((item, index) => {
-              return (
-                <div key={index} className="Editor--saved-charts-container--item">
-                  <img
-                    alt={item.title}
-                    style={{
-                      width: "100%",
-                      objectFit: "contain",
-                    }}
-                    src={item.dataURI}
-                  ></img>
-                  <h5>{item.title}</h5>
-                  <div>
-                    <div>{item.isCumulative ? `✓ Cumulative ${item.metric}` : `✓ Daily ${item.metric}`}</div>
-                    <div>{item.showDataLabels && "✓ Show data labels"}</div>
-                    <div>{`✓ Last ${item.dayInterval} days`}</div>
-                  </div>
-                  <div>
-                    <ListDescriptor>{Object.keys(item.selectedCountries).filter(k => item.selectedCountries[k])}</ListDescriptor>
-                  </div>
-                  <button
-                    onClick={() => {
-                      setMetric(item.metric);
-                      setIsCumulative(item.isCumulative);
-                      setShowDataLabels(item.showDataLabels);
-                      setTitle(item.title);
-                      setDayInterval(item.dayInterval);
-                      setSelectedCountries(item.selectedCountries);
-                    }}
-                  >
-                    Load
-                  </button>{" "}
-                  <a
-                    href="#"
-                    onClick={e => {
-                      e.preventDefault();
-                      setSavedCharts(savedCharts.filter((_, idx) => index !== idx));
-                    }}
-                  >
-                    Remove
-                  </a>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
+                </Fragment>
+              ) : (
+                <Header icon>
+                  <Icon name="save outline" />
+                  No charts were saved yet.
+                </Header>
+              )}
+            </Segment>
+          </Grid.Column>
+        </Grid.Row>
+      </Grid>
     </div>
   );
 }

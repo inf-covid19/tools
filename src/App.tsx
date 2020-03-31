@@ -8,6 +8,7 @@ import Loader from "./components/Loader";
 import { DATA_SOURCES } from "./constants";
 import useLastUpdated from "./hooks/useLastUpdated";
 import ListDescriptor from "./components/ListDescriptor";
+import { Header, Container } from "semantic-ui-react";
 
 function App() {
   const lastUpdated = useLastUpdated();
@@ -32,19 +33,23 @@ function App() {
       <header className="App-header">
         <img src={LogoUFRGS} height="100" alt="logo UFRGS" />{" "}
         <div style={{ margin: "0 2em" }}>
-          <h1>COVID-19 Analysis Tools</h1>
-          <p>A set of configurable tools around COVID-19 data.</p>
+          <Header as="h1">
+            COVID-19 Analysis Tools
+            <Header.Subheader>A set of configurable tools around COVID-19 data.</Header.Subheader>
+          </Header>
         </div>
         <img src={LogoINF} height="100" alt="logo UFRGS-INF" />
       </header>
 
-      <Editor />
+      <Container fluid>
+        <Editor />
+      </Container>
 
       <footer>
         <span>
           Sources:{" "}
           <ListDescriptor>
-            {DATA_SOURCES.map((src) => (
+            {DATA_SOURCES.map(src => (
               <a key={src.url} rel="noopener noreferrer" target="_blank" href={src.url}>
                 {src.name}
               </a>
