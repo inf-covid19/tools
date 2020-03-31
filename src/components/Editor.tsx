@@ -216,6 +216,7 @@ function App() {
                                 setTitle(item.title);
                                 setDayInterval(item.dayInterval);
                                 setSelectedCountries(item.selectedCountries);
+                                window.scrollTo(0, 0);
                               }}
                             >
                               Load
