@@ -1,10 +1,10 @@
-import React, { useState ,useRef} from "react";
+import React, { useState, useRef } from "react";
 import { DEFAULT_COUNTRIES, DEFAULT_DAY_INTERVAL, DEFAULT_IS_CUMULATIVE, DEFAULT_METRIC, DEFAULT_SHOW_DATA_LABELS, DEFAULT_TITLE } from "../constants";
 import { COUNTRIES } from "../countries";
 import "./Editor.css";
 import HeatmapChart from "./HeatmapChart";
 import ListDescriptor from "./ListDescriptor";
-import ReactApexChart from "react-apexcharts";
+
 
 type MetricType = "cases" | "deaths";
 type SelectedCountriesMap = Record<string, boolean>;
@@ -14,7 +14,7 @@ const STORAGE_KEY = "covid19-tools.editor.savedCharts";
 const IS_SAVED_CHARTS_ENABLED = true;
 
 function getSavedCharts(): {
-  dataURI: string,
+  dataURI: string;
   metric: MetricType;
   isCumulative: boolean;
   showDataLabels: boolean;
@@ -97,8 +97,11 @@ function App() {
             <input type="number" name="interval" min={7} max={90} defaultValue={dayInterval} onBlur={({ target }) => setDayInterval(parseInt(target.value) || dayInterval)} />
           </div>
           <div className="Editor-Toolbar--field">
-            <div className="Editor-Toolbar--field--title" style={{display: 'flex', justifyContent:'space-between'}}>Countries
-              <a href="#" onClick={() => setSelectedCountries({})}>Deselect all</a>
+            <div className="Editor-Toolbar--field--title" style={{ display: "flex", justifyContent: "space-between" }}>
+              Countries
+              <a href="#" onClick={() => setSelectedCountries({})}>
+                Deselect all
+              </a>
             </div>
             <div className="countries">
               {Object.keys(COUNTRIES).map((country: any) => {
@@ -138,7 +141,7 @@ function App() {
                   ];
                   setSavedCharts(newSavedCharts);
                   setImmediate(() => localStorage.setItem(STORAGE_KEY, JSON.stringify(newSavedCharts)));
-                })
+                });
               }}
             >
               Save
@@ -146,17 +149,21 @@ function App() {
           )}
         </div>
       </div>
-      {IS_SAVED_CHARTS_ENABLED && (
+      {IS_SAVED_CHARTS_ENABLED && savedCharts.length > 0 && (
         <div>
           <h3>Saved charts</h3>
           <div className="Editor--saved-charts-container">
             {savedCharts.map((item, index) => {
               return (
                 <div key={index} className="Editor--saved-charts-container--item">
-                  <img alt={item.title} style={{
-                    width: '100%',
-                    objectFit: 'contain'
-                  }} src={item.dataURI}></img>
+                  <img
+                    alt={item.title}
+                    style={{
+                      width: "100%",
+                      objectFit: "contain",
+                    }}
+                    src={item.dataURI}
+                  ></img>
                   <h5>{item.title}</h5>
                   <div>
                     <div>{item.isCumulative ? `✓ Cumulative ${item.metric}` : `✓ Daily ${item.metric}`}</div>
@@ -178,7 +185,15 @@ function App() {
                   >
                     Load
                   </button>{" "}
-                  <a href="#" onClick={() => setSavedCharts(savedCharts.filter((_, idx) => index !== idx))}>Remove</a>
+                  <a
+                    href="#"
+                    onClick={e => {
+                      e.preventDefault();
+                      setSavedCharts(savedCharts.filter((_, idx) => index !== idx));
+                    }}
+                  >
+                    Remove
+                  </a>
                 </div>
               );
             })}
