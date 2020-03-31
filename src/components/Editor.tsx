@@ -1,13 +1,23 @@
 import React, { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { Button, Card, Checkbox, Form, Grid, Header, Icon, Image, Segment } from "semantic-ui-react";
-import { DEFAULT_COUNTRIES, DEFAULT_DAY_INTERVAL, DEFAULT_IS_CUMULATIVE, DEFAULT_METRIC, DEFAULT_SHOW_DATA_LABELS, DEFAULT_TITLE } from "../constants";
+import { DEFAULT_COUNTRIES, DEFAULT_OPTIONS } from "../constants";
 import { COUNTRIES } from "../countries";
 import "./Editor.css";
-import HeatmapChart from "./HeatmapChart";
+import CustomizableChart from "./CustomizableChart";
 
+type ChartType = 'heatmap' | 'bar' | 'area' | 'line';
 type MetricType = "cases" | "deaths";
 type SelectedCountriesMap = Record<string, boolean>;
-type Options = { metric: MetricType; isCumulative: boolean; showDataLabels: boolean; title: string; dayInterval: number; selectedCountries: SelectedCountriesMap };
+export type ChartOptions = {
+  chartType: ChartType;
+  metric: MetricType;
+  isCumulative: boolean;
+  alignAt: number;
+  showDataLabels: boolean;
+  title: string;
+  dayInterval: number;
+  selectedCountries: SelectedCountriesMap;
+};
 
 const SAVED_CHARTS_KEY = "covid19-tools.editor.savedCharts";
 const DEFAULTS_KEY = "covid19-tools.editor.defaults";
@@ -15,7 +25,7 @@ const DEFAULTS_KEY = "covid19-tools.editor.defaults";
 function getSavedCharts(): Array<
   {
     dataURI: string;
-  } & Options
+  } & ChartOptions
 > {
   if (localStorage.hasOwnProperty(SAVED_CHARTS_KEY)) {
     const savedChartsJSON = localStorage.getItem(SAVED_CHARTS_KEY);
@@ -32,13 +42,9 @@ const countryOptions = Object.keys(COUNTRIES).map(country => ({
   text: country,
 }));
 
-const defaultsValues: Options = (() => {
+const defaultsValues: ChartOptions = (() => {
   const defaults = {
-    metric: DEFAULT_METRIC,
-    isCumulative: DEFAULT_IS_CUMULATIVE,
-    showDataLabels: DEFAULT_SHOW_DATA_LABELS,
-    title: DEFAULT_TITLE,
-    dayInterval: DEFAULT_DAY_INTERVAL,
+    ...DEFAULT_OPTIONS,
     selectedCountries: DEFAULT_COUNTRIES.reduce<SelectedCountriesMap>((acc, curr) => ({ ...acc, [curr]: true }), {}),
   };
 
@@ -60,7 +66,9 @@ function App() {
   const [savedCharts, setSavedCharts] = useState(getSavedCharts());
 
   const chartRef = useRef<any>(null);
-  const [metric, setMetric] = useState<MetricType>(defaultsValues.metric);
+  const [chartType, setChartType] = useState(defaultsValues.chartType);
+  const [metric, setMetric] = useState(defaultsValues.metric);
+  const [alignAt, setAlignAt] = useState(defaultsValues.alignAt);
   const [isCumulative, setIsCumulative] = useState(defaultsValues.isCumulative);
   const [showDataLabels, setShowDataLabels] = useState(defaultsValues.showDataLabels);
   const [title, setTitle] = useState(defaultsValues.title);
@@ -75,8 +83,8 @@ function App() {
   }, [savedCharts]);
 
   useEffect(() => {
-    localStorage.setItem(DEFAULTS_KEY, JSON.stringify({ metric, isCumulative, showDataLabels, title, dayInterval, selectedCountries }));
-  }, [metric, isCumulative, showDataLabels, title, dayInterval, selectedCountries]);
+    localStorage.setItem(DEFAULTS_KEY, JSON.stringify({ metric, isCumulative, showDataLabels, title, dayInterval, selectedCountries, alignAt , chartType}));
+  }, [metric, isCumulative, showDataLabels, title, dayInterval, selectedCountries, alignAt, chartType]);
 
   useEffect(() => {
     let cancelled = false;
@@ -97,8 +105,9 @@ function App() {
         <Grid.Row>
           <Grid.Column width={12}>
             <Segment>
-              <HeatmapChart
+              <CustomizableChart
                 ref={chartRef}
+                chartType={chartType}
                 height={600}
                 isCumulative={isCumulative}
                 title={title}
@@ -106,6 +115,7 @@ function App() {
                 showDataLabels={showDataLabels}
                 dayInterval={dayInterval}
                 selectedCountries={selectedCountries}
+                alignAt={alignAt}
               />
             </Segment>
           </Grid.Column>
@@ -117,6 +127,18 @@ function App() {
                   <label>Title</label>
                   <input placeholder="Enter a title" type="text" defaultValue={title} onBlur={({ target }: any) => setTitle(target.value)} />
                 </Form.Field>
+
+                <Form.Select
+                  label="Choose chart type"
+                  value={chartType}
+                  onChange={(_, { value }) => setChartType(value as ChartType)}
+                  options={[
+                    { key: "heatmap", text: "Heatmap", value: "heatmap" },
+                    { key: "line", text: "Line", value: "line" },
+                    { key: "area", text: "Area", value: "area" },
+                    { key: "bar", text: "Bar", value: "bar" },
+                  ]}
+                />
 
                 <Form.Select
                   label="Choose total or daily values"
@@ -139,6 +161,11 @@ function App() {
                 />
 
                 <Form.Field>
+                  <label>How many {metric} would you like to align at?</label>
+                  <input type="number" placeholder="Enter a number" min="0" defaultValue={alignAt} onBlur={({ target }: any) => setAlignAt(parseInt(target.value) || 0)} />
+                </Form.Field>
+
+                <Form.Field disabled={alignAt > 0}>
                   <label>How many past days would you like to see?</label>
                   <input
                     type="number"
@@ -179,12 +206,14 @@ function App() {
                         ...savedCharts,
                         {
                           dataURI: imgURI,
+                          alignAt,
                           metric,
                           title,
                           isCumulative,
                           selectedCountries,
                           dayInterval,
                           showDataLabels,
+                          chartType,
                         },
                       ];
                       setSavedCharts(newSavedCharts);
@@ -192,7 +221,7 @@ function App() {
                     });
                   }}
                 >
-                  {saved ? 'Saved' : 'Save'}
+                  {saved ? "Saved" : "Save"}
                 </Button>
               </Form>
             </Segment>
@@ -230,6 +259,8 @@ function App() {
                                 setTitle(item.title);
                                 setDayInterval(item.dayInterval);
                                 setSelectedCountries(item.selectedCountries);
+                                setAlignAt(item.alignAt || 0);
+                                setChartType(item.chartType || 'heatmap');
                                 window.scrollTo(0, 0);
                               }}
                             >

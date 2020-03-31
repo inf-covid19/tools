@@ -1,10 +1,13 @@
-export const DEFAULT_TITLE = 'Heatmap of Coronavirus Data';
-
-export const DEFAULT_METRIC = "cases";
-export const DEFAULT_SHOW_DATA_LABELS = false;
-export const DEFAULT_IS_CUMULATIVE = true;
-
-export const DEFAULT_DAY_INTERVAL = 30;
+export const DEFAULT_OPTIONS = {
+  chartType: 'heatmap',
+  metric: 'cases',
+  showDataLabels: false,
+  isCumulative: true,
+  title: 'Heatmap of Coronavirus Data',
+  dayInterval: 30,
+  selectedCountries: {},
+  alignAt: 0,
+}
 
 export const DEFAULT_COUNTRIES = [
   "Brazil",
