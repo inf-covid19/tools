@@ -66,6 +66,7 @@ function App() {
   const [title, setTitle] = useState(defaultsValues.title);
   const [dayInterval, setDayInterval] = useState(defaultsValues.dayInterval);
   const [selectedCountries, setSelectedCountries] = useState(defaultsValues.selectedCountries);
+  const [saved, setSaved] = useState(false);
 
   const selectedCountryOptions = useMemo(() => Object.keys(selectedCountries).filter(k => selectedCountries[k]), [selectedCountries]);
 
@@ -76,6 +77,19 @@ function App() {
   useEffect(() => {
     localStorage.setItem(DEFAULTS_KEY, JSON.stringify({ metric, isCumulative, showDataLabels, title, dayInterval, selectedCountries }));
   }, [metric, isCumulative, showDataLabels, title, dayInterval, selectedCountries]);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (saved) {
+      setTimeout(() => {
+        if (cancelled) return;
+        setSaved(false);
+      }, 3000);
+    }
+    return () => {
+      cancelled = true;
+    };
+  }, [saved]);
 
   return (
     <div>
@@ -158,6 +172,7 @@ function App() {
                   <Checkbox toggle checked={showDataLabels} onChange={() => setShowDataLabels(!showDataLabels)} label="Show data labels" />
                 </Form.Field>
                 <Button
+                  positive={saved}
                   onClick={() => {
                     chartRef.current?.chart.dataURI().then(({ imgURI }: any) => {
                       const newSavedCharts = [
@@ -173,10 +188,11 @@ function App() {
                         },
                       ];
                       setSavedCharts(newSavedCharts);
+                      setSaved(true);
                     });
                   }}
                 >
-                  Save
+                  {saved ? 'Saved' : 'Save'}
                 </Button>
               </Form>
             </Segment>
@@ -198,10 +214,8 @@ function App() {
                             <Card.Meta>{`${item.isCumulative ? "Total" : "Daily"} number of ${item.metric}`}</Card.Meta>
                           </Card.Content>
                           <Card.Content extra>
-                          <span className="right floated">
-       Past {item.dayInterval} days
-      </span>
-                            
+                            <span className="right floated">Past {item.dayInterval} days</span>
+
                             <Icon name="map marker" />
                             {`${Object.keys(item.selectedCountries).filter(k => item.selectedCountries[k]).length} regions`}
                           </Card.Content>
