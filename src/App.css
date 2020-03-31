@@ -1,34 +1,13 @@
-.App {
-  text-align: center;
-}
-
 .App-header {
   display: flex;
   padding: 0 5em;
-  /* flex-direction: column; */
   align-items: center;
   justify-content: center;
-
-  
-}
-
-.App-header > div {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-}
-
-.App-header h1 {
-  margin-bottom: 10px;
-}
-
-.App-header p {
-  font-weight: 300;
-  margin: 0;
+  text-align: center;
 }
 
 .App footer {
+  text-align: center;
   font-size: 0.8em;
   padding: 2em 0;
   color: #0d0d0d;

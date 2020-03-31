@@ -4,11 +4,11 @@ import { eachDayOfInterval, subDays, format } from "date-fns";
 import sortBy from "lodash/sortBy";
 import last from "lodash/last";
 import ReactApexChart, { Props } from "react-apexcharts";
-import * as d3 from 'd3'
+import * as d3 from "d3";
 
 const numberFormatter = d3.format(".2s");
 
-type HeatmapChartProps  = Omit<Props, 'options' | 'series' | 'type'> & {
+type HeatmapChartProps = Omit<Props, "options" | "series" | "type"> & {
   title: string;
   metric: "cases" | "deaths";
   showDataLabels: boolean;
@@ -42,7 +42,7 @@ function HeatmapChart(props: HeatmapChartProps, ref: React.Ref<any>) {
       let cumulativeValue = 0;
 
       const countryDataByDate = countryData.reduceRight<Record<string, any>>((acc, curr) => {
-        const value = parseInt(curr[metric] || '0');
+        const value = parseInt(curr[metric] || "0");
         const date = curr["dateRep"] as string;
         cumulativeValue += value;
         acc[date] = {
@@ -80,7 +80,6 @@ function HeatmapChart(props: HeatmapChartProps, ref: React.Ref<any>) {
   const chartOptions = useMemo(() => {
     return {
       chart: {
-        height: 500,
         type: "heatmap",
         toolbar: {
           tools: {
@@ -90,26 +89,35 @@ function HeatmapChart(props: HeatmapChartProps, ref: React.Ref<any>) {
             zoomin: false,
             zoomout: false,
             pan: false,
-            reset: false
-          }
-        }
+            reset: false,
+          },
+        },
       },
       tooltip: {
         y: {
-          formatter: (value: string) => `${value} ${metric}` 
-        }
+          formatter: (value: string) => `${value} ${metric}`,
+        },
       },
       xaxis: {
-        type: "datetime"
+        type: "datetime",
       },
       dataLabels: {
         enabled: showDataLabels,
-        formatter: (value: number) => value >= 1000 ? numberFormatter(value) : value,
+        formatter: (value: number) => (value >= 1000 ? numberFormatter(value) : value),
       },
       title: {
         text: title,
         style: {
           fontSize: "20px",
+          fontFamily: "Lato, 'Helvetica Neue', Arial, Helvetica, sans-serif",
+        },
+      },
+      subtitle: {
+        text: `${isCumulative ? "Total" : "Daily"} number of ${metric}`,
+        floating: true,
+        style: {
+          fontSize: "14px",
+          fontFamily: "Lato, 'Helvetica Neue', Arial, Helvetica, sans-serif",
         },
       },
       plotOptions: {
@@ -117,9 +125,9 @@ function HeatmapChart(props: HeatmapChartProps, ref: React.Ref<any>) {
           shadeIntensity: 0.0,
           colorScale: {
             ranges: [
-              { from: 0, to: 10, name: "0-10", color: "#ffffd9", foreColor: '#0d0d0d' },
-              { from: 11, to: 50, name: "11-50", color: "#edf8b1", foreColor: '#0d0d0d' },
-              { from: 51, to: 100, name: "51-100", color: "#c7e9b4", foreColor: '#0d0d0d' },
+              { from: 0, to: 10, name: "0-10", color: "#ffffd9", foreColor: "#0d0d0d" },
+              { from: 11, to: 50, name: "11-50", color: "#edf8b1", foreColor: "#0d0d0d" },
+              { from: 51, to: 100, name: "51-100", color: "#c7e9b4", foreColor: "#0d0d0d" },
               { from: 101, to: 250, name: "101-250", color: "#7fcdbb" },
               { from: 251, to: 500, name: "251-500", color: "#41b6c4" },
               { from: 501, to: 1000, name: "501-1000", color: "#1d91c0" },
@@ -131,16 +139,13 @@ function HeatmapChart(props: HeatmapChartProps, ref: React.Ref<any>) {
         },
       },
     };
-  }, [title, metric, showDataLabels]);
+  }, [title, metric, isCumulative, showDataLabels]);
 
   if (loading) {
     return <div style={{ height: props.height, display: "flex", justifyContent: "center", alignItems: "center" }}>Loading...</div>;
   }
 
-  return (
-      <ReactApexChart ref={ref} options={chartOptions} series={sortedSeries} type="heatmap" {...rest} />
-  );
+  return <ReactApexChart ref={ref} options={chartOptions} series={sortedSeries} type="heatmap" {...rest} />;
 }
-
 
 export default React.forwardRef(HeatmapChart);
