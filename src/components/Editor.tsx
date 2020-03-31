@@ -1,11 +1,11 @@
 import React, { Fragment, useEffect, useMemo, useRef, useState } from "react";
-import { Button, Card, Checkbox, Form, Grid, Header, Icon, Image, Segment } from "semantic-ui-react";
+import { Button, Card, Checkbox, Form, Grid, Header, Icon, Image, Segment, Select } from "semantic-ui-react";
 import { DEFAULT_COUNTRIES, DEFAULT_OPTIONS } from "../constants";
 import { COUNTRIES } from "../countries";
 import "./Editor.css";
 import CustomizableChart from "./CustomizableChart";
 
-type ChartType = 'heatmap' | 'bar' | 'area' | 'line';
+type ChartType = "heatmap" | "bar" | "area" | "line";
 type MetricType = "cases" | "deaths";
 type SelectedCountriesMap = Record<string, boolean>;
 export type ChartOptions = {
@@ -83,7 +83,7 @@ function App() {
   }, [savedCharts]);
 
   useEffect(() => {
-    localStorage.setItem(DEFAULTS_KEY, JSON.stringify({ metric, isCumulative, showDataLabels, title, dayInterval, selectedCountries, alignAt , chartType}));
+    localStorage.setItem(DEFAULTS_KEY, JSON.stringify({ metric, isCumulative, showDataLabels, title, dayInterval, selectedCountries, alignAt, chartType }));
   }, [metric, isCumulative, showDataLabels, title, dayInterval, selectedCountries, alignAt, chartType]);
 
   useEffect(() => {
@@ -161,7 +161,7 @@ function App() {
                 />
 
                 <Form.Field>
-                  <label>How many {metric} would you like to align at?</label>
+                  <label>Minimum number of {metric} to align timeline</label>
                   <input type="number" placeholder="Enter a number" min="0" defaultValue={alignAt} onBlur={({ target }: any) => setAlignAt(parseInt(target.value) || 0)} />
                 </Form.Field>
 
@@ -176,11 +176,13 @@ function App() {
                   />
                 </Form.Field>
 
-                <Form.Select
+                <Form.Field
+                  control={Select}
+                  searchInput={{ id: "editor-countries-select" }}
                   clearable
-                  label="Choose countries"
+                  label={{ children: "Choose countries (click to add more)", htmlFor: "editor-countries-select" }}
                   value={selectedCountryOptions}
-                  onChange={(_, { value }) =>
+                  onChange={(_: any, { value }: any) =>
                     setSelectedCountries(curr => {
                       const next = { ...curr };
                       const invertedIndex = Object.fromEntries((value as string[]).map(k => [k, true]));
@@ -260,7 +262,7 @@ function App() {
                                 setDayInterval(item.dayInterval);
                                 setSelectedCountries(item.selectedCountries);
                                 setAlignAt(item.alignAt || 0);
-                                setChartType(item.chartType || 'heatmap');
+                                setChartType(item.chartType || "heatmap");
                                 window.scrollTo(0, 0);
                               }}
                             >

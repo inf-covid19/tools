@@ -3,7 +3,7 @@ export const DEFAULT_OPTIONS = {
   metric: 'cases',
   showDataLabels: false,
   isCumulative: true,
-  title: 'Heatmap of Coronavirus Data',
+  title: 'Timeline Plots of Coronavirus Data',
   dayInterval: 30,
   selectedCountries: {},
   alignAt: 0,
