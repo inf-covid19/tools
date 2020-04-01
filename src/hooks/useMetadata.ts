@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 
-export const METADATA_KEY = "covid19-tools.metadata.cacheV2";
+export const METADATA_KEY = "covid19-tools.metadata.v1";
 
 export default function useMetadata() {
   const [metadata, setMetadata] = useState<Record<string, any>>({});

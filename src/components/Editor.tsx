@@ -19,8 +19,8 @@ export type ChartOptions = {
   selectedCountries: SelectedCountriesMap;
 };
 
-const SAVED_CHARTS_KEY = "covid19-tools.editor.savedCharts";
-const DEFAULTS_KEY = "covid19-tools.editor.defaults";
+const SAVED_CHARTS_KEY = "covid19-tools.editor.savedCharts.v2";
+const DEFAULTS_KEY = "covid19-tools.editor.defaults.v2";
 
 function getSavedCharts(): Array<
   {
