@@ -2,6 +2,7 @@ import React, { useMemo } from "react";
 import useRegionData from "../hooks/useRegionData";
 import { eachDayOfInterval, subDays, format, startOfDay, parse, differenceInDays } from "date-fns";
 import sortBy from "lodash/sortBy";
+import orderBy from "lodash/orderBy";
 import last from "lodash/last";
 import first from "lodash/first";
 import ReactApexChart, { Props } from "react-apexcharts";
@@ -21,6 +22,10 @@ const placeTypeMap: any = {
   autonomous_community: "region",
   country: "region",
   county: "county",
+  nhsr: "region",
+  utla: "region",
+  health_board: "region",
+  lgd: "region",
 };
 
 const RegionConfig: any = {
@@ -83,9 +88,6 @@ const RegionConfig: any = {
       cases: "cases",
       deaths: "deaths",
     },
-    // place_type: {
-    //   country: "region",
-    // },
   },
 };
 
@@ -111,20 +113,18 @@ function CustomizableChart(props: CustomizableChartProps, ref: React.Ref<any>) {
     }
 
     return Object.entries(data).map(([region, regionData]) => {
+      console.log("");
+      console.log(region, "Region Data pre", regionData);
       const country = first(region.split(".")) as any;
       const hasSubRegion = region.indexOf(".") > -1;
       const config = hasSubRegion && RegionConfig.hasOwnProperty(country) ? RegionConfig[country] : RegionConfig.Default;
 
-      console.log("region config", region, config);
-
       if (hasSubRegion) {
         let subRegion = last(region.split("."));
-        console.log("Has subregion", subRegion);
-        console.log("subregion data pre", regionData);
-
         regionData = regionData.filter((r: any) => r[placeTypeMap[r.place_type]] === subRegion) as any;
-        console.log("subregion data", regionData);
       }
+
+      regionData = orderBy(regionData, x => parse(x[config.date.name] as string, config.date.format, startOfDay(new Date())), "desc") as any;
 
       let cumulativeValue = 0;
       if (alignAt > 0) {
@@ -166,25 +166,35 @@ function CustomizableChart(props: CustomizableChartProps, ref: React.Ref<any>) {
         };
       }
 
-      console.log("Region Data", region);
-      console.log("Region Data", regionData);
+      console.log("\n", region, "\n\n");
+      console.log(region, "Region Data", regionData);
+      console.log(region, "isCumulative", isCumulative);
 
       const regionDataByDate = regionData.reduceRight<Record<string, any>>((acc, curr) => {
         const value = parseInt(curr[config.metric[metric]] || "0");
-
         const date = curr[config.date.name] as string;
-        cumulativeValue += value;
+        let diffValue = value;
+        console.log(region, "reduce", date, "lastvalue", cumulativeValue, "value", value);
+
+        if (hasSubRegion) {
+          if (value - cumulativeValue === 0) {
+            return acc;
+          }
+          diffValue = value - cumulativeValue;
+        }
+        cumulativeValue += diffValue;
+
         acc[date] = {
           ...curr,
-          [metric]: isCumulative ? cumulativeValue : value,
+          [metric]: isCumulative ? cumulativeValue : diffValue,
         };
         return acc;
       }, {});
 
-      console.log("data by date", regionDataByDate);
+      console.log(region, "data by date", regionDataByDate);
 
       let prevValue = 0;
-      const countrySeries = timeline.map(date => {
+      const regionSeries = timeline.map(date => {
         const dateData = regionDataByDate[format(date, config.date.format)];
         const value = {
           x: date.getTime(),
@@ -194,9 +204,11 @@ function CustomizableChart(props: CustomizableChartProps, ref: React.Ref<any>) {
         return value;
       });
 
+      console.log(region, "region data series", regionSeries);
+
       return {
         name: region,
-        data: countrySeries,
+        data: regionSeries,
       };
     });
   }, [data, loading, timeline, isCumulative, metric, alignAt]);
