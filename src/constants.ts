@@ -1,18 +1,18 @@
 export const DEFAULT_OPTIONS = {
-  chartType: 'heatmap',
-  metric: 'cases',
+  chartType: "heatmap",
+  metric: "cases",
   showDataLabels: false,
   isCumulative: true,
-  title: 'Timeline Plots of Coronavirus Data',
+  title: "Timeline Plots of Coronavirus Data",
   dayInterval: 30,
   selectedCountries: {},
   alignAt: 0,
-}
+};
 
 export const DEFAULT_COUNTRIES = [
   "Brazil",
-  "United States of America",
-  "United Kingdom",
+  "United_States_of_America",
+  "United_Kingdom",
   "China",
   "Sweden",
   "Spain",
@@ -21,30 +21,27 @@ export const DEFAULT_COUNTRIES = [
   "Canada",
   "Portugal",
   "Italy",
-  "South Korea",
+  "South_Korea",
   "Iran",
   "Israel",
   "Netherlands",
-  "Peru"
+  "Peru",
 ];
 
 export const DATA_SOURCES = [
   {
     name: "ECDC",
-    url:
-      "https://www.ecdc.europa.eu/en/publications-data/download-todays-data-geographic-distribution-covid-19-cases-worldwide"
+    url: "https://www.ecdc.europa.eu/en/publications-data/download-todays-data-geographic-distribution-covid-19-cases-worldwide",
   },
   { name: "Brasil.IO", url: "https://brasil.io/dataset/covid19/caso" },
   {
     name: "PHAS",
-    url:
-      "https://www.folkhalsomyndigheten.se/smittskydd-beredskap/utbrott/aktuella-utbrott/covid-19/aktuellt-epidemiologiskt-lage"
+    url: "https://www.folkhalsomyndigheten.se/smittskydd-beredskap/utbrott/aktuella-utbrott/covid-19/aktuellt-epidemiologiskt-lage",
   },
   { name: "NY Times", url: "https://github.com/nytimes/covid-19-data" },
   { name: "ISC", url: "https://covid19.isciii.es/" },
   {
     name: "PHE",
-    url:
-      "https://www.gov.uk/government/publications/covid-19-track-coronavirus-cases"
-  }
+    url: "https://www.gov.uk/government/publications/covid-19-track-coronavirus-cases",
+  },
 ];
