@@ -14,10 +14,6 @@ export const getRegionData = (regionId: string) => {
     regionId = [...s.slice(0, s.length - 1), regionData.parent].join(".");
   }
 
-  console.log("metadate", metadata);
-
-  console.log("region Id", regionId);
-
   return withCache(regionId, () => csv(`https://raw.githubusercontent.com/inf-covid19/covid19-data/master/${get(metadata, regionId).file}?v=2`));
 };
 

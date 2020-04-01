@@ -113,8 +113,6 @@ function CustomizableChart(props: CustomizableChartProps, ref: React.Ref<any>) {
     }
 
     return Object.entries(data).map(([region, regionData]) => {
-      console.log("");
-      console.log(region, "Region Data pre", regionData);
       const country = first(region.split(".")) as any;
       const hasSubRegion = region.indexOf(".") > -1;
       const config = hasSubRegion && RegionConfig.hasOwnProperty(country) ? RegionConfig[country] : RegionConfig.Default;
@@ -131,8 +129,13 @@ function CustomizableChart(props: CustomizableChartProps, ref: React.Ref<any>) {
         let prevDate: Date;
 
         const normalizedData = regionData.reduceRight<any[]>((arr, curr) => {
-          let date = parse(curr["dateRep"] as string, "dd/MM/yyyy", startOfDay(new Date()));
-          const value = parseInt(curr[metric] || "0");
+          let date = parse(curr[config.date.name] as string, config.date.format, startOfDay(new Date()));
+          const value = parseInt(curr[config.metric[metric]] || "0");
+          let diffValue = value;
+
+          if (hasSubRegion) {
+            diffValue = value - cumulativeValue;
+          }
 
           if (prevDate && differenceInDays(date, prevDate) > 1) {
             const missingInterval = eachDayOfInterval({
@@ -146,7 +149,7 @@ function CustomizableChart(props: CustomizableChartProps, ref: React.Ref<any>) {
             });
           }
 
-          cumulativeValue += value;
+          cumulativeValue += diffValue;
           arr.push({
             ...curr,
             total: cumulativeValue,
@@ -154,9 +157,9 @@ function CustomizableChart(props: CustomizableChartProps, ref: React.Ref<any>) {
           prevDate = date;
           return arr;
         }, []);
-
         return {
-          name: region,
+          name: last(region.split(".")) as string,
+          key: region,
           data: normalizedData
             .filter(v => v.total >= alignAt)
             .map((v, index) => ({
@@ -166,15 +169,10 @@ function CustomizableChart(props: CustomizableChartProps, ref: React.Ref<any>) {
         };
       }
 
-      console.log("\n", region, "\n\n");
-      console.log(region, "Region Data", regionData);
-      console.log(region, "isCumulative", isCumulative);
-
       const regionDataByDate = regionData.reduceRight<Record<string, any>>((acc, curr) => {
         const value = parseInt(curr[config.metric[metric]] || "0");
         const date = curr[config.date.name] as string;
         let diffValue = value;
-        console.log(region, "reduce", date, "lastvalue", cumulativeValue, "value", value);
 
         if (hasSubRegion) {
           if (value - cumulativeValue === 0) {
@@ -191,8 +189,6 @@ function CustomizableChart(props: CustomizableChartProps, ref: React.Ref<any>) {
         return acc;
       }, {});
 
-      console.log(region, "data by date", regionDataByDate);
-
       let prevValue = 0;
       const regionSeries = timeline.map(date => {
         const dateData = regionDataByDate[format(date, config.date.format)];
@@ -204,10 +200,9 @@ function CustomizableChart(props: CustomizableChartProps, ref: React.Ref<any>) {
         return value;
       });
 
-      console.log(region, "region data series", regionSeries);
-
       return {
-        name: region,
+        name: last(region.split(".")) as string,
+        key: region,
         data: regionSeries,
       };
     });
@@ -215,7 +210,7 @@ function CustomizableChart(props: CustomizableChartProps, ref: React.Ref<any>) {
 
   const sortedSeries = useMemo(() => {
     return sortBy(
-      series.filter(s => !!selectedCountries[s.name]),
+      series.filter(s => !!selectedCountries[s.key]),
       s => last(s.data)?.y
     );
   }, [series, selectedCountries]);
