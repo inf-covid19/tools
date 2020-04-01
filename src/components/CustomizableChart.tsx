@@ -88,6 +88,15 @@ function CustomizableChart(props: CustomizableChartProps, ref: React.Ref<any>) {
         },
       },
       colors: seriesColors,
+      grid: {
+        padding: {
+          bottom: 15,
+        },
+      },
+      legend: {
+        position: "top",
+        offsetX: 110,
+      },
       tooltip: {
         y: {
           formatter: (value: number) => `${displayNumberFormatter(value)} ${metric}`,
@@ -121,6 +130,16 @@ function CustomizableChart(props: CustomizableChartProps, ref: React.Ref<any>) {
           fontFamily: "Lato, 'Helvetica Neue', Arial, Helvetica, sans-serif",
         },
       },
+      annotations: {
+        position: "front",
+        texts: [
+          {
+            text: "See more charts like this at https://inf-convid19.github.io/tools",
+            fontSize: "11px",
+            y: (props.height as number) - 5,
+          },
+        ],
+      },
       plotOptions: {
         heatmap: {
           shadeIntensity: 0.0,
@@ -140,7 +159,7 @@ function CustomizableChart(props: CustomizableChartProps, ref: React.Ref<any>) {
         },
       },
     };
-  }, [title, metric, isCumulative, showDataLabels, alignAt, seriesColors]);
+  }, [title, metric, isCumulative, showDataLabels, alignAt, seriesColors, props.height]);
 
   if (loading) {
     return (
