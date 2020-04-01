@@ -174,6 +174,10 @@ function CustomizableChart(props: CustomizableChartProps, ref: React.Ref<any>) {
         const date = curr[config.date.name] as string;
         let diffValue = value;
 
+        if (diffValue === 0 && cumulativeValue != 0) {
+          return acc;
+        }
+
         if (hasSubRegion) {
           if (value - cumulativeValue === 0) {
             return acc;
