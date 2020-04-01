@@ -13,18 +13,7 @@ import useMetadata from "./hooks/useMetadata";
 
 function App() {
   const lastUpdated = useLastUpdated();
-  // const [showSplashScreen, setShowSplashScreen] = useState(true);
-
   const { loading } = useMetadata();
-  // useEffect(() => {
-  //   let cancelled = false;
-
-  //   setTimeout(() => (!cancelled ? setShowSplashScreen(false) : undefined), 3000);
-
-  //   return () => {
-  //     cancelled = true;
-  //   };
-  // }, []);
 
   if (loading) {
     return <Loader />;
