@@ -10,17 +10,8 @@ import useLastUpdated from "./hooks/useLastUpdated";
 import ListDescriptor from "./components/ListDescriptor";
 import { Header, Container } from "semantic-ui-react";
 import useMetadata from "./hooks/useMetadata";
-import ReactGA from "react-ga";
-
-function initializeReactGA() {
-  if (process.env.REACT_APP_GA_TRACKING_CODE) {
-    ReactGA.initialize(process.env.REACT_APP_GA_TRACKING_CODE);
-    ReactGA.pageview("/");
-  }
-}
 
 function App() {
-  initializeReactGA();
   const lastUpdated = useLastUpdated();
   const { loading } = useMetadata();
 
