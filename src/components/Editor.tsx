@@ -1,6 +1,6 @@
 import React, { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { Button, Card, Checkbox, Form, Grid, Header, Icon, Image, Segment, Select } from "semantic-ui-react";
-import { DEFAULT_OPTIONS } from "../constants";
+import { DEFAULT_OPTIONS, DEFAULT_COUNTRIES } from "../constants";
 import "./Editor.css";
 import CustomizableChart from "./CustomizableChart";
 import useMetadata from "../hooks/useMetadata";
@@ -36,17 +36,12 @@ function getSavedCharts(): Array<
   return [];
 }
 
-// const countryOptions = Object.keys(COUNTRIES).map(country => ({
-//   key: country,
-//   value: country,
-//   text: country,
-// }));
 const countryOptions: any = [];
 
 const defaultsValues: ChartOptions = (() => {
   const defaults = {
     ...DEFAULT_OPTIONS,
-    selectedCountries: {},
+    selectedCountries: Object.fromEntries(DEFAULT_COUNTRIES.map(k => [k, true])),
   };
 
   if (localStorage.hasOwnProperty(DEFAULTS_KEY)) {
@@ -198,7 +193,7 @@ function App() {
                   control={Select}
                   searchInput={{ id: "editor-countries-select" }}
                   clearable
-                  label={{ children: "Choose countries (click to add more)", htmlFor: "editor-countries-select" }}
+                  label={{ children: "Choose regions (click to add more)", htmlFor: "editor-countries-select" }}
                   value={selectedRegionOptions}
                   onChange={(_: any, { value }: any) =>
                     setSelectedRegions(curr => {

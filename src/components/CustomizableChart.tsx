@@ -158,7 +158,7 @@ function CustomizableChart(props: CustomizableChartProps, ref: React.Ref<any>) {
           return arr;
         }, []);
         return {
-          name: last(region.split(".")) as string,
+          name: last(region.split("."))?.replace(/_/g, " "),
           key: region,
           data: normalizedData
             .filter(v => v.total >= alignAt)
@@ -201,7 +201,7 @@ function CustomizableChart(props: CustomizableChartProps, ref: React.Ref<any>) {
       });
 
       return {
-        name: last(region.split(".")) as string,
+        name: last(region.split("."))?.replace(/_/g, " "),
         key: region,
         data: regionSeries,
       };
