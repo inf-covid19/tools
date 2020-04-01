@@ -2,7 +2,8 @@ import { differenceInHours } from "date-fns";
 import { csv } from "d3";
 import { METADATA_KEY } from "../hooks/useMetadata";
 import get from "lodash/get";
-const STORAGE_KEY = "covid19-tools.api.cacheV2";
+
+const STORAGE_KEY = "covid19-tools.api.cache.v3";
 
 export const getRegionData = (regionId: string) => {
   const metadata = JSON.parse(localStorage.getItem(METADATA_KEY) || "{}");
