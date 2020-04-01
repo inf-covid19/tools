@@ -22,7 +22,7 @@ export default function useRegionData(regionIds: string[]) {
     Promise.all(regionIds.map(id => getRegionData(id)))
       .then(results => {
         if (cancelled) return;
-        
+
         const data: Record<string, DSVRowArray> = {};
         results.forEach((res, index) => {
           data[regionIds[index]] = res;
