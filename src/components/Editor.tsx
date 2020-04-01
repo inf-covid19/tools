@@ -36,8 +36,6 @@ function getSavedCharts(): Array<
   return [];
 }
 
-const countryOptions: any = [];
-
 const defaultsValues: ChartOptions = (() => {
   const defaults = {
     ...DEFAULT_OPTIONS,
