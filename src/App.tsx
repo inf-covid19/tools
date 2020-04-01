@@ -9,22 +9,24 @@ import { DATA_SOURCES } from "./constants";
 import useLastUpdated from "./hooks/useLastUpdated";
 import ListDescriptor from "./components/ListDescriptor";
 import { Header, Container } from "semantic-ui-react";
+import useMetadata from "./hooks/useMetadata";
 
 function App() {
   const lastUpdated = useLastUpdated();
-  const [showSplashScreen, setShowSplashScreen] = useState(true);
+  // const [showSplashScreen, setShowSplashScreen] = useState(true);
 
-  useEffect(() => {
-    let cancelled = false;
+  const { loading } = useMetadata();
+  // useEffect(() => {
+  //   let cancelled = false;
 
-    setTimeout(() => (!cancelled ? setShowSplashScreen(false) : undefined), 3000);
+  //   setTimeout(() => (!cancelled ? setShowSplashScreen(false) : undefined), 3000);
 
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  //   return () => {
+  //     cancelled = true;
+  //   };
+  // }, []);
 
-  if (showSplashScreen) {
+  if (loading) {
     return <Loader />;
   }
 

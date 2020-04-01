@@ -1,9 +1,9 @@
 import React, { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { Button, Card, Checkbox, Form, Grid, Header, Icon, Image, Segment, Select } from "semantic-ui-react";
-import { DEFAULT_COUNTRIES, DEFAULT_OPTIONS } from "../constants";
-import { COUNTRIES } from "../countries";
+import { DEFAULT_OPTIONS } from "../constants";
 import "./Editor.css";
 import CustomizableChart from "./CustomizableChart";
+import useMetadata from "../hooks/useMetadata";
 
 type ChartType = "heatmap" | "bar" | "area" | "line";
 type MetricType = "cases" | "deaths";
@@ -36,16 +36,17 @@ function getSavedCharts(): Array<
   return [];
 }
 
-const countryOptions = Object.keys(COUNTRIES).map(country => ({
-  key: country,
-  value: country,
-  text: country,
-}));
+// const countryOptions = Object.keys(COUNTRIES).map(country => ({
+//   key: country,
+//   value: country,
+//   text: country,
+// }));
+const countryOptions: any = [];
 
 const defaultsValues: ChartOptions = (() => {
   const defaults = {
     ...DEFAULT_OPTIONS,
-    selectedCountries: DEFAULT_COUNTRIES.reduce<SelectedCountriesMap>((acc, curr) => ({ ...acc, [curr]: true }), {}),
+    selectedCountries: {},
   };
 
   if (localStorage.hasOwnProperty(DEFAULTS_KEY)) {
@@ -73,18 +74,35 @@ function App() {
   const [showDataLabels, setShowDataLabels] = useState(defaultsValues.showDataLabels);
   const [title, setTitle] = useState(defaultsValues.title);
   const [dayInterval, setDayInterval] = useState(defaultsValues.dayInterval);
-  const [selectedCountries, setSelectedCountries] = useState(defaultsValues.selectedCountries);
+  const [selectedRegions, setSelectedRegions] = useState(defaultsValues.selectedCountries);
   const [saved, setSaved] = useState(false);
+  const { data: metadata } = useMetadata();
 
-  const selectedCountryOptions = useMemo(() => Object.keys(selectedCountries).filter(k => selectedCountries[k]), [selectedCountries]);
+  const regionsOptions = Object.entries(metadata).flatMap(([country, countryData]) => {
+    const countryName = countryData.name.replace(/_/g, " ");
+    return [
+      {
+        key: country,
+        value: country,
+        text: countryName,
+      },
+      ...Object.entries(countryData.regions as Record<string, any>).map(([key, regionData]) => ({
+        key: `${country}.regions.${key}`,
+        text: `${regionData.name}${regionData.parent ? `, ${regionData.parent}` : ""}, ${countryName}`,
+        value: `${country}.regions.${key}`,
+      })),
+    ];
+  });
+
+  const selectedRegionOptions = useMemo(() => Object.keys(selectedRegions).filter(k => selectedRegions[k]), [selectedRegions]);
 
   useEffect(() => {
     localStorage.setItem(SAVED_CHARTS_KEY, JSON.stringify(savedCharts));
   }, [savedCharts]);
 
   useEffect(() => {
-    localStorage.setItem(DEFAULTS_KEY, JSON.stringify({ metric, isCumulative, showDataLabels, title, dayInterval, selectedCountries, alignAt, chartType }));
-  }, [metric, isCumulative, showDataLabels, title, dayInterval, selectedCountries, alignAt, chartType]);
+    localStorage.setItem(DEFAULTS_KEY, JSON.stringify({ metric, isCumulative, showDataLabels, title, dayInterval, selectedCountries: selectedRegions, alignAt, chartType }));
+  }, [metric, isCumulative, showDataLabels, title, dayInterval, selectedRegions, alignAt, chartType]);
 
   useEffect(() => {
     let cancelled = false;
@@ -114,7 +132,7 @@ function App() {
                 metric={metric}
                 showDataLabels={showDataLabels}
                 dayInterval={dayInterval}
-                selectedCountries={selectedCountries}
+                selectedCountries={selectedRegions}
                 alignAt={alignAt}
               />
             </Segment>
@@ -181,9 +199,9 @@ function App() {
                   searchInput={{ id: "editor-countries-select" }}
                   clearable
                   label={{ children: "Choose countries (click to add more)", htmlFor: "editor-countries-select" }}
-                  value={selectedCountryOptions}
+                  value={selectedRegionOptions}
                   onChange={(_: any, { value }: any) =>
-                    setSelectedCountries(curr => {
+                    setSelectedRegions(curr => {
                       const next = { ...curr };
                       const invertedIndex = Object.fromEntries((value as string[]).map(k => [k, true]));
                       Object.keys({ ...next, ...invertedIndex }).forEach(k => {
@@ -194,7 +212,7 @@ function App() {
                   }
                   search
                   multiple
-                  options={countryOptions}
+                  options={regionsOptions}
                 />
 
                 <Form.Field>
@@ -212,7 +230,7 @@ function App() {
                           metric,
                           title,
                           isCumulative,
-                          selectedCountries,
+                          selectedCountries: selectedRegions,
                           dayInterval,
                           showDataLabels,
                           chartType,
@@ -260,7 +278,7 @@ function App() {
                                 setShowDataLabels(item.showDataLabels);
                                 setTitle(item.title);
                                 setDayInterval(item.dayInterval);
-                                setSelectedCountries(item.selectedCountries);
+                                setSelectedRegions(item.selectedCountries);
                                 setAlignAt(item.alignAt || 0);
                                 setChartType(item.chartType || "heatmap");
                                 window.scrollTo(0, 0);

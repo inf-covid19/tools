@@ -3,6 +3,7 @@ import useRegionData from "../hooks/useRegionData";
 import { eachDayOfInterval, subDays, format, startOfDay, parse, differenceInDays } from "date-fns";
 import sortBy from "lodash/sortBy";
 import last from "lodash/last";
+import first from "lodash/first";
 import ReactApexChart, { Props } from "react-apexcharts";
 import { Loader } from "semantic-ui-react";
 import { ChartOptions } from "./Editor";
@@ -14,8 +15,82 @@ const numberFormatter = d3.format(".2s");
 
 type CustomizableChartProps = Omit<Props, "options" | "series" | "type"> & ChartOptions;
 
+const placeTypeMap: any = {
+  state: "state",
+  city: "city",
+  autonomous_community: "region",
+  country: "region",
+  county: "county",
+};
+
+const RegionConfig: any = {
+  Brazil: {
+    date: {
+      name: "date",
+      format: "yyyy-MM-dd",
+    },
+    metric: {
+      cases: "confirmed",
+      deaths: "deaths",
+    },
+  },
+  Spain: {
+    date: {
+      name: "date",
+      format: "yyyy-MM-dd",
+    },
+    metric: {
+      cases: "cases",
+      deaths: "deaths",
+    },
+  },
+  United_Kingdom: {
+    date: {
+      name: "date",
+      format: "yyyy-MM-dd",
+    },
+    metric: {
+      cases: "cases",
+      deaths: "deaths",
+    },
+  },
+  United_States_of_America: {
+    date: {
+      name: "date",
+      format: "yyyy-MM-dd",
+    },
+    metric: {
+      cases: "cases",
+      deaths: "deaths",
+    },
+  },
+  Sweden: {
+    date: {
+      name: "date",
+      format: "yyyy-MM-dd",
+    },
+    metric: {
+      cases: "cases",
+      deaths: "deaths",
+    },
+  },
+  Default: {
+    date: {
+      name: "dateRep",
+      format: "dd/MM/yyyy",
+    },
+    metric: {
+      cases: "cases",
+      deaths: "deaths",
+    },
+    // place_type: {
+    //   country: "region",
+    // },
+  },
+};
+
 function CustomizableChart(props: CustomizableChartProps, ref: React.Ref<any>) {
-  const { chartType = 'heatmap', title, metric, showDataLabels, isCumulative, dayInterval, selectedCountries, alignAt = 0, ...rest } = props;
+  const { chartType = "heatmap", title, metric, showDataLabels, isCumulative, dayInterval, selectedCountries, alignAt = 0, ...rest } = props;
 
   const timeline = useMemo(
     () =>
@@ -35,13 +110,27 @@ function CustomizableChart(props: CustomizableChartProps, ref: React.Ref<any>) {
       return [];
     }
 
-    return Object.entries(data).map(([country, countryData]) => {
-      let cumulativeValue = 0;
+    return Object.entries(data).map(([region, regionData]) => {
+      const country = first(region.split(".")) as any;
+      const hasSubRegion = region.indexOf(".") > -1;
+      const config = hasSubRegion && RegionConfig.hasOwnProperty(country) ? RegionConfig[country] : RegionConfig.Default;
 
+      console.log("region config", region, config);
+
+      if (hasSubRegion) {
+        let subRegion = last(region.split("."));
+        console.log("Has subregion", subRegion);
+        console.log("subregion data pre", regionData);
+
+        regionData = regionData.filter((r: any) => r[placeTypeMap[r.place_type]] === subRegion) as any;
+        console.log("subregion data", regionData);
+      }
+
+      let cumulativeValue = 0;
       if (alignAt > 0) {
         let prevDate: Date;
 
-        const normalizedData = countryData.reduceRight<any[]>((arr, curr) => {
+        const normalizedData = regionData.reduceRight<any[]>((arr, curr) => {
           let date = parse(curr["dateRep"] as string, "dd/MM/yyyy", startOfDay(new Date()));
           const value = parseInt(curr[metric] || "0");
 
@@ -67,7 +156,7 @@ function CustomizableChart(props: CustomizableChartProps, ref: React.Ref<any>) {
         }, []);
 
         return {
-          name: country,
+          name: region,
           data: normalizedData
             .filter(v => v.total >= alignAt)
             .map((v, index) => ({
@@ -77,9 +166,13 @@ function CustomizableChart(props: CustomizableChartProps, ref: React.Ref<any>) {
         };
       }
 
-      const countryDataByDate = countryData.reduceRight<Record<string, any>>((acc, curr) => {
-        const value = parseInt(curr[metric] || "0");
-        const date = curr["dateRep"] as string;
+      console.log("Region Data", region);
+      console.log("Region Data", regionData);
+
+      const regionDataByDate = regionData.reduceRight<Record<string, any>>((acc, curr) => {
+        const value = parseInt(curr[config.metric[metric]] || "0");
+
+        const date = curr[config.date.name] as string;
         cumulativeValue += value;
         acc[date] = {
           ...curr,
@@ -88,9 +181,11 @@ function CustomizableChart(props: CustomizableChartProps, ref: React.Ref<any>) {
         return acc;
       }, {});
 
+      console.log("data by date", regionDataByDate);
+
       let prevValue = 0;
       const countrySeries = timeline.map(date => {
-        const dateData = countryDataByDate[format(date, "dd/MM/yyyy")];
+        const dateData = regionDataByDate[format(date, config.date.format)];
         const value = {
           x: date.getTime(),
           y: dateData ? dateData[metric] : isCumulative ? prevValue : 0,
@@ -100,7 +195,7 @@ function CustomizableChart(props: CustomizableChartProps, ref: React.Ref<any>) {
       });
 
       return {
-        name: country,
+        name: region,
         data: countrySeries,
       };
     });

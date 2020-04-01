@@ -1,4 +1,4 @@
-export const COUNTRIES : Record<string, string> = {
+export const COUNTRIES: Record<string, string> = {
   Afghanistan: "afghanistan.csv",
   Angola: "angola.csv",
   Albania: "albania.csv",
@@ -33,8 +33,7 @@ export const COUNTRIES : Record<string, string> = {
   Cameroon: "cameroon.csv",
   Canada: "canada.csv",
   "Cape Verde": "cape_verde.csv",
-  "Cases on an international conveyance Japan":
-    "cases_on_an_international_conveyance_japan.csv",
+  "Cases on an international conveyance Japan": "cases_on_an_international_conveyance_japan.csv",
   "Cayman Islands": "cayman_islands.csv",
   "Central African Republic": "central_african_republic.csv",
   Chad: "chad.csv",
@@ -195,5 +194,5 @@ export const COUNTRIES : Record<string, string> = {
   Venezuela: "venezuela.csv",
   Vietnam: "vietnam.csv",
   Zambia: "zambia.csv",
-  Zimbabwe: "zimbabwe.csv"
+  Zimbabwe: "zimbabwe.csv",
 };

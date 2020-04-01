@@ -1,11 +1,24 @@
 import { differenceInHours } from "date-fns";
 import { csv } from "d3";
-import { COUNTRIES } from "../countries";
-
+import { METADATA_KEY } from "../hooks/useMetadata";
+import get from "lodash/get";
 const STORAGE_KEY = "covid19-tools.api.cacheV2";
 
 export const getRegionData = (regionId: string) => {
-  return withCache(regionId, () => csv(`https://raw.githubusercontent.com/inf-covid19/covid19-data/master/data/countries/${COUNTRIES[regionId]}?v=2`));
+  const metadata = JSON.parse(localStorage.getItem(METADATA_KEY) || "{}");
+
+  const regionData = get(metadata, regionId);
+
+  if (regionData && !!regionData.parent) {
+    const s = regionId.split(".");
+    regionId = [...s.slice(0, s.length - 1), regionData.parent].join(".");
+  }
+
+  console.log("metadate", metadata);
+
+  console.log("region Id", regionId);
+
+  return withCache(regionId, () => csv(`https://raw.githubusercontent.com/inf-covid19/covid19-data/master/${get(metadata, regionId).file}?v=2`));
 };
 
 function initializeCache() {
