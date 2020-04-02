@@ -4,7 +4,7 @@ import { eachDayOfInterval, subDays, format, startOfDay, parse, differenceInDays
 import sortBy from "lodash/sortBy";
 import orderBy from "lodash/orderBy";
 import findLastIndex from "lodash/findLastIndex";
-import get from 'lodash/get';
+import get from "lodash/get";
 import last from "lodash/last";
 import first from "lodash/first";
 import ReactApexChart, { Props } from "react-apexcharts";
@@ -218,9 +218,12 @@ function CustomizableChart(props: CustomizableChartProps, ref: React.Ref<any>) {
     let desiredIndex = 0;
     const filteredSeries = series.filter(s => !!selectedRegions[s.key]);
     filteredSeries.forEach(series => {
-      desiredIndex = Math.max(desiredIndex, findLastIndex(series.data, s => !!s.y))
-    })
-    return sortBy(filteredSeries, (s) => get(s.data, [alignAt > 0 ? s.data.length - 1 : desiredIndex, 'y']));
+      desiredIndex = Math.max(
+        desiredIndex,
+        findLastIndex(series.data, s => !!s.y)
+      );
+    });
+    return sortBy(filteredSeries, s => get(s.data, [alignAt > 0 ? s.data.length - 1 : desiredIndex, "y"]));
   }, [series, alignAt, selectedRegions]);
 
   const chartOptions = useMemo(() => {

@@ -9,13 +9,13 @@ import { groupBy, last } from "lodash";
 import { startOfWeek, format } from "date-fns";
 import { subWeeks } from "date-fns/esm";
 import { ChartOptions } from "./Editor";
-import get from 'lodash/get';
+import get from "lodash/get";
 
 const numberFormatter = d3.format(".2s");
 
-const displayNumberFormatter = d3.format(",")
+const displayNumberFormatter = d3.format(",");
 
-const titleCase = (word: string) => word.slice(0, 1).toUpperCase()+word.slice(1);
+const titleCase = (word: string) => word.slice(0, 1).toUpperCase() + word.slice(1);
 
 type TrendChartProps = Omit<Props, "options" | "series" | "type"> & Pick<ChartOptions, "selectedRegions" | "title" | "alignAt" | "metric">;
 
@@ -39,7 +39,7 @@ function TrendChart(props: TrendChartProps, ref: React.Ref<any>) {
         name: last(regionId.split("."))?.replace(/_/g, " "),
         data: normalizedRegionData.flatMap((row, index) => {
           const valueColumn = metric;
-          const valueDailyColumn = `${metric}_daily`
+          const valueDailyColumn = `${metric}_daily`;
 
           if (row.cases < alignAt) return [];
 
@@ -59,6 +59,24 @@ function TrendChart(props: TrendChartProps, ref: React.Ref<any>) {
     return series.filter(({ key }) => !!selectedRegions[key]);
   }, [series, selectedRegions]);
 
+  const seriesColors = useMemo(() => {
+    return filteredSeries.map(({ key }) => {
+      const hashCode = (str: string) => {
+        var hash = 0;
+        for (var i = 0; i < str.length; i++) {
+          hash = str.charCodeAt(i) + ((hash << 5) - hash);
+        }
+        return hash;
+      };
+      const intToRGB = (i: number) => {
+        var c = (i & 0x00ffffff).toString(16).toUpperCase();
+
+        return "00000".substring(0, 6 - c.length) + c;
+      };
+      return "#" + intToRGB(hashCode(key));
+    });
+  }, [filteredSeries]);
+
   const chartOptions = useMemo(() => {
     return {
       chart: {
@@ -74,9 +92,10 @@ function TrendChart(props: TrendChartProps, ref: React.Ref<any>) {
           },
         },
         zoom: {
-          type: 'xy'
+          type: "xy",
         },
       },
+      colors: seriesColors,
       stroke: {
         // curve: "smooth",
       },
@@ -84,10 +103,11 @@ function TrendChart(props: TrendChartProps, ref: React.Ref<any>) {
         shared: false,
         intersect: true,
         y: {
-          formatter: (n: number) =>  `Weekly Confirmed ${titleCase(metric)}: ${displayNumberFormatter(n)}`,
+          formatter: (n: number) => `Weekly Confirmed ${titleCase(metric)}: ${displayNumberFormatter(n)}`,
         },
         x: {
-          formatter: (n: number, point: any) => `${displayNumberFormatter(n)} confirmed ${metric} at ${format(new Date(point?.w?.config?.series[point.seriesIndex].data[point.dataPointIndex].date), 'PPP')}`,
+          formatter: (n: number, point: any) =>
+            `${displayNumberFormatter(n)} confirmed ${metric} at ${format(new Date(point?.w?.config?.series[point.seriesIndex].data[point.dataPointIndex].date), "PPP")}`,
         },
       },
       legend: {
@@ -121,7 +141,7 @@ function TrendChart(props: TrendChartProps, ref: React.Ref<any>) {
         size: 3,
       },
     };
-  }, [title, metric]);
+  }, [title, metric, seriesColors]);
 
   if (loading) {
     return (
