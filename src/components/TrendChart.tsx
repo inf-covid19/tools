@@ -6,12 +6,14 @@ import useMetadata from "../hooks/useMetadata";
 import ReactApexChart, { Props } from "react-apexcharts";
 import * as d3 from "d3";
 import { groupBy, last } from "lodash";
-import { startOfWeek } from "date-fns";
+import { startOfWeek, format } from "date-fns";
 import { subWeeks } from "date-fns/esm";
 import { ChartOptions } from "./Editor";
 import get from 'lodash/get';
 
 const numberFormatter = d3.format(".2s");
+
+const displayNumberFormatter = d3.format(",")
 
 const titleCase = (word: string) => word.slice(0, 1).toUpperCase()+word.slice(1);
 
@@ -43,6 +45,7 @@ function TrendChart(props: TrendChartProps, ref: React.Ref<any>) {
 
           return [
             {
+              date: row.date,
               x: row[valueColumn],
               y: normalizedRegionData.slice(Math.max(0, index - 7), index).reduce((sum, r) => sum + get(r, valueDailyColumn, 0), 0),
             },
@@ -62,24 +65,29 @@ function TrendChart(props: TrendChartProps, ref: React.Ref<any>) {
         toolbar: {
           tools: {
             download: true,
-            selection: false,
-            zoom: false,
-            zoomin: false,
-            zoomout: false,
-            pan: false,
-            reset: false,
+            selection: true,
+            zoom: true,
+            zoomin: true,
+            zoomout: true,
+            pan: true,
+            reset: true,
           },
+        },
+        zoom: {
+          type: 'xy'
         },
       },
       stroke: {
         // curve: "smooth",
       },
       tooltip: {
+        shared: false,
+        intersect: true,
         y: {
-          formatter: (n: number) => `Weekly Confirmed ${titleCase(metric)}: ${n}`,
+          formatter: (n: number) =>  `Weekly Confirmed ${titleCase(metric)}: ${displayNumberFormatter(n)}`,
         },
         x: {
-          formatter: (n: number) => `Total Confirmed ${titleCase(metric)}: ${n}`,
+          formatter: (n: number, point: any) => `${displayNumberFormatter(n)} confirmed ${metric} at ${format(new Date(point?.w?.config?.series[point.seriesIndex].data[point.dataPointIndex].date), 'PPP')}`,
         },
       },
       legend: {
@@ -110,7 +118,7 @@ function TrendChart(props: TrendChartProps, ref: React.Ref<any>) {
         },
       },
       markers: {
-        // size: 5,
+        size: 3,
       },
     };
   }, [title, metric]);
