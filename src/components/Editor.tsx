@@ -16,36 +16,48 @@ export type ChartOptions = {
   showDataLabels: boolean;
   title: string;
   dayInterval: number;
-  selectedCountries: SelectedCountriesMap;
+  selectedRegions: SelectedCountriesMap;
 };
 
 const SAVED_CHARTS_KEY = "covid19-tools.editor.savedCharts.v2";
 const DEFAULTS_KEY = "covid19-tools.editor.defaults.v2";
 
-function getSavedCharts(): Array<
+function getSavedCharts(
+  id?: string
+): Array<
   {
     dataURI: string;
   } & ChartOptions
 > {
-  if (localStorage.hasOwnProperty(SAVED_CHARTS_KEY)) {
-    const savedChartsJSON = localStorage.getItem(SAVED_CHARTS_KEY);
+  if (localStorage.hasOwnProperty(`${SAVED_CHARTS_KEY}${id ? `.${id}` : ""}`)) {
+    const savedChartsJSON = localStorage.getItem(`${SAVED_CHARTS_KEY}${id ? `.${id}` : ""}`);
     if (savedChartsJSON) {
-      return JSON.parse(savedChartsJSON);
+      return JSON.parse(savedChartsJSON).map((savedChart: any) => {
+        if (savedChart.hasOwnProperty("selectedCountries")) {
+          savedChart.selectedRegions = savedChart.selectedCountries;
+          delete savedChart.selectedCountries;
+        }
+        return savedChart;
+      });
     }
   }
   return [];
 }
 
-const defaultsValues: ChartOptions = (() => {
+const getDefaultsValues = (id?: string): ChartOptions => {
   const defaults = {
     ...DEFAULT_OPTIONS,
-    selectedCountries: Object.fromEntries(DEFAULT_COUNTRIES.map(k => [k, true])),
+    selectedRegions: Object.fromEntries(DEFAULT_COUNTRIES.map(k => [k, true])),
   };
 
-  if (localStorage.hasOwnProperty(DEFAULTS_KEY)) {
-    const savedChartsJSON = localStorage.getItem(DEFAULTS_KEY);
+  if (localStorage.hasOwnProperty(`${DEFAULTS_KEY}${id ? `.${id}` : ""}`)) {
+    const savedChartsJSON = localStorage.getItem(`${DEFAULTS_KEY}${id ? `.${id}` : ""}`);
     if (savedChartsJSON) {
       const parsedDefaults = JSON.parse(savedChartsJSON);
+      if (parsedDefaults.hasOwnProperty("selectedCountries")) {
+        parsedDefaults.selectedRegions = parsedDefaults.selectedCountries;
+        delete parsedDefaults.selectedCountries;
+      }
       return {
         ...defaults,
         ...parsedDefaults,
@@ -53,11 +65,21 @@ const defaultsValues: ChartOptions = (() => {
     }
   }
 
-  return defaults;
-})();
+  return defaults as ChartOptions;
+};
 
-function App() {
-  const [savedCharts, setSavedCharts] = useState(getSavedCharts());
+type EditorProps = {
+  id?: string;
+  availableOptions: Array<keyof ChartOptions>;
+  render: (ref: React.MutableRefObject<any>, options: ChartOptions) => React.ReactNode;
+};
+
+function Editor(props: EditorProps) {
+  const { id, availableOptions } = props;
+
+  const defaultsValues = useMemo(() => getDefaultsValues(props.id), [props.id]);
+
+  const [savedCharts, setSavedCharts] = useState(getSavedCharts(props.id));
 
   const chartRef = useRef<any>(null);
   const [chartType, setChartType] = useState(defaultsValues.chartType);
@@ -67,7 +89,7 @@ function App() {
   const [showDataLabels, setShowDataLabels] = useState(defaultsValues.showDataLabels);
   const [title, setTitle] = useState(defaultsValues.title);
   const [dayInterval, setDayInterval] = useState(defaultsValues.dayInterval);
-  const [selectedRegions, setSelectedRegions] = useState(defaultsValues.selectedCountries);
+  const [selectedRegions, setSelectedRegions] = useState(defaultsValues.selectedRegions);
   const [saved, setSaved] = useState(false);
   const { data: metadata } = useMetadata();
 
@@ -90,12 +112,15 @@ function App() {
   const selectedRegionOptions = useMemo(() => Object.keys(selectedRegions).filter(k => selectedRegions[k]), [selectedRegions]);
 
   useEffect(() => {
-    localStorage.setItem(SAVED_CHARTS_KEY, JSON.stringify(savedCharts));
-  }, [savedCharts]);
+    localStorage.setItem(`${SAVED_CHARTS_KEY}${id ? `.${id}` : ""}`, JSON.stringify(savedCharts));
+  }, [id, savedCharts]);
 
   useEffect(() => {
-    localStorage.setItem(DEFAULTS_KEY, JSON.stringify({ metric, isCumulative, showDataLabels, title, dayInterval, selectedCountries: selectedRegions, alignAt, chartType }));
-  }, [metric, isCumulative, showDataLabels, title, dayInterval, selectedRegions, alignAt, chartType]);
+    localStorage.setItem(
+      `${DEFAULTS_KEY}${id ? `.${id}` : ""}`,
+      JSON.stringify({ metric, isCumulative, showDataLabels, title, dayInterval, selectedCountries: selectedRegions, alignAt, chartType })
+    );
+  }, [id, metric, isCumulative, showDataLabels, title, dayInterval, selectedRegions, alignAt, chartType]);
 
   useEffect(() => {
     let cancelled = false;
@@ -116,101 +141,115 @@ function App() {
         <Grid.Row>
           <Grid.Column width={12}>
             <Segment>
-              <CustomizableChart
-                ref={chartRef}
-                chartType={chartType}
-                height={600}
-                isCumulative={isCumulative}
-                title={title}
-                metric={metric}
-                showDataLabels={showDataLabels}
-                dayInterval={dayInterval}
-                selectedCountries={selectedRegions}
-                alignAt={alignAt}
-              />
+              {props.render(chartRef, {
+                chartType,
+                isCumulative,
+                title,
+                metric,
+                showDataLabels,
+                dayInterval,
+                selectedRegions,
+                alignAt,
+              })}
             </Segment>
           </Grid.Column>
           <Grid.Column width={4}>
             <Segment style={{ height: "100%" }}>
               <Form>
                 <Header>Options</Header>
-                <Form.Field>
-                  <label>Title</label>
-                  <input placeholder="Enter a title" type="text" defaultValue={title} onBlur={({ target }: any) => setTitle(target.value)} />
-                </Form.Field>
 
-                <Form.Select
-                  label="Choose chart type"
-                  value={chartType}
-                  onChange={(_, { value }) => setChartType(value as ChartType)}
-                  options={[
-                    { key: "heatmap", text: "Heatmap", value: "heatmap" },
-                    { key: "line", text: "Line", value: "line" },
-                    { key: "area", text: "Area", value: "area" },
-                    { key: "bar", text: "Bar", value: "bar" },
-                  ]}
-                />
+                {availableOptions.includes("title") && (
+                  <Form.Field>
+                    <label>Title</label>
+                    <input placeholder="Enter a title" type="text" defaultValue={title} onBlur={({ target }: any) => setTitle(target.value)} />
+                  </Form.Field>
+                )}
 
-                <Form.Select
-                  label="Choose total or daily values"
-                  value={isCumulative ? "total" : "daily"}
-                  onChange={(_, { value }) => setIsCumulative(value === "total")}
-                  options={[
-                    { key: "total", text: "Total", value: "total" },
-                    { key: "daily", text: "Daily", value: "daily" },
-                  ]}
-                />
-
-                <Form.Select
-                  label="Choose cases or deaths"
-                  value={metric}
-                  onChange={(_, { value }) => setMetric(value as MetricType)}
-                  options={[
-                    { key: "cases", text: "Cases", value: "cases" },
-                    { key: "deaths", text: "Deaths", value: "deaths" },
-                  ]}
-                />
-
-                <Form.Field>
-                  <label>Minimum number of {metric} to align timeline</label>
-                  <input type="number" placeholder="Enter a number" min="0" defaultValue={alignAt} onBlur={({ target }: any) => setAlignAt(parseInt(target.value) || 0)} />
-                </Form.Field>
-
-                <Form.Field disabled={alignAt > 0}>
-                  <label>How many past days would you like to see?</label>
-                  <input
-                    type="number"
-                    placeholder="Enter a number"
-                    min="0"
-                    defaultValue={dayInterval}
-                    onBlur={({ target }: any) => setDayInterval(parseInt(target.value) || dayInterval)}
+                {availableOptions.includes("chartType") && (
+                  <Form.Select
+                    label="Choose chart type"
+                    value={chartType}
+                    onChange={(_, { value }) => setChartType(value as ChartType)}
+                    options={[
+                      { key: "heatmap", text: "Heatmap", value: "heatmap" },
+                      { key: "line", text: "Line", value: "line" },
+                      { key: "area", text: "Area", value: "area" },
+                      { key: "bar", text: "Bar", value: "bar" },
+                    ]}
                   />
-                </Form.Field>
+                )}
 
-                <Form.Field
-                  control={Select}
-                  searchInput={{ id: "editor-countries-select" }}
-                  clearable
-                  label={{ children: "Choose regions (click to add more)", htmlFor: "editor-countries-select" }}
-                  value={selectedRegionOptions}
-                  onChange={(_: any, { value }: any) =>
-                    setSelectedRegions(curr => {
-                      const next = { ...curr };
-                      const invertedIndex = Object.fromEntries((value as string[]).map(k => [k, true]));
-                      Object.keys({ ...next, ...invertedIndex }).forEach(k => {
-                        next[k] = invertedIndex[k] || false;
-                      });
-                      return next;
-                    })
-                  }
-                  search
-                  multiple
-                  options={regionsOptions}
-                />
+                {availableOptions.includes("isCumulative") && (
+                  <Form.Select
+                    label="Choose total or daily values"
+                    value={isCumulative ? "total" : "daily"}
+                    onChange={(_, { value }) => setIsCumulative(value === "total")}
+                    options={[
+                      { key: "total", text: "Total", value: "total" },
+                      { key: "daily", text: "Daily", value: "daily" },
+                    ]}
+                  />
+                )}
+                {availableOptions.includes("metric") && (
+                  <Form.Select
+                    label="Choose cases or deaths"
+                    value={metric}
+                    onChange={(_, { value }) => setMetric(value as MetricType)}
+                    options={[
+                      { key: "cases", text: "Cases", value: "cases" },
+                      { key: "deaths", text: "Deaths", value: "deaths" },
+                    ]}
+                  />
+                )}
 
-                <Form.Field>
-                  <Checkbox toggle checked={showDataLabels} onChange={() => setShowDataLabels(!showDataLabels)} label="Show data labels" />
-                </Form.Field>
+                {availableOptions.includes("alignAt") && (
+                  <Form.Field>
+                    <label>Minimum number of {metric} to align timeline</label>
+                    <input type="number" placeholder="Enter a number" min="0" defaultValue={alignAt} onBlur={({ target }: any) => setAlignAt(parseInt(target.value) || 0)} />
+                  </Form.Field>
+                )}
+
+                {availableOptions.includes("dayInterval") && (
+                  <Form.Field disabled={alignAt > 0}>
+                    <label>How many past days would you like to see?</label>
+                    <input
+                      type="number"
+                      placeholder="Enter a number"
+                      min="0"
+                      defaultValue={dayInterval}
+                      onBlur={({ target }: any) => setDayInterval(parseInt(target.value) || dayInterval)}
+                    />
+                  </Form.Field>
+                )}
+
+                {availableOptions.includes("selectedRegions") && (
+                  <Form.Field
+                    control={Select}
+                    searchInput={{ id: "editor-countries-select" }}
+                    clearable
+                    label={{ children: "Choose regions (click to add more)", htmlFor: "editor-countries-select" }}
+                    value={selectedRegionOptions}
+                    onChange={(_: any, { value }: any) =>
+                      setSelectedRegions(curr => {
+                        const next = { ...curr };
+                        const invertedIndex = Object.fromEntries((value as string[]).map(k => [k, true]));
+                        Object.keys({ ...next, ...invertedIndex }).forEach(k => {
+                          next[k] = invertedIndex[k] || false;
+                        });
+                        return next;
+                      })
+                    }
+                    search
+                    multiple
+                    options={regionsOptions}
+                  />
+                )}
+
+                {availableOptions.includes("showDataLabels") && (
+                  <Form.Field>
+                    <Checkbox toggle checked={showDataLabels} onChange={() => setShowDataLabels(!showDataLabels)} label="Show data labels" />
+                  </Form.Field>
+                )}
                 <Button
                   positive={saved}
                   onClick={() => {
@@ -223,7 +262,7 @@ function App() {
                           metric,
                           title,
                           isCumulative,
-                          selectedCountries: selectedRegions,
+                          selectedRegions,
                           dayInterval,
                           showDataLabels,
                           chartType,
@@ -259,7 +298,7 @@ function App() {
                             <span className="right floated">Past {item.dayInterval} days</span>
 
                             <Icon name="map marker" />
-                            {`${Object.keys(item.selectedCountries).filter(k => item.selectedCountries[k]).length} regions`}
+                            {`${Object.keys(item.selectedRegions).filter(k => item.selectedRegions[k]).length} regions`}
                           </Card.Content>
 
                           <Button.Group widths="2" attached="bottom">
@@ -271,7 +310,7 @@ function App() {
                                 setShowDataLabels(item.showDataLabels);
                                 setTitle(item.title);
                                 setDayInterval(item.dayInterval);
-                                setSelectedRegions(item.selectedCountries);
+                                setSelectedRegions(item.selectedRegions);
                                 setAlignAt(item.alignAt || 0);
                                 setChartType(item.chartType || "heatmap");
                                 window.scrollTo(0, 0);
@@ -306,4 +345,4 @@ function App() {
     </div>
   );
 }
-export default App;
+export default Editor;

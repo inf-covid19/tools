@@ -1,0 +1,137 @@
+import React, { useMemo } from "react";
+import useRegionData from "../hooks/useRegionData";
+import { Loader } from "semantic-ui-react";
+import normalizeTimeseries from "../utils/normalizeTimeseries";
+import useMetadata from "../hooks/useMetadata";
+import ReactApexChart, { Props } from "react-apexcharts";
+import * as d3 from "d3";
+import { groupBy, last } from "lodash";
+import { startOfWeek, format } from "date-fns";
+import { subWeeks } from "date-fns/esm";
+import { ChartOptions } from "./Editor";
+import get from 'lodash/get';
+
+const numberFormatter = d3.format(".2s");
+
+const displayNumberFormatter = d3.format(",")
+
+const titleCase = (word: string) => word.slice(0, 1).toUpperCase()+word.slice(1);
+
+type TrendChartProps = Omit<Props, "options" | "series" | "type"> & Pick<ChartOptions, "selectedRegions" | "title" | "alignAt" | "metric">;
+
+function TrendChart(props: TrendChartProps, ref: React.Ref<any>) {
+  const { selectedRegions, title, alignAt, metric, ...rest } = props;
+
+  const regionsIds = useMemo(() => {
+    return Object.keys(selectedRegions);
+  }, [selectedRegions]);
+
+  const { data, loading } = useRegionData(regionsIds);
+
+  const series = useMemo(() => {
+    if (!data) return [];
+
+    return Object.entries(data).map(([regionId, regionData]) => {
+      const normalizedRegionData = normalizeTimeseries(regionId, regionData);
+
+      return {
+        key: regionId,
+        name: last(regionId.split("."))?.replace(/_/g, " "),
+        data: normalizedRegionData.flatMap((row, index) => {
+          const valueColumn = metric;
+          const valueDailyColumn = `${metric}_daily`
+
+          if (row.cases < alignAt) return [];
+
+          return [
+            {
+              date: row.date,
+              x: row[valueColumn],
+              y: normalizedRegionData.slice(Math.max(0, index - 7), index).reduce((sum, r) => sum + get(r, valueDailyColumn, 0), 0),
+            },
+          ];
+        }),
+      };
+    });
+  }, [data, metric, alignAt]);
+
+  const filteredSeries = useMemo(() => {
+    return series.filter(({ key }) => !!selectedRegions[key]);
+  }, [series, selectedRegions]);
+
+  const chartOptions = useMemo(() => {
+    return {
+      chart: {
+        toolbar: {
+          tools: {
+            download: true,
+            selection: true,
+            zoom: true,
+            zoomin: true,
+            zoomout: true,
+            pan: true,
+            reset: true,
+          },
+        },
+        zoom: {
+          type: 'xy'
+        },
+      },
+      stroke: {
+        // curve: "smooth",
+      },
+      tooltip: {
+        shared: false,
+        intersect: true,
+        y: {
+          formatter: (n: number) =>  `Weekly Confirmed ${titleCase(metric)}: ${displayNumberFormatter(n)}`,
+        },
+        x: {
+          formatter: (n: number, point: any) => `${displayNumberFormatter(n)} confirmed ${metric} at ${format(new Date(point?.w?.config?.series[point.seriesIndex].data[point.dataPointIndex].date), 'PPP')}`,
+        },
+      },
+      legend: {
+        position: "top",
+      },
+      xaxis: {
+        type: "numeric",
+        labels: {
+          formatter: (n: number) => (n < 1000 ? Math.round(n) : numberFormatter(n)),
+        },
+        title: {
+          text: `Total Confirmed ${titleCase(metric)}`,
+        },
+      },
+      yaxis: {
+        labels: {
+          formatter: (n: number) => (n < 1000 ? Math.round(n) : numberFormatter(n)),
+        },
+        title: {
+          text: `New Confirmed ${titleCase(metric)} (in the Past Week)`,
+        },
+      },
+      title: {
+        text: title,
+        style: {
+          fontSize: "20px",
+          fontFamily: "Lato, 'Helvetica Neue', Arial, Helvetica, sans-serif",
+        },
+      },
+      markers: {
+        size: 3,
+      },
+    };
+  }, [title, metric]);
+
+  if (loading) {
+    return (
+      <div style={{ height: props.height, display: "flex", justifyContent: "center", alignItems: "center" }}>
+        <Loader active inline />
+      </div>
+    );
+  }
+
+  return <ReactApexChart ref={ref} options={chartOptions} series={filteredSeries} type="line" {...rest} />;
+}
+
+export default React.forwardRef(TrendChart);

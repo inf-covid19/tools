@@ -1,42 +1,50 @@
 import * as fns from "date-fns";
-import React, { Fragment, useEffect, useState } from "react";
+import React, { useState } from "react";
+import { Container, Header, Menu } from "semantic-ui-react";
 import "./App.css";
 import LogoINF from "./assets/ufrgs-inf.png";
 import LogoUFRGS from "./assets/ufrgs.png";
-import Editor from "./components/Editor";
+import ChartEditor from "./components/ChartEditor";
+import ListDescriptor from "./components/ListDescriptor";
 import Loader from "./components/Loader";
+import TrendEditor from "./components/TrendEditor";
 import { DATA_SOURCES } from "./constants";
 import useLastUpdated from "./hooks/useLastUpdated";
-import ListDescriptor from "./components/ListDescriptor";
-import { Header, Container } from "semantic-ui-react";
 import useMetadata from "./hooks/useMetadata";
 
 function App() {
   const lastUpdated = useLastUpdated();
   const { loading } = useMetadata();
+  const [tab, setTab] = useState("editor");
 
   if (loading) {
     return <Loader />;
   }
 
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={LogoUFRGS} height="100" alt="logo UFRGS" />{" "}
+    <div>
+      <header className="App--header">
+        <img src={LogoUFRGS} height="100" alt="Universidade Federal do Rio Grande do Sul (UFRGS)" />{" "}
         <div style={{ margin: "0 2em" }}>
           <Header as="h1">
             COVID-19 Analysis Tools
             <Header.Subheader>A set of configurable tools around COVID-19 data.</Header.Subheader>
           </Header>
         </div>
-        <img src={LogoINF} height="100" alt="logo UFRGS-INF" />
+        <img src={LogoINF} height="100" alt="Instituto de Informática UFGRS" />
       </header>
 
       <Container fluid>
-        <Editor />
+        <Menu className="App--menu"  pointing secondary>
+          <Menu.Item name="Chart Editor" active={tab === "editor"} onClick={() => setTab("editor")} />
+          <Menu.Item name="Trend Visualizer" active={tab === "trends"} onClick={() => setTab("trends")} />
+        </Menu>
+
+        {tab === "editor" && <ChartEditor />}
+        {tab === "trends" && <TrendEditor />}
       </Container>
 
-      <footer>
+      <footer className="App--footer">
         <span>
           Sources:{" "}
           <ListDescriptor>

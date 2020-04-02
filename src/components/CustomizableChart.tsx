@@ -94,7 +94,7 @@ const RegionConfig: any = {
 };
 
 function CustomizableChart(props: CustomizableChartProps, ref: React.Ref<any>) {
-  const { chartType = "heatmap", title, metric, showDataLabels, isCumulative, dayInterval, selectedCountries, alignAt = 0, ...rest } = props;
+  const { chartType = "heatmap", title, metric, showDataLabels, isCumulative, dayInterval, selectedRegions, alignAt = 0, ...rest } = props;
 
   const timeline = useMemo(
     () =>
@@ -105,7 +105,7 @@ function CustomizableChart(props: CustomizableChartProps, ref: React.Ref<any>) {
     [dayInterval]
   );
 
-  const regionsIds = useMemo(() => Object.keys(selectedCountries), [selectedCountries]);
+  const regionsIds = useMemo(() => Object.keys(selectedRegions), [selectedRegions]);
 
   const { data, loading } = useRegionData(regionsIds);
 
@@ -176,7 +176,7 @@ function CustomizableChart(props: CustomizableChartProps, ref: React.Ref<any>) {
         const date = curr[config.date.name] as string;
         let diffValue = value;
 
-        if (diffValue === 0 && cumulativeValue != 0) {
+        if (diffValue === 0 && cumulativeValue !== 0) {
           return acc;
         }
 
@@ -216,12 +216,12 @@ function CustomizableChart(props: CustomizableChartProps, ref: React.Ref<any>) {
 
   const sortedSeries = useMemo(() => {
     let desiredIndex = 0;
-    const filteredSeries = series.filter(s => !!selectedCountries[s.key]);
+    const filteredSeries = series.filter(s => !!selectedRegions[s.key]);
     filteredSeries.forEach(series => {
       desiredIndex = Math.max(desiredIndex, findLastIndex(series.data, s => !!s.y))
     })
     return sortBy(filteredSeries, (s) => get(s.data, [alignAt > 0 ? s.data.length - 1 : desiredIndex, 'y']));
-  }, [series, alignAt, selectedCountries]);
+  }, [series, alignAt, selectedRegions]);
 
   const chartOptions = useMemo(() => {
     return {
