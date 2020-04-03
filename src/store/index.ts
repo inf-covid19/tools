@@ -5,6 +5,10 @@ import get from "lodash/get";
 
 const STORAGE_KEY = "covid19-tools.api.cache.v3";
 
+export const getMetadata = () => {
+  return withCache("metadata", () => fetch("https://raw.githubusercontent.com/inf-covid19/covid19-data/master/data/metadata.json").then(resp => resp.json()));
+};
+
 export const getRegionData = (regionId: string) => {
   const metadata = JSON.parse(localStorage.getItem(METADATA_KEY) || "{}");
 

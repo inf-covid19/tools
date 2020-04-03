@@ -1,10 +1,10 @@
 import React, { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { Button, Card, Checkbox, Form, Grid, Header, Icon, Image, Segment, Select } from "semantic-ui-react";
-import { DEFAULT_OPTIONS, DEFAULT_COUNTRIES } from "../constants";
-import "./Editor.css";
-import CustomizableChart from "./CustomizableChart";
+import { DEFAULT_COUNTRIES, DEFAULT_OPTIONS } from "../constants";
 import useMetadata from "../hooks/useMetadata";
+import "./Editor.css";
 
+type ScaleType = 'linear' | 'log';
 type ChartType = "heatmap" | "bar" | "area" | "line";
 type MetricType = "cases" | "deaths";
 type SelectedCountriesMap = Record<string, boolean>;
@@ -17,6 +17,7 @@ export type ChartOptions = {
   title: string;
   dayInterval: number;
   selectedRegions: SelectedCountriesMap;
+  scale: ScaleType;
 };
 
 const SAVED_CHARTS_KEY = "covid19-tools.editor.savedCharts.v2";
@@ -84,6 +85,7 @@ function Editor(props: EditorProps) {
   const chartRef = useRef<any>(null);
   const [chartType, setChartType] = useState(defaultsValues.chartType);
   const [metric, setMetric] = useState(defaultsValues.metric);
+  const [scale, setScale] = useState(defaultsValues.scale);
   const [alignAt, setAlignAt] = useState(defaultsValues.alignAt);
   const [isCumulative, setIsCumulative] = useState(defaultsValues.isCumulative);
   const [showDataLabels, setShowDataLabels] = useState(defaultsValues.showDataLabels);
@@ -119,9 +121,9 @@ function Editor(props: EditorProps) {
   useEffect(() => {
     localStorage.setItem(
       `${DEFAULTS_KEY}${id ? `.${id}` : ""}`,
-      JSON.stringify({ metric, isCumulative, showDataLabels, title, dayInterval, selectedCountries: selectedRegions, alignAt, chartType })
+      JSON.stringify({ metric, isCumulative, showDataLabels, title, dayInterval, selectedCountries: selectedRegions, alignAt, chartType, scale })
     );
-  }, [id, metric, isCumulative, showDataLabels, title, dayInterval, selectedRegions, alignAt, chartType]);
+  }, [id, metric, isCumulative, showDataLabels, title, dayInterval, selectedRegions, alignAt, chartType, scale]);
 
   useEffect(() => {
     let cancelled = false;
@@ -151,6 +153,7 @@ function Editor(props: EditorProps) {
                 dayInterval,
                 selectedRegions,
                 alignAt,
+                scale,
               })}
             </Segment>
           </Grid.Column>
@@ -199,6 +202,18 @@ function Editor(props: EditorProps) {
                     options={[
                       { key: "cases", text: "Cases", value: "cases" },
                       { key: "deaths", text: "Deaths", value: "deaths" },
+                    ]}
+                  />
+                )}
+
+              {availableOptions.includes("scale") && (
+                  <Form.Select
+                    label="Choose linear or logarithmic scale"
+                    value={scale}
+                    onChange={(_, { value }) => setScale(value as ScaleType)}
+                    options={[
+                      { key: "linear", text: "Linear", value: "linear" },
+                      { key: "log", text: "Logarithmic", value: "log" },
                     ]}
                   />
                 )}
@@ -252,7 +267,7 @@ function Editor(props: EditorProps) {
                   </Form.Field>
                 )}
                 <Button
-                type="button"
+                  type="button"
                   loading={saving}
                   positive={saved}
                   onClick={() => {
@@ -270,6 +285,7 @@ function Editor(props: EditorProps) {
                           dayInterval,
                           showDataLabels,
                           chartType,
+                          scale,
                         },
                       ];
                       setSavedCharts(newSavedCharts);
@@ -318,6 +334,7 @@ function Editor(props: EditorProps) {
                                 setSelectedRegions(item.selectedRegions);
                                 setAlignAt(item.alignAt || 0);
                                 setChartType(item.chartType || "heatmap");
+                                setScale(item.scale || 'log');
                                 window.scrollTo(0, 0);
                               }}
                             >

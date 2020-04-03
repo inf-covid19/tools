@@ -1,15 +1,13 @@
-import React, { useMemo } from "react";
-import useRegionData from "../hooks/useRegionData";
-import { Loader } from "semantic-ui-react";
-import normalizeTimeseries from "../utils/normalizeTimeseries";
-import useMetadata from "../hooks/useMetadata";
-import ReactApexChart, { Props } from "react-apexcharts";
+import { format } from "date-fns";
 import * as d3 from "d3";
-import { groupBy, last } from "lodash";
-import { startOfWeek, format } from "date-fns";
-import { subWeeks } from "date-fns/esm";
-import { ChartOptions } from "./Editor";
+import { last, first } from "lodash";
 import get from "lodash/get";
+import React, { useMemo } from "react";
+import ReactApexChart, { Props } from "react-apexcharts";
+import { Loader } from "semantic-ui-react";
+import useRegionData from "../hooks/useRegionData";
+import normalizeTimeseries from "../utils/normalizeTimeseries";
+import { ChartOptions } from "./Editor";
 
 const numberFormatter = d3.format(".2s");
 
@@ -17,10 +15,10 @@ const displayNumberFormatter = d3.format(",");
 
 const titleCase = (word: string) => word.slice(0, 1).toUpperCase() + word.slice(1);
 
-type TrendChartProps = Omit<Props, "options" | "series" | "type"> & Pick<ChartOptions, "selectedRegions" | "title" | "alignAt" | "metric">;
+type TrendChartProps = Omit<Props, "options" | "series" | "type"> & Pick<ChartOptions, "selectedRegions" | "title" | "alignAt" | "metric" | "scale">;
 
 function TrendChart(props: TrendChartProps, ref: React.Ref<any>) {
-  const { selectedRegions, title, alignAt, metric, ...rest } = props;
+  const { selectedRegions, title, alignAt, metric, scale = "log", ...rest } = props;
 
   const regionsIds = useMemo(() => {
     return Object.keys(selectedRegions);
@@ -31,7 +29,7 @@ function TrendChart(props: TrendChartProps, ref: React.Ref<any>) {
   const series = useMemo(() => {
     if (!data) return [];
 
-    return Object.entries(data).map(([regionId, regionData]) => {
+    const series = Object.entries(data).map(([regionId, regionData]) => {
       const normalizedRegionData = normalizeTimeseries(regionId, regionData);
 
       return {
@@ -53,14 +51,46 @@ function TrendChart(props: TrendChartProps, ref: React.Ref<any>) {
         }),
       };
     });
+
+    return series;
   }, [data, metric, alignAt]);
 
   const filteredSeries = useMemo(() => {
     return series.filter(({ key }) => !!selectedRegions[key]);
   }, [series, selectedRegions]);
 
+  const [xScaler, yScaler, scaledSeries] = useMemo(() => {
+    let minX = Number.POSITIVE_INFINITY;
+    let minY = Number.POSITIVE_INFINITY;
+    let maxX = Number.NEGATIVE_INFINITY;
+    let maxY = Number.NEGATIVE_INFINITY;
+
+    filteredSeries.forEach(({ data }) => {
+      data.forEach(({ x, y }) => {
+        minX = Math.min(x, minX);
+        maxX = Math.max(x, maxX);
+        minY = Math.min(y, minY);
+        maxY = Math.max(y, maxY);
+      });
+    });
+
+    const xScaler = scale === 'log' ? d3.scaleLog().domain([Math.max(0.01, Math.pow(10, Math.floor(Math.log10(minX)))), Math.pow(10, Math.ceil(Math.log10(maxX)))]) : d3.scaleLinear().domain([minX, maxX]);
+    const yScaler =  scale === 'log' ? d3.scaleLog().domain([Math.max(0.01, Math.pow(10, Math.floor(Math.log10(minY)))), Math.pow(10, Math.ceil(Math.log10(maxY)))]) : d3.scaleLinear().domain([minY, maxY]);
+
+    const scaledSeries = filteredSeries.map(series => ({
+      ...series,
+      data: series.data.map(item => ({
+        ...item,
+        x: xScaler(item.x),
+        y: yScaler(item.y),
+      })),
+    }));
+
+    return [xScaler, yScaler, scaledSeries] as const;
+  }, [filteredSeries, scale]);
+
   const seriesColors = useMemo(() => {
-    return filteredSeries.map(({ key, name }) => {
+    return scaledSeries.map(({ key, name }) => {
       const hashCode = (str: string) => {
         var hash = 0;
         for (var i = 0; i < str.length; i++) {
@@ -75,9 +105,14 @@ function TrendChart(props: TrendChartProps, ref: React.Ref<any>) {
       };
       return "#" + intToRGB(hashCode(`${name}:${key}`));
     });
-  }, [filteredSeries]);
+  }, [scaledSeries]);
 
   const chartOptions = useMemo(() => {
+    const xTicks = xScaler.ticks();
+    const yTicks = yScaler.ticks();
+    const withXScaler = (fn: (...args: any) => {}) => (n: number, ...args: any) => fn(Math.round(xScaler.invert(n)), ...args);
+    const withYScaler = (fn: (...args: any) => {}) => (n: number, ...args: any) => fn(Math.round(yScaler.invert(n)), ...args);
+
     return {
       chart: {
         toolbar: {
@@ -93,23 +128,30 @@ function TrendChart(props: TrendChartProps, ref: React.Ref<any>) {
         },
         zoom: {
           type: "xy",
-          autoScaleYaxis: true,
+        },
+      },
+      grid: {
+        xaxis: {
+          lines: {
+            show: true,
+          },
         },
       },
       colors: seriesColors,
       stroke: {
-        // curve: "smooth",
         width: 2,
       },
       tooltip: {
         shared: false,
         intersect: true,
         y: {
-          formatter: (n: number) => `Weekly Confirmed ${titleCase(metric)}: ${displayNumberFormatter(n)}`,
+          formatter: withYScaler((n: number) => `Weekly Confirmed ${titleCase(metric)}: ${displayNumberFormatter(n)}`),
         },
         x: {
-          formatter: (n: number, point: any) =>
-            `${displayNumberFormatter(n)} confirmed ${metric} at ${format(new Date(point?.w?.config?.series[point.seriesIndex].data[point.dataPointIndex].date), "PPP")}`,
+          formatter: withXScaler(
+            (n: number, point: any) =>
+              `${displayNumberFormatter(n)} confirmed ${metric} at ${format(new Date(point?.w?.config?.series[point.seriesIndex].data[point.dataPointIndex].date), "PPP")}`
+          ),
         },
       },
       legend: {
@@ -117,16 +159,23 @@ function TrendChart(props: TrendChartProps, ref: React.Ref<any>) {
       },
       xaxis: {
         type: "numeric",
+        max: scale === 'log' ? xScaler(last(xTicks)!) : undefined,
+        min: scale === 'log' ? xScaler(first(xTicks)!) : undefined,
         labels: {
-          formatter: (n: number) => (n < 1000 ? Math.round(n) : numberFormatter(n)),
+          formatter: withXScaler((n: number) => (n < 1000 ? Math.round(n) : numberFormatter(n))),
         },
         title: {
           text: `Total Confirmed ${titleCase(metric)}`,
         },
+        tooltip: {
+          enabled: false,
+        },
       },
       yaxis: {
+        max: scale === 'log' ? yScaler(last(yTicks)!) : undefined,
+        min: scale === 'log' ? yScaler(first(yTicks)!) : undefined,
         labels: {
-          formatter: (n: number) => (n < 1000 ? Math.round(n) : numberFormatter(n)),
+          formatter: withYScaler((n: number) => (n < 1000 ? Math.round(n) : numberFormatter(n))),
         },
         title: {
           text: `New Confirmed ${titleCase(metric)} (in the Past Week)`,
@@ -141,9 +190,12 @@ function TrendChart(props: TrendChartProps, ref: React.Ref<any>) {
       },
       markers: {
         size: 3,
+        hover: {
+          size: 5,
+        },
       },
     };
-  }, [title, metric, seriesColors]);
+  }, [title, metric, seriesColors, scale, xScaler, yScaler]);
 
   if (loading) {
     return (
@@ -153,7 +205,7 @@ function TrendChart(props: TrendChartProps, ref: React.Ref<any>) {
     );
   }
 
-  return <ReactApexChart ref={ref} options={chartOptions} series={filteredSeries} type="line" {...rest} />;
+  return <ReactApexChart ref={ref} options={chartOptions} series={scaledSeries} type="line" {...rest} />;
 }
 
 export default React.forwardRef(TrendChart);

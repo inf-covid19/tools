@@ -5,8 +5,8 @@ import Editor from "./Editor";
 export default function TrendEditor() {
   return (
     <Editor
-    id="trends"
-      availableOptions={["metric", "alignAt", "title", "selectedRegions"]}
+      id="trends"
+      availableOptions={["metric", "alignAt", "title", "selectedRegions", "scale"]}
       render={(ref, options) => {
         return <TrendChart ref={ref} {...options} height={600} />;
       }}
