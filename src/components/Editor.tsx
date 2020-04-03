@@ -91,6 +91,7 @@ function Editor(props: EditorProps) {
   const [dayInterval, setDayInterval] = useState(defaultsValues.dayInterval);
   const [selectedRegions, setSelectedRegions] = useState(defaultsValues.selectedRegions);
   const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
   const { data: metadata } = useMetadata();
 
   const regionsOptions = Object.entries(metadata).flatMap(([country, countryData]) => {
@@ -251,8 +252,11 @@ function Editor(props: EditorProps) {
                   </Form.Field>
                 )}
                 <Button
+                type="button"
+                  loading={saving}
                   positive={saved}
                   onClick={() => {
+                    setSaving(true);
                     chartRef.current?.chart.dataURI().then(({ imgURI }: any) => {
                       const newSavedCharts = [
                         ...savedCharts,
@@ -270,6 +274,7 @@ function Editor(props: EditorProps) {
                       ];
                       setSavedCharts(newSavedCharts);
                       setSaved(true);
+                      setSaving(false);
                     });
                   }}
                 >

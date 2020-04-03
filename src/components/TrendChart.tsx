@@ -36,7 +36,7 @@ function TrendChart(props: TrendChartProps, ref: React.Ref<any>) {
 
       return {
         key: regionId,
-        name: last(regionId.split("."))?.replace(/_/g, " "),
+        name: last(regionId.split("."))!.replace(/_/g, " "),
         data: normalizedRegionData.flatMap((row, index) => {
           const valueColumn = metric;
           const valueDailyColumn = `${metric}_daily`;
@@ -60,7 +60,7 @@ function TrendChart(props: TrendChartProps, ref: React.Ref<any>) {
   }, [series, selectedRegions]);
 
   const seriesColors = useMemo(() => {
-    return filteredSeries.map(({ key }) => {
+    return filteredSeries.map(({ key, name }) => {
       const hashCode = (str: string) => {
         var hash = 0;
         for (var i = 0; i < str.length; i++) {
@@ -73,7 +73,7 @@ function TrendChart(props: TrendChartProps, ref: React.Ref<any>) {
 
         return "00000".substring(0, 6 - c.length) + c;
       };
-      return "#" + intToRGB(hashCode(key));
+      return "#" + intToRGB(hashCode(`${name}:${key}`));
     });
   }, [filteredSeries]);
 
@@ -85,19 +85,21 @@ function TrendChart(props: TrendChartProps, ref: React.Ref<any>) {
             download: true,
             selection: true,
             zoom: true,
-            zoomin: true,
-            zoomout: true,
-            pan: true,
+            zoomin: false,
+            zoomout: false,
+            pan: false,
             reset: true,
           },
         },
         zoom: {
           type: "xy",
+          autoScaleYaxis: true,
         },
       },
       colors: seriesColors,
       stroke: {
         // curve: "smooth",
+        width: 2,
       },
       tooltip: {
         shared: false,

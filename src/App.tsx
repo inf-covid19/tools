@@ -1,5 +1,5 @@
 import * as fns from "date-fns";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Container, Header, Menu } from "semantic-ui-react";
 import "./App.css";
 import LogoINF from "./assets/ufrgs-inf.png";
@@ -12,10 +12,14 @@ import { DATA_SOURCES } from "./constants";
 import useLastUpdated from "./hooks/useLastUpdated";
 import useMetadata from "./hooks/useMetadata";
 
+const LAST_TAB_KEY = 'covid19-tools.api.lastTab'
+
 function App() {
   const lastUpdated = useLastUpdated();
   const { loading } = useMetadata();
-  const [tab, setTab] = useState("editor");
+  const [tab, setTab] = useState(localStorage.getItem(LAST_TAB_KEY) || 'editor');
+
+  useEffect(() => localStorage.setItem(LAST_TAB_KEY, tab), [tab])
 
   if (loading) {
     return <Loader />;
