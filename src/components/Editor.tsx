@@ -1,9 +1,8 @@
 import React, { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { Button, Card, Checkbox, Form, Grid, Header, Icon, Image, Segment, Select } from "semantic-ui-react";
-import { DEFAULT_OPTIONS, DEFAULT_COUNTRIES } from "../constants";
-import "./Editor.css";
-import CustomizableChart from "./CustomizableChart";
+import { DEFAULT_COUNTRIES, DEFAULT_OPTIONS } from "../constants";
 import useMetadata from "../hooks/useMetadata";
+import "./Editor.css";
 
 type ChartType = "heatmap" | "bar" | "area" | "line";
 type MetricType = "cases" | "deaths";
@@ -252,7 +251,7 @@ function Editor(props: EditorProps) {
                   </Form.Field>
                 )}
                 <Button
-                type="button"
+                  type="button"
                   loading={saving}
                   positive={saved}
                   onClick={() => {

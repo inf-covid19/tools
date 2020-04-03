@@ -1,15 +1,13 @@
-import React, { useMemo } from "react";
-import useRegionData from "../hooks/useRegionData";
-import { Loader } from "semantic-ui-react";
-import normalizeTimeseries from "../utils/normalizeTimeseries";
-import useMetadata from "../hooks/useMetadata";
-import ReactApexChart, { Props } from "react-apexcharts";
+import { format } from "date-fns";
 import * as d3 from "d3";
-import { groupBy, last } from "lodash";
-import { startOfWeek, format } from "date-fns";
-import { subWeeks } from "date-fns/esm";
-import { ChartOptions } from "./Editor";
+import { last } from "lodash";
 import get from "lodash/get";
+import React, { useMemo } from "react";
+import ReactApexChart, { Props } from "react-apexcharts";
+import { Loader } from "semantic-ui-react";
+import useRegionData from "../hooks/useRegionData";
+import normalizeTimeseries from "../utils/normalizeTimeseries";
+import { ChartOptions } from "./Editor";
 
 const numberFormatter = d3.format(".2s");
 
