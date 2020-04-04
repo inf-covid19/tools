@@ -1,7 +1,6 @@
 {
   "name": "tools",
   "version": "0.1.0",
-  "homepage": "https://inf-covid19.github.io/tools",
   "private": true,
   "dependencies": {
     "@testing-library/jest-dom": "^4.2.4",
@@ -18,6 +17,10 @@
     "d3": "^5.15.0",
     "date-fns": "^2.11.1",
     "lodash": "^4.17.15",
+    "material-color-hash": "^0.1.6",
+    "ml-regression-exponential": "^2.0.0",
+    "ml-regression-polynomial": "^2.1.0",
+    "ml-regression-power": "^2.0.0",
     "numeral": "^2.0.6",
     "react": "^16.13.1",
     "react-apexcharts": "^1.3.6",

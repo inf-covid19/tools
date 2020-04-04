@@ -19,8 +19,8 @@ export default function useRegionData(regionIds: string[]) {
     setData(null);
     setLoading(true);
 
-    Promise.all(regionIds.map(id => getRegionData(id)))
-      .then(results => {
+    Promise.all(regionIds.map((id) => getRegionData(id)))
+      .then((results) => {
         if (cancelled) return;
 
         const data: Record<string, DSVRowArray> = {};
@@ -29,7 +29,7 @@ export default function useRegionData(regionIds: string[]) {
         });
         setData(data);
       })
-      .catch(err => {
+      .catch((err) => {
         if (cancelled) return;
 
         setError(err);
@@ -43,7 +43,7 @@ export default function useRegionData(regionIds: string[]) {
     return () => {
       cancelled = true;
     };
-  }, [triggerUpdate]);
+  }, [triggerUpdate]); // eslint-disable-line
 
   return useMemo(() => ({ data, loading, error }), [data, loading, error]);
 }

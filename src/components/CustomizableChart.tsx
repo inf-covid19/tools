@@ -12,6 +12,7 @@ import { Loader } from "semantic-ui-react";
 import { ChartOptions } from "./Editor";
 import numeral from "numeral";
 import * as d3 from "d3";
+import useSeriesColors from "../hooks/useSeriesColors";
 
 const ordinalFormattter = (n: number) => numeral(n).format("Oo");
 const numberFormatter = d3.format(".2s");
@@ -160,7 +161,7 @@ function CustomizableChart(props: CustomizableChartProps, ref: React.Ref<any>) {
           return arr;
         }, []);
         return {
-          name: last(region.split("."))?.replace(/_/g, " "),
+          name: last(region.split("."))!.replace(/_/g, " "),
           key: region,
           data: normalizedData
             .filter(v => v.total >= alignAt)
@@ -207,7 +208,7 @@ function CustomizableChart(props: CustomizableChartProps, ref: React.Ref<any>) {
       });
 
       return {
-        name: last(region.split("."))?.replace(/_/g, " "),
+        name: last(region.split("."))!.replace(/_/g, " "),
         key: region,
         data: regionSeries,
       };
@@ -226,6 +227,8 @@ function CustomizableChart(props: CustomizableChartProps, ref: React.Ref<any>) {
     return sortBy(filteredSeries, s => get(s.data, [alignAt > 0 ? s.data.length - 1 : desiredIndex, "y"]));
   }, [series, alignAt, selectedRegions]);
 
+  const seriesColors = useSeriesColors(sortedSeries);
+
   const chartOptions = useMemo(() => {
     return {
       chart: {
@@ -241,6 +244,7 @@ function CustomizableChart(props: CustomizableChartProps, ref: React.Ref<any>) {
           },
         },
       },
+      colors: seriesColors,
       tooltip: {
         y: {
           formatter: (value: string) => `${value} ${metric}`,
@@ -293,7 +297,7 @@ function CustomizableChart(props: CustomizableChartProps, ref: React.Ref<any>) {
         },
       },
     };
-  }, [title, metric, isCumulative, showDataLabels, alignAt]);
+  }, [title, metric, isCumulative, showDataLabels, alignAt, seriesColors]);
 
   if (loading) {
     return (

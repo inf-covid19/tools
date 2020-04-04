@@ -8,6 +8,7 @@ import { Loader } from "semantic-ui-react";
 import useRegionData from "../hooks/useRegionData";
 import normalizeTimeseries from "../utils/normalizeTimeseries";
 import { ChartOptions } from "./Editor";
+import useSeriesColors from "../hooks/useSeriesColors";
 
 const numberFormatter = d3.format(".2s");
 
@@ -89,23 +90,7 @@ function TrendChart(props: TrendChartProps, ref: React.Ref<any>) {
     return [xScaler, yScaler, scaledSeries] as const;
   }, [filteredSeries, scale]);
 
-  const seriesColors = useMemo(() => {
-    return scaledSeries.map(({ key, name }) => {
-      const hashCode = (str: string) => {
-        var hash = 0;
-        for (var i = 0; i < str.length; i++) {
-          hash = str.charCodeAt(i) + ((hash << 5) - hash);
-        }
-        return hash;
-      };
-      const intToRGB = (i: number) => {
-        var c = (i & 0x00ffffff).toString(16).toUpperCase();
-
-        return "00000".substring(0, 6 - c.length) + c;
-      };
-      return "#" + intToRGB(hashCode(`${name}:${key}`));
-    });
-  }, [scaledSeries]);
+  const seriesColors = useSeriesColors(scaledSeries);
 
   const chartOptions = useMemo(() => {
     const xTicks = xScaler.ticks();

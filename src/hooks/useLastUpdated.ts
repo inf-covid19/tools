@@ -7,7 +7,7 @@ export default function useLastUpdated() {
   useEffect(() => {
     let cancelled = false;
 
-    fetch("https://api.github.com/repos/inf-covid19/tools/branches/master")
+    fetch("https://api.github.com/repos/inf-covid19/data/branches/master")
       .then(resp => resp.json())
       .then(json => {
         if (cancelled) return;
