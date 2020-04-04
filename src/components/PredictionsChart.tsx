@@ -1,17 +1,17 @@
-import React, { useMemo } from "react";
-import useRegionData from "../hooks/useRegionData";
-import { eachDayOfInterval, subDays, addDays, format, isAfter, isBefore } from "date-fns";
-import sortBy from "lodash/sortBy";
+import * as d3 from "d3";
+import { addDays, eachDayOfInterval, format, isAfter, subDays } from "date-fns";
 import findLastIndex from "lodash/findLastIndex";
 import get from "lodash/get";
 import last from "lodash/last";
+import sortBy from "lodash/sortBy";
+import PolynomialRegression from "ml-regression-polynomial";
+import numeral from "numeral";
+import React, { useMemo } from "react";
 import ReactApexChart, { Props } from "react-apexcharts";
 import { Loader } from "semantic-ui-react";
-import { ChartOptions } from "./Editor";
-import numeral from "numeral";
-import * as d3 from "d3";
-import PolynomialRegression from "ml-regression-polynomial";
+import useRegionData from "../hooks/useRegionData";
 import normalizeTimeseries from "../utils/normalizeTimeseries";
+import { ChartOptions } from "./Editor";
 
 const ordinalFormattter = (n: number) => numeral(n).format("Oo");
 const numberFormatter = d3.format(".2s");

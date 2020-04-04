@@ -43,7 +43,7 @@ export default function useRegionData(regionIds: string[]) {
     return () => {
       cancelled = true;
     };
-  }, [triggerUpdate]);
+  }, [triggerUpdate]); // eslint-disable-line
 
   return useMemo(() => ({ data, loading, error }), [data, loading, error]);
 }

@@ -1,6 +1,6 @@
 import * as fns from "date-fns";
 import React, { useState, useEffect } from "react";
-import { Container, Header, Menu } from "semantic-ui-react";
+import { Container, Header, Menu, Label } from "semantic-ui-react";
 import "./App.css";
 import LogoINF from "./assets/ufrgs-inf.png";
 import LogoUFRGS from "./assets/ufrgs.png";
@@ -43,7 +43,10 @@ function App() {
         <Menu className="App--menu" pointing secondary>
           <Menu.Item name="Chart Editor" active={tab === "editor"} onClick={() => setTab("editor")} />
           <Menu.Item name="Trend Visualizer" active={tab === "trends"} onClick={() => setTab("trends")} />
-          <Menu.Item name="Prediction Visualizer" active={tab === "predictions"} onClick={() => setTab("predictions")} />
+          <Menu.Item name="Prediction Visualizer" active={tab === "predictions"} onClick={() => setTab("predictions")}>
+            Prediction Visualizer
+            <Label color='teal'>Beta</Label>
+          </Menu.Item>
         </Menu>
 
         {tab === "editor" && <ChartEditor />}
