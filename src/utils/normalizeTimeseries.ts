@@ -49,8 +49,6 @@ export function alignTimeseries(timeseries: TimeseriesRow[], earliestDate: Date)
     return timeseries;
   }
 
-  console.log(earliestDate, timeseries[0].date)
-
   return [
     ...eachDayOfInterval({
       start: earliestDate,
