@@ -1,10 +1,10 @@
-import { DSVRowArray } from "d3";
 import sortBy from "lodash/sortBy";
 import { useEffect, useMemo, useState } from "react";
 import { getRegionData } from "../store";
+import normalizeTimeseries, { TimeseriesRow } from "../utils/normalizeTimeseries";
 
 export default function useRegionData(regionIds: string[]) {
-  const [data, setData] = useState<Record<string, DSVRowArray> | null>(null);
+  const [data, setData] = useState<Record<string, TimeseriesRow[]> | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -23,9 +23,9 @@ export default function useRegionData(regionIds: string[]) {
       .then((results) => {
         if (cancelled) return;
 
-        const data: Record<string, DSVRowArray> = {};
+        const data: Record<string, TimeseriesRow[]> = {};
         results.forEach((res, index) => {
-          data[regionIds[index]] = res;
+          data[regionIds[index]] = normalizeTimeseries(regionIds[index], res);
         });
         setData(data);
       })

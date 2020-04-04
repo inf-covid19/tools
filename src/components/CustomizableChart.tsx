@@ -1,110 +1,24 @@
-import React, { useMemo } from "react";
-import useRegionData from "../hooks/useRegionData";
-import { eachDayOfInterval, subDays, format, startOfDay, parse, differenceInDays } from "date-fns";
-import sortBy from "lodash/sortBy";
-import orderBy from "lodash/orderBy";
-import findLastIndex from "lodash/findLastIndex";
+import * as d3 from "d3";
+import { subDays } from "date-fns";
 import get from "lodash/get";
 import last from "lodash/last";
-import first from "lodash/first";
+import sortBy from "lodash/sortBy";
+import numeral from "numeral";
+import React, { useMemo } from "react";
 import ReactApexChart, { Props } from "react-apexcharts";
 import { Loader } from "semantic-ui-react";
-import { ChartOptions } from "./Editor";
-import numeral from "numeral";
-import * as d3 from "d3";
+import useRegionData from "../hooks/useRegionData";
 import useSeriesColors from "../hooks/useSeriesColors";
+import { alignTimeseries } from "../utils/normalizeTimeseries";
+import { ChartOptions } from "./Editor";
 
 const ordinalFormattter = (n: number) => numeral(n).format("Oo");
 const numberFormatter = d3.format(".2s");
 
 type CustomizableChartProps = Omit<Props, "options" | "series" | "type"> & ChartOptions;
 
-const placeTypeMap: any = {
-  state: "state",
-  city: "city",
-  autonomous_community: "region",
-  country: "region",
-  county: "county",
-  nhsr: "region",
-  utla: "region",
-  health_board: "region",
-  lgd: "region",
-};
-
-const RegionConfig: any = {
-  Brazil: {
-    date: {
-      name: "date",
-      format: "yyyy-MM-dd",
-    },
-    metric: {
-      cases: "confirmed",
-      deaths: "deaths",
-    },
-  },
-  Spain: {
-    date: {
-      name: "date",
-      format: "yyyy-MM-dd",
-    },
-    metric: {
-      cases: "cases",
-      deaths: "deaths",
-    },
-  },
-  United_Kingdom: {
-    date: {
-      name: "date",
-      format: "yyyy-MM-dd",
-    },
-    metric: {
-      cases: "cases",
-      deaths: "deaths",
-    },
-  },
-  United_States_of_America: {
-    date: {
-      name: "date",
-      format: "yyyy-MM-dd",
-    },
-    metric: {
-      cases: "cases",
-      deaths: "deaths",
-    },
-  },
-  Sweden: {
-    date: {
-      name: "date",
-      format: "yyyy-MM-dd",
-    },
-    metric: {
-      cases: "cases",
-      deaths: "deaths",
-    },
-  },
-  Default: {
-    date: {
-      name: "dateRep",
-      format: "dd/MM/yyyy",
-    },
-    metric: {
-      cases: "cases",
-      deaths: "deaths",
-    },
-  },
-};
-
 function CustomizableChart(props: CustomizableChartProps, ref: React.Ref<any>) {
   const { chartType = "heatmap", title, metric, showDataLabels, isCumulative, dayInterval, selectedRegions, alignAt = 0, ...rest } = props;
-
-  const timeline = useMemo(
-    () =>
-      eachDayOfInterval({
-        start: subDays(new Date(), dayInterval),
-        end: new Date(),
-      }),
-    [dayInterval]
-  );
 
   const regionsIds = useMemo(() => Object.keys(selectedRegions), [selectedRegions]);
 
@@ -115,117 +29,35 @@ function CustomizableChart(props: CustomizableChartProps, ref: React.Ref<any>) {
       return [];
     }
 
+    const earliestDate = subDays(new Date(), dayInterval);
     return Object.entries(data).map(([region, regionData]) => {
-      const country = first(region.split(".")) as any;
-      const hasSubRegion = region.indexOf(".") > -1;
-      const config = hasSubRegion && RegionConfig.hasOwnProperty(country) ? RegionConfig[country] : RegionConfig.Default;
-
-      if (hasSubRegion) {
-        let subRegion = last(region.split("."));
-        regionData = regionData.filter((r: any) => r[placeTypeMap[r.place_type]] === subRegion) as any;
-      }
-
-      regionData = orderBy(regionData, x => parse(x[config.date.name] as string, config.date.format, startOfDay(new Date())), "desc") as any;
-
-      let cumulativeValue = 0;
       if (alignAt > 0) {
-        let prevDate: Date;
-
-        const normalizedData = regionData.reduceRight<any[]>((arr, curr) => {
-          let date = parse(curr[config.date.name] as string, config.date.format, startOfDay(new Date()));
-          const value = parseInt(curr[config.metric[metric]] || "0");
-          let diffValue = value;
-
-          if (hasSubRegion) {
-            diffValue = value - cumulativeValue;
-          }
-
-          if (prevDate && differenceInDays(date, prevDate) > 1) {
-            const missingInterval = eachDayOfInterval({
-              start: prevDate,
-              end: date,
-            });
-            missingInterval.slice(1, missingInterval.length - 1).forEach(() => {
-              arr.push({
-                total: cumulativeValue,
-              });
-            });
-          }
-
-          cumulativeValue += diffValue;
-          arr.push({
-            ...curr,
-            total: cumulativeValue,
-          });
-          prevDate = date;
-          return arr;
-        }, []);
         return {
           name: last(region.split("."))!.replace(/_/g, " "),
           key: region,
-          data: normalizedData
-            .filter(v => v.total >= alignAt)
+          data: regionData
+            .filter(v => v[metric] >= alignAt)
             .map((v, index) => ({
               x: index + 1,
-              y: isCumulative ? v.total : v[metric],
+              y: isCumulative ? v[metric] : v[`${metric}_daily` as 'cases_daily' | 'deaths_daily'],
             })),
         };
       }
 
-      const regionDataByDate = regionData.reduceRight<Record<string, any>>((acc, curr) => {
-        const value = parseInt(curr[config.metric[metric]] || "0");
-        const date = curr[config.date.name] as string;
-        let diffValue = value;
-
-        if (diffValue === 0 && cumulativeValue !== 0) {
-          return acc;
-        }
-
-        if (hasSubRegion) {
-          if (value - cumulativeValue === 0) {
-            return acc;
-          }
-          diffValue = value - cumulativeValue;
-        }
-        cumulativeValue += diffValue;
-
-        acc[date] = {
-          ...curr,
-          [metric]: isCumulative ? cumulativeValue : diffValue,
-        };
-        return acc;
-      }, {});
-
-      let prevValue = 0;
-      const regionSeries = timeline.map(date => {
-        const dateData = regionDataByDate[format(date, config.date.format)];
-        const value = {
-          x: date.getTime(),
-          y: dateData ? dateData[metric] : isCumulative ? prevValue : 0,
-        };
-        prevValue = value.y;
-        return value;
-      });
-
       return {
         name: last(region.split("."))!.replace(/_/g, " "),
         key: region,
-        data: regionSeries,
+        data: alignTimeseries(regionData, earliestDate).slice(-dayInterval).map(row => ({
+          x: row.date.getTime(),
+          y: row[`${metric}${isCumulative ? '' : '_daily'}` as 'cases' | 'deaths' | 'cases_daily' | 'deaths_daily']
+        })),
       };
     });
-  }, [data, loading, timeline, isCumulative, metric, alignAt]);
+  }, [loading, data, dayInterval, alignAt, metric, isCumulative]);
 
   const sortedSeries = useMemo(() => {
-    let desiredIndex = 0;
-    const filteredSeries = series.filter(s => !!selectedRegions[s.key]);
-    filteredSeries.forEach(series => {
-      desiredIndex = Math.max(
-        desiredIndex,
-        findLastIndex(series.data, s => !!s.y)
-      );
-    });
-    return sortBy(filteredSeries, s => get(s.data, [alignAt > 0 ? s.data.length - 1 : desiredIndex, "y"]));
-  }, [series, alignAt, selectedRegions]);
+    return sortBy(series.filter(s => !!selectedRegions[s.key]), s => get(s.data, [s.data.length - 1, "y"]));
+  }, [series, selectedRegions]);
 
   const seriesColors = useSeriesColors(sortedSeries);
 

@@ -10,9 +10,8 @@ import React, { useMemo } from "react";
 import ReactApexChart, { Props } from "react-apexcharts";
 import { Loader } from "semantic-ui-react";
 import useRegionData from "../hooks/useRegionData";
-import normalizeTimeseries from "../utils/normalizeTimeseries";
-import { ChartOptions } from "./Editor";
 import useSeriesColors from "../hooks/useSeriesColors";
+import { ChartOptions } from "./Editor";
 
 const ordinalFormattter = (n: number) => numeral(n).format("Oo");
 const numberFormatter = d3.format(".2s");
@@ -40,13 +39,11 @@ function PredictionsChart(props: PredictionsChartProps, ref: React.Ref<any>) {
       return [];
     }
 
-    return Object.entries(data).map(([region, regionData]) => {
-      let normalizedRegionData = normalizeTimeseries(region, regionData);
-
+    return Object.entries(data).map(([key, data]) => {
       return {
-        name: last(region.split("."))!.replace(/_/g, " "),
-        key: region,
-        data: normalizedRegionData,
+        name: last(key.split("."))!.replace(/_/g, " "),
+        key,
+        data,
       };
     });
   }, [data, loading]);
