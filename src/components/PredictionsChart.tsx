@@ -44,7 +44,7 @@ function PredictionsChart(props: PredictionsChartProps, ref: React.Ref<any>) {
       let normalizedRegionData = normalizeTimeseries(region, regionData);
 
       return {
-        name: last(region.split("."))?.replace(/_/g, " "),
+        name: last(region.split("."))!.replace(/_/g, " "),
         key: region,
         data: normalizedRegionData,
       };
@@ -57,7 +57,7 @@ function PredictionsChart(props: PredictionsChartProps, ref: React.Ref<any>) {
 
   const seriesWithPredictions = useMemo(
     () =>
-      filteredSeries.flatMap((serie: any) => {
+      filteredSeries.flatMap((serie) => {
         const { X, Y } = serie.data.reduce(
           (acc: any, row: any, index: number) => {
             return {
@@ -81,8 +81,9 @@ function PredictionsChart(props: PredictionsChartProps, ref: React.Ref<any>) {
 
         const predictionLastFactor = (last(serie.data) as any)[`${metric}_daily`] / pred(X.length - 1);
 
+        const K = 90 - serie.data.filter(x => x.cases > 100).length;
         const nextSeriePredictions = predictionSerie.slice(1).reduce<any[]>((arr, date, index) => {
-          const predValue = pred(X.length + index) * predictionLastFactor;
+          const predValue = pred(X.length + index) * predictionLastFactor * Math.max(0, (((K-index)/K)));
           const lastMetric = (arr[index-1] || last(serie.data))[metric] as number;
 
           arr.push({
@@ -99,7 +100,10 @@ function PredictionsChart(props: PredictionsChartProps, ref: React.Ref<any>) {
           serieData = [
             ...timeline.slice(0, timelineDiff).map((d) => ({
               date: d,
-              [metric]: 0,
+              cases: 0,
+              cases_daily: 0,
+              deaths: 0,
+              deaths_daily: 0,
             })),
             ...serieData,
           ];
@@ -126,7 +130,7 @@ function PredictionsChart(props: PredictionsChartProps, ref: React.Ref<any>) {
     seriesWithPredictions.forEach((series) => {
       desiredIndex = Math.max(
         desiredIndex,
-        findLastIndex(series.data, (s: any) => !!s.y)
+        findLastIndex(series.data, (s) => !!s.y)
       );
     });
     return sortBy(seriesWithPredictions, (s) => get(s.data, [alignAt > 0 ? s.data.length - 1 : desiredIndex, "y"]));
