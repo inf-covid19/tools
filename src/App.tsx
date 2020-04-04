@@ -15,8 +15,6 @@ import PredictionsEditor from "./components/PredictionsEditor";
 
 const LAST_TAB_KEY = "covid19-tools.api.lastTab";
 
-const IS_PREDICTIONS_ENABLED = window.location.search.includes('prediction=true');
-
 function App() {
   const lastUpdated = useLastUpdated();
   const { loading } = useMetadata();
@@ -24,10 +22,6 @@ function App() {
 
   useEffect(() => {
     localStorage.setItem(LAST_TAB_KEY, tab)
-
-    if (tab === 'predictions' && !IS_PREDICTIONS_ENABLED) {
-      setTab('editor');
-    }
   }, [tab]);
 
   if (loading) {
@@ -51,17 +45,15 @@ function App() {
         <Menu className="App--menu" pointing secondary>
           <Menu.Item name="Chart Editor" active={tab === "editor"} onClick={() => setTab("editor")} />
           <Menu.Item name="Trend Visualizer" active={tab === "trends"} onClick={() => setTab("trends")} />
-          {IS_PREDICTIONS_ENABLED && (
           <Menu.Item name="Prediction Visualizer" active={tab === "predictions"} onClick={() => setTab("predictions")}>
             Prediction Visualizer
             <Label color='teal'>Beta</Label>
           </Menu.Item>
-          )}
         </Menu>
 
         {tab === "editor" && <ChartEditor />}
         {tab === "trends" && <TrendEditor />}
-        {IS_PREDICTIONS_ENABLED && tab === "predictions" && <PredictionsEditor />}
+        {tab === "predictions" && <PredictionsEditor />}
       </Container>
 
       <footer className="App--footer">

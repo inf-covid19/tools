@@ -62,7 +62,7 @@ function PredictionsChart(props: PredictionsChartProps, ref: React.Ref<any>) {
           (acc: any, row: any, index: number) => {
             return {
               X: [...acc.X, index],
-              Y: [...acc.Y, row[metric]],
+              Y: [...acc.Y, row[`${metric}_daily`]],
             };
           },
           { X: [], Y: [] }
@@ -79,13 +79,18 @@ function PredictionsChart(props: PredictionsChartProps, ref: React.Ref<any>) {
           end: addDays(lastDate, predictionDays),
         });
 
-        const predictionLastDiff = (last(serie.data) as any)[metric] - pred(X.length - 1);
-        const nextSeriePredictions = predictionSerie.slice(1).map((date, index) => {
-          return {
-            date: alignAt > 0 ? X.length + index + 1 : date,
-            [metric]: pred(X.length + index) + predictionLastDiff,
-          };
-        });
+        const predictionLastFactor = (last(serie.data) as any)[`${metric}_daily`] / pred(X.length - 1);
+
+        const nextSeriePredictions = predictionSerie.slice(1).reduce<any[]>((arr, date, index) => {
+          const predValue = pred(X.length + index) * predictionLastFactor;
+          const lastMetric = (arr[index-1] || last(serie.data))[metric] as number;
+
+          arr.push({
+            date: date,
+            [metric]: Math.round(Math.max(lastMetric+predValue, lastMetric)),
+          });
+          return arr;
+        }, []);
 
         let serieData = serie.data;
 
@@ -113,7 +118,7 @@ function PredictionsChart(props: PredictionsChartProps, ref: React.Ref<any>) {
           },
         ];
       }),
-    [alignAt, dayInterval, filteredSeries, metric, predictionDays, timeline]
+    [dayInterval, filteredSeries, metric, predictionDays, timeline]
   );
 
   const sortedSeries = useMemo(() => {

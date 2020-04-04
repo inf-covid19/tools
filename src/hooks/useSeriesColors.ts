@@ -13,12 +13,9 @@ function useSeriesColors(series: { key: string; name: string; data: any[] }[]) {
       const shade = shades[Math.round((y / maxY) * (shades.length - 1))] || 500;
 
       const style = toMaterialStyle(`${name}:${key}`, shade as any);
-      console.log('---useSeriesColors---', key, shade, style.backgroundColor);
       return style.backgroundColor;
     });
   }, [series]);
-
-  console.log(seriesColors);
 
   return seriesColors;
 }
