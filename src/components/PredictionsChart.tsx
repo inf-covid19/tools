@@ -12,6 +12,7 @@ import { Loader } from "semantic-ui-react";
 import useRegionData from "../hooks/useRegionData";
 import normalizeTimeseries from "../utils/normalizeTimeseries";
 import { ChartOptions } from "./Editor";
+import useSeriesColors from "../hooks/useSeriesColors";
 
 const ordinalFormattter = (n: number) => numeral(n).format("Oo");
 const numberFormatter = d3.format(".2s");
@@ -126,6 +127,9 @@ function PredictionsChart(props: PredictionsChartProps, ref: React.Ref<any>) {
     return sortBy(seriesWithPredictions, (s) => get(s.data, [alignAt > 0 ? s.data.length - 1 : desiredIndex, "y"]));
   }, [seriesWithPredictions, alignAt]);
 
+
+  const seriesColors = useSeriesColors(sortedSeries);
+
   const chartOptions = useMemo(() => {
     return {
       chart: {
@@ -141,6 +145,7 @@ function PredictionsChart(props: PredictionsChartProps, ref: React.Ref<any>) {
           },
         },
       },
+      colors: seriesColors,
       tooltip: {
         y: {
           formatter: (value: string) => `${value} ${metric}`,
@@ -213,7 +218,7 @@ function PredictionsChart(props: PredictionsChartProps, ref: React.Ref<any>) {
         },
       },
     };
-  }, [title, metric, isCumulative, showDataLabels, alignAt, predictionDays, chartType]);
+  }, [title, metric, isCumulative, showDataLabels, alignAt, predictionDays, chartType, seriesColors]);
 
   if (loading) {
     return (
