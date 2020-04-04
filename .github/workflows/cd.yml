@@ -32,6 +32,7 @@ jobs:
       - name: Deploy
         env:
           REACT_APP_GA_TRACKING_CODE: ${{ secrets.GA_TRACKING_CODE }}
+          PUBLIC_URL: https://inf-covid19.github.io/tools
         run: |
           git fetch origin gh-pages
           git config --local user.email "action@github.com"
