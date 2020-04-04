@@ -7,7 +7,8 @@ export const DEFAULT_OPTIONS = {
   dayInterval: 30,
   selectedCountries: {},
   alignAt: 0,
-  scale: 'log'
+  scale: "log",
+  predictionDays: 7,
 };
 
 export const DEFAULT_COUNTRIES = [

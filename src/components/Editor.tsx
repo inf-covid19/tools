@@ -4,7 +4,7 @@ import { DEFAULT_COUNTRIES, DEFAULT_OPTIONS } from "../constants";
 import useMetadata from "../hooks/useMetadata";
 import "./Editor.css";
 
-type ScaleType = 'linear' | 'log';
+type ScaleType = "linear" | "log";
 type ChartType = "heatmap" | "bar" | "area" | "line";
 type MetricType = "cases" | "deaths";
 type SelectedCountriesMap = Record<string, boolean>;
@@ -18,6 +18,7 @@ export type ChartOptions = {
   dayInterval: number;
   selectedRegions: SelectedCountriesMap;
   scale: ScaleType;
+  predictionDays: number;
 };
 
 const SAVED_CHARTS_KEY = "covid19-tools.editor.savedCharts.v2";
@@ -48,7 +49,7 @@ function getSavedCharts(
 const getDefaultsValues = (id?: string): ChartOptions => {
   const defaults = {
     ...DEFAULT_OPTIONS,
-    selectedRegions: Object.fromEntries(DEFAULT_COUNTRIES.map(k => [k, true])),
+    selectedRegions: Object.fromEntries(DEFAULT_COUNTRIES.map((k) => [k, true])),
   };
 
   if (localStorage.hasOwnProperty(`${DEFAULTS_KEY}${id ? `.${id}` : ""}`)) {
@@ -94,6 +95,8 @@ function Editor(props: EditorProps) {
   const [selectedRegions, setSelectedRegions] = useState(defaultsValues.selectedRegions);
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [predictionDays, setPredictionDays] = useState(defaultsValues.predictionDays);
+
   const { data: metadata } = useMetadata();
 
   const regionsOptions = Object.entries(metadata).flatMap(([country, countryData]) => {
@@ -112,7 +115,7 @@ function Editor(props: EditorProps) {
     ];
   });
 
-  const selectedRegionOptions = useMemo(() => Object.keys(selectedRegions).filter(k => selectedRegions[k]), [selectedRegions]);
+  const selectedRegionOptions = useMemo(() => Object.keys(selectedRegions).filter((k) => selectedRegions[k]), [selectedRegions]);
 
   useEffect(() => {
     localStorage.setItem(`${SAVED_CHARTS_KEY}${id ? `.${id}` : ""}`, JSON.stringify(savedCharts));
@@ -121,9 +124,9 @@ function Editor(props: EditorProps) {
   useEffect(() => {
     localStorage.setItem(
       `${DEFAULTS_KEY}${id ? `.${id}` : ""}`,
-      JSON.stringify({ metric, isCumulative, showDataLabels, title, dayInterval, selectedCountries: selectedRegions, alignAt, chartType, scale })
+      JSON.stringify({ metric, isCumulative, showDataLabels, title, dayInterval, selectedCountries: selectedRegions, alignAt, chartType, scale, predictionDays })
     );
-  }, [id, metric, isCumulative, showDataLabels, title, dayInterval, selectedRegions, alignAt, chartType, scale]);
+  }, [id, metric, isCumulative, showDataLabels, title, dayInterval, selectedRegions, alignAt, chartType, scale, predictionDays]);
 
   useEffect(() => {
     let cancelled = false;
@@ -154,6 +157,7 @@ function Editor(props: EditorProps) {
                 selectedRegions,
                 alignAt,
                 scale,
+                predictionDays,
               })}
             </Segment>
           </Grid.Column>
@@ -182,6 +186,18 @@ function Editor(props: EditorProps) {
                     ]}
                   />
                 )}
+                {availableOptions.includes("predictionDays") && (
+                  <Form.Field>
+                    <label>How many days would you like to predict?</label>
+                    <input
+                      type="number"
+                      placeholder="Enter a number"
+                      min="0"
+                      defaultValue={predictionDays}
+                      onBlur={({ target }: any) => setPredictionDays(parseInt(target.value) || 0)}
+                    />
+                  </Form.Field>
+                )}
 
                 {availableOptions.includes("isCumulative") && (
                   <Form.Select
@@ -206,7 +222,7 @@ function Editor(props: EditorProps) {
                   />
                 )}
 
-              {availableOptions.includes("scale") && (
+                {availableOptions.includes("scale") && (
                   <Form.Select
                     label="Choose linear or logarithmic scale"
                     value={scale}
@@ -246,10 +262,10 @@ function Editor(props: EditorProps) {
                     label={{ children: "Choose regions (click to add more)", htmlFor: "editor-countries-select" }}
                     value={selectedRegionOptions}
                     onChange={(_: any, { value }: any) =>
-                      setSelectedRegions(curr => {
+                      setSelectedRegions((curr) => {
                         const next = { ...curr };
-                        const invertedIndex = Object.fromEntries((value as string[]).map(k => [k, true]));
-                        Object.keys({ ...next, ...invertedIndex }).forEach(k => {
+                        const invertedIndex = Object.fromEntries((value as string[]).map((k) => [k, true]));
+                        Object.keys({ ...next, ...invertedIndex }).forEach((k) => {
                           next[k] = invertedIndex[k] || false;
                         });
                         return next;
@@ -286,6 +302,7 @@ function Editor(props: EditorProps) {
                           showDataLabels,
                           chartType,
                           scale,
+                          predictionDays,
                         },
                       ];
                       setSavedCharts(newSavedCharts);
@@ -319,7 +336,7 @@ function Editor(props: EditorProps) {
                             <span className="right floated">Past {item.dayInterval} days</span>
 
                             <Icon name="map marker" />
-                            {`${Object.keys(item.selectedRegions).filter(k => item.selectedRegions[k]).length} regions`}
+                            {`${Object.keys(item.selectedRegions).filter((k) => item.selectedRegions[k]).length} regions`}
                           </Card.Content>
 
                           <Button.Group widths="2" attached="bottom">
@@ -334,7 +351,7 @@ function Editor(props: EditorProps) {
                                 setSelectedRegions(item.selectedRegions);
                                 setAlignAt(item.alignAt || 0);
                                 setChartType(item.chartType || "heatmap");
-                                setScale(item.scale || 'log');
+                                setScale(item.scale || "log");
                                 window.scrollTo(0, 0);
                               }}
                             >

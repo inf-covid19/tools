@@ -11,15 +11,16 @@ import TrendEditor from "./components/TrendEditor";
 import { DATA_SOURCES } from "./constants";
 import useLastUpdated from "./hooks/useLastUpdated";
 import useMetadata from "./hooks/useMetadata";
+import PredictionsEditor from "./components/PredictionsEditor";
 
-const LAST_TAB_KEY = 'covid19-tools.api.lastTab'
+const LAST_TAB_KEY = "covid19-tools.api.lastTab";
 
 function App() {
   const lastUpdated = useLastUpdated();
   const { loading } = useMetadata();
-  const [tab, setTab] = useState(localStorage.getItem(LAST_TAB_KEY) || 'editor');
+  const [tab, setTab] = useState(localStorage.getItem(LAST_TAB_KEY) || "editor");
 
-  useEffect(() => localStorage.setItem(LAST_TAB_KEY, tab), [tab])
+  useEffect(() => localStorage.setItem(LAST_TAB_KEY, tab), [tab]);
 
   if (loading) {
     return <Loader />;
@@ -39,20 +40,22 @@ function App() {
       </header>
 
       <Container fluid>
-        <Menu className="App--menu"  pointing secondary>
+        <Menu className="App--menu" pointing secondary>
           <Menu.Item name="Chart Editor" active={tab === "editor"} onClick={() => setTab("editor")} />
           <Menu.Item name="Trend Visualizer" active={tab === "trends"} onClick={() => setTab("trends")} />
+          <Menu.Item name="Prediction Visualizer" active={tab === "predictions"} onClick={() => setTab("predictions")} />
         </Menu>
 
         {tab === "editor" && <ChartEditor />}
         {tab === "trends" && <TrendEditor />}
+        {tab === "predictions" && <PredictionsEditor />}
       </Container>
 
       <footer className="App--footer">
         <span>
           Sources:{" "}
           <ListDescriptor>
-            {DATA_SOURCES.map(src => (
+            {DATA_SOURCES.map((src) => (
               <a key={src.url} rel="noopener noreferrer" target="_blank" href={src.url}>
                 {src.name}
               </a>

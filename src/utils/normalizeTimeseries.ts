@@ -41,21 +41,21 @@ export default function normalizeTimeseries(regionId: string, timeseriesRaw: DSV
 
   // filtering based on region, because it can have multiple regions in the same csv
   if (!isCountry) {
-    timeseries = timeseries.filter(row => row[PLACE_TYPE_MAPPING[row["place_type"]!]] === region);
+    timeseries = timeseries.filter((row) => row[PLACE_TYPE_MAPPING[row["place_type"]!]] === region);
   }
 
   // ensure order (more recent sits at the end of the timeseries)
-  timeseries = orderBy(timeseries, row => parseDate(row, country, isCountry));
+  timeseries = orderBy(timeseries, (row) => parseDate(row, country, isCountry));
 
-  const casesColumn = isCountry? 'cases' :get(REGION_CUSTOM_CONFIG, [country, "columns", "cases"], "cases");
-  const deathsColumn = isCountry? 'deaths' :get(REGION_CUSTOM_CONFIG, [country, "columns", "deaths"], "deaths");
+  const casesColumn = isCountry ? "cases" : get(REGION_CUSTOM_CONFIG, [country, "columns", "cases"], "cases");
+  const deathsColumn = isCountry ? "deaths" : get(REGION_CUSTOM_CONFIG, [country, "columns", "deaths"], "deaths");
 
   let prevDate: Date;
   let totalCases = 0;
   let totalDeaths = 0;
 
   // normalize timeseries (include cases, cases_daily, deaths, deaths_daily)
-  return timeseries.flatMap(row => {
+  return timeseries.flatMap((row) => {
     const data: {
       date: Date;
       cases: number;
@@ -70,7 +70,7 @@ export default function normalizeTimeseries(regionId: string, timeseriesRaw: DSV
         start: prevDate,
         end: date,
       });
-      missingInterval.slice(1, missingInterval.length - 1).forEach(missingDate => {
+      missingInterval.slice(1, missingInterval.length - 1).forEach((missingDate) => {
         data.push({
           date: missingDate,
           cases: totalCases,
