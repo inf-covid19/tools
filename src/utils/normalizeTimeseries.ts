@@ -1,5 +1,5 @@
 import { DSVRowArray, DSVRowString } from "d3";
-import { differenceInDays, eachDayOfInterval, isBefore, parse, startOfDay, subDays } from "date-fns";
+import { differenceInDays, eachDayOfInterval, isBefore, parse, startOfDay } from "date-fns";
 import first from "lodash/first";
 import get from "lodash/get";
 import last from "lodash/last";
