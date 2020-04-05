@@ -229,7 +229,7 @@ function PredictionsChart(props: PredictionsChartProps, ref: React.Ref<any>) {
         },
       },
     };
-  }, [title, metric, isCumulative, showDataLabels, alignAt, chartType, seriesColors, predictionX1, predictionX2]);
+  }, [seriesColors, alignAt, predictionX1, predictionX2, chartType, props.height, showDataLabels, title, isCumulative, metric]);
 
   if (loading) {
     return (
