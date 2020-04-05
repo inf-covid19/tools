@@ -58,8 +58,9 @@ export const PLACE_TYPE_LABEL_MAPPING: Record<string, string> = {
   utla: "UTLAs",
   health_board: "Health Boards",
   lgd: "LGDs",
-  unknown: 'Other regions',
-  region: 'Regions',
-  departamento: 'Departments',
-  provincia: 'Provinces',
+  unknown: "Other regions",
+  region: "Regions",
+  departamento: "Departments",
+  provincia: "Provinces",
 };
+export const CHART_REFERENCE = "See more charts like this at https://inf-convid19.github.io/tools";

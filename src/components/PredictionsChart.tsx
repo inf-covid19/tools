@@ -14,6 +14,7 @@ import useSeriesColors from "../hooks/useSeriesColors";
 import { getNameByRegionId } from "../utils/metadata";
 import { alignTimeseries } from "../utils/normalizeTimeseries";
 import { ChartOptions } from "./Editor";
+import { CHART_REFERENCE } from "../constants";
 
 const displayNumberFormatter = d3.format(",");
 const ordinalFormattter = (n: number) => numeral(n).format("Oo");
@@ -145,6 +146,11 @@ function PredictionsChart(props: PredictionsChartProps, ref: React.Ref<any>) {
         },
       },
       colors: seriesColors,
+      grid: {
+        padding: {
+          bottom: 15,
+        },
+      },
       tooltip: {
         y: {
           formatter: (value: number, point: any) => {
@@ -175,6 +181,13 @@ function PredictionsChart(props: PredictionsChartProps, ref: React.Ref<any>) {
             label: {
               text: "Prediction",
             },
+          },
+        ],
+        texts: [
+          {
+            text: CHART_REFERENCE,
+            fontSize: "11px",
+            y: (props.height as number) - 5,
           },
         ],
       },

@@ -12,6 +12,7 @@ import useSeriesColors from "../hooks/useSeriesColors";
 import { getNameByRegionId } from "../utils/metadata";
 import { alignTimeseries } from "../utils/normalizeTimeseries";
 import { ChartOptions } from "./Editor";
+import { CHART_REFERENCE } from "../constants";
 
 const displayNumberFormatter = d3.format(",");
 const ordinalFormattter = (n: number) => numeral(n).format("Oo");
@@ -134,7 +135,7 @@ function CustomizableChart(props: CustomizableChartProps, ref: React.Ref<any>) {
         position: "front",
         texts: [
           {
-            text: "See more charts like this at https://inf-convid19.github.io/tools",
+            text: CHART_REFERENCE,
             fontSize: "11px",
             y: (props.height as number) - 5,
           },

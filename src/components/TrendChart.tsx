@@ -10,6 +10,7 @@ import useSeriesColors from "../hooks/useSeriesColors";
 import { ChartOptions } from "./Editor";
 import { getNameByRegionId } from "../utils/metadata";
 import useMetadata from "../hooks/useMetadata";
+import { CHART_REFERENCE } from "../constants";
 
 const numberFormatter = d3.format(".2s");
 
@@ -148,6 +149,16 @@ function TrendChart(props: TrendChartProps, ref: React.Ref<any>) {
           ),
         },
       },
+      annotations: {
+        position: "front",
+        texts: [
+          {
+            text: CHART_REFERENCE,
+            fontSize: "11px",
+            y: (props.height as number) - 5,
+          },
+        ],
+      },
       legend: {
         position: "top",
       },
@@ -189,7 +200,7 @@ function TrendChart(props: TrendChartProps, ref: React.Ref<any>) {
         },
       },
     };
-  }, [title, metric, seriesColors, scale, xScaler, yScaler]);
+  }, [title, metric, seriesColors, scale, xScaler, yScaler, props.height]);
 
   if (loading) {
     return (
