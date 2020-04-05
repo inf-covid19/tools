@@ -10,9 +10,8 @@ import React, { useMemo } from "react";
 import ReactApexChart, { Props } from "react-apexcharts";
 import { Loader } from "semantic-ui-react";
 import useRegionData from "../hooks/useRegionData";
-import normalizeTimeseries from "../utils/normalizeTimeseries";
-import { ChartOptions } from "./Editor";
 import useSeriesColors from "../hooks/useSeriesColors";
+import { ChartOptions } from "./Editor";
 
 const ordinalFormattter = (n: number) => numeral(n).format("Oo");
 const numberFormatter = d3.format(".2s");
@@ -40,13 +39,11 @@ function PredictionsChart(props: PredictionsChartProps, ref: React.Ref<any>) {
       return [];
     }
 
-    return Object.entries(data).map(([region, regionData]) => {
-      let normalizedRegionData = normalizeTimeseries(region, regionData);
-
+    return Object.entries(data).map(([key, data]) => {
       return {
-        name: last(region.split("."))!.replace(/_/g, " "),
-        key: region,
-        data: normalizedRegionData,
+        name: last(key.split("."))!.replace(/_/g, " "),
+        key,
+        data,
       };
     });
   }, [data, loading]);
@@ -58,7 +55,7 @@ function PredictionsChart(props: PredictionsChartProps, ref: React.Ref<any>) {
   const seriesWithPredictions = useMemo(
     () =>
       filteredSeries.flatMap((serie) => {
-        const { X, Y } = serie.data.reduce(
+        const { X, Y } = serie.data.slice(-Math.max(dayInterval, 2)).reduce(
           (acc: any, row: any, index: number) => {
             return {
               X: [...acc.X, index],
@@ -68,7 +65,7 @@ function PredictionsChart(props: PredictionsChartProps, ref: React.Ref<any>) {
           { X: [], Y: [] }
         );
 
-        const degree = 3;
+        const degree = X.length > 2 ? 3 : 1;
         const regression = new PolynomialRegression(X, Y, degree);
         const pred = (n: number) => Math.round(regression.predict(n));
 
@@ -81,14 +78,14 @@ function PredictionsChart(props: PredictionsChartProps, ref: React.Ref<any>) {
 
         const predictionLastFactor = (last(serie.data) as any)[`${metric}_daily`] / pred(X.length - 1);
 
-        const K = 90 - serie.data.filter(x => x.cases > 100).length;
+        const K = 90 - serie.data.filter((x) => x.cases > 100).length;
         const nextSeriePredictions = predictionSerie.slice(1).reduce<any[]>((arr, date, index) => {
-          const predValue = pred(X.length + index) * predictionLastFactor * Math.max(0, (((K-index)/K)));
-          const lastMetric = (arr[index-1] || last(serie.data))[metric] as number;
+          const predValue = pred(X.length + index) * predictionLastFactor * Math.max(0, (K - index) / K);
+          const lastMetric = (arr[index - 1] || last(serie.data))[metric] as number;
 
           arr.push({
             date: date,
-            [metric]: Math.round(Math.max(lastMetric+predValue, lastMetric)),
+            [metric]: Math.round(Math.max(lastMetric + predValue, lastMetric)),
           });
           return arr;
         }, []);
@@ -136,7 +133,6 @@ function PredictionsChart(props: PredictionsChartProps, ref: React.Ref<any>) {
     return sortBy(seriesWithPredictions, (s) => get(s.data, [alignAt > 0 ? s.data.length - 1 : desiredIndex, "y"]));
   }, [seriesWithPredictions, alignAt]);
 
-
   const seriesColors = useSeriesColors(sortedSeries);
 
   const chartOptions = useMemo(() => {
@@ -165,7 +161,7 @@ function PredictionsChart(props: PredictionsChartProps, ref: React.Ref<any>) {
               ? (value: number) => `${ordinalFormattter(value)} day after ${alignAt >= 1000 ? numberFormatter(alignAt) : alignAt} ${metric}`
               : (date: number) => {
                   const pointDate = new Date(date);
-                  const isPrediction = isAfter(pointDate, subDays(new Date(), 1)); // TODO: improve way to know if it's prediction based on series
+                  const isPrediction = isAfter(pointDate, new Date()); // TODO: improve way to know if it's prediction based on series
                   return `${format(new Date(date), "PPP")}${isPrediction ? " (Prediction)" : ""}`;
                 },
         },
@@ -179,10 +175,10 @@ function PredictionsChart(props: PredictionsChartProps, ref: React.Ref<any>) {
       annotations: {
         xaxis: [
           {
-            x: subDays(new Date(), 1).getTime(), // TODO: get this from where we calculated predictions
+            x: subDays(new Date(), 0).getTime(), // TODO: get this from where we calculated predictions
             x2: addDays(new Date(), predictionDays).getTime(), // TODO: get this from where we calculated predictions
             fillColor: "#0000FF",
-            opacity: chartType === "heatmap" ? 0.1 : 0.1,
+            opacity: chartType === "heatmap" ? 0.0 : 0.1,
             label: {
               text: "Prediction",
             },

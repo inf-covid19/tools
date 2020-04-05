@@ -1,9 +1,9 @@
 import { DSVRowArray, DSVRowString } from "d3";
+import { differenceInDays, eachDayOfInterval, isBefore, parse, startOfDay } from "date-fns";
 import first from "lodash/first";
+import get from "lodash/get";
 import last from "lodash/last";
 import orderBy from "lodash/orderBy";
-import get from "lodash/get";
-import { parse, startOfDay, differenceInDays, eachDayOfInterval } from "date-fns";
 
 const PLACE_TYPE_MAPPING: Record<string, string> = {
   state: "state",
@@ -32,6 +32,40 @@ const parseDate = (row: DSVRowString, country: string, isCountry: boolean) => {
   return parse(row[dateColumn]!, dateFormat, startOfDay(new Date()));
 };
 
+export type TimeseriesRow = {
+  date: Date;
+  cases: number;
+  cases_daily: number;
+  deaths: number;
+  deaths_daily: number;
+};
+
+export function alignTimeseries(timeseries: TimeseriesRow[], earliestDate: Date) {
+  if (timeseries.length === 0) {
+    return [];
+  }
+
+  if (!isBefore(earliestDate, timeseries[0].date)) {
+    return timeseries;
+  }
+
+  const missingDays = eachDayOfInterval({
+    start: earliestDate,
+    end: timeseries[0].date,
+  });
+
+  return [
+    ...missingDays.slice(0, missingDays.length - 1).map((date) => ({
+      date,
+      cases: 0,
+      cases_daily: 0,
+      deaths: 0,
+      deaths_daily: 0,
+    })),
+    ...timeseries,
+  ];
+}
+
 export default function normalizeTimeseries(regionId: string, timeseriesRaw: DSVRowArray) {
   const country = first(regionId.split("."))!;
   const region = last(regionId.split("."))!;
@@ -56,13 +90,7 @@ export default function normalizeTimeseries(regionId: string, timeseriesRaw: DSV
 
   // normalize timeseries (include cases, cases_daily, deaths, deaths_daily)
   return timeseries.flatMap((row) => {
-    const data: {
-      date: Date;
-      cases: number;
-      cases_daily: number;
-      deaths: number;
-      deaths_daily: number;
-    }[] = [];
+    const data: TimeseriesRow[] = [];
     const date = parseDate(row, country, isCountry);
 
     if (prevDate && differenceInDays(date, prevDate) > 1) {

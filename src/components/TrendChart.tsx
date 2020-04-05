@@ -1,14 +1,13 @@
-import { format } from "date-fns";
 import * as d3 from "d3";
-import { last, first } from "lodash";
+import { format } from "date-fns";
+import { first, last } from "lodash";
 import get from "lodash/get";
 import React, { useMemo } from "react";
 import ReactApexChart, { Props } from "react-apexcharts";
 import { Loader } from "semantic-ui-react";
 import useRegionData from "../hooks/useRegionData";
-import normalizeTimeseries from "../utils/normalizeTimeseries";
-import { ChartOptions } from "./Editor";
 import useSeriesColors from "../hooks/useSeriesColors";
+import { ChartOptions } from "./Editor";
 
 const numberFormatter = d3.format(".2s");
 
@@ -31,12 +30,10 @@ function TrendChart(props: TrendChartProps, ref: React.Ref<any>) {
     if (!data) return [];
 
     const series = Object.entries(data).map(([regionId, regionData]) => {
-      const normalizedRegionData = normalizeTimeseries(regionId, regionData);
-
       return {
         key: regionId,
         name: last(regionId.split("."))!.replace(/_/g, " "),
-        data: normalizedRegionData.flatMap((row, index) => {
+        data: regionData.flatMap((row, index) => {
           const valueColumn = metric;
           const valueDailyColumn = `${metric}_daily`;
 
@@ -46,7 +43,7 @@ function TrendChart(props: TrendChartProps, ref: React.Ref<any>) {
             {
               date: row.date,
               x: row[valueColumn],
-              y: normalizedRegionData.slice(Math.max(0, index - 7), index).reduce((sum, r) => sum + get(r, valueDailyColumn, 0), 0),
+              y: regionData.slice(Math.max(0, index - 7), index).reduce((sum, r) => sum + get(r, valueDailyColumn, 0), 0),
             },
           ];
         }),
