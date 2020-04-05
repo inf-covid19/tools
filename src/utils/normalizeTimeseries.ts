@@ -42,18 +42,20 @@ export type TimeseriesRow = {
 
 export function alignTimeseries(timeseries: TimeseriesRow[], earliestDate: Date) {
   if (timeseries.length === 0) {
-    return []
+    return [];
   }
 
-  if (!isBefore(earliestDate, timeseries[0].date)){
+  if (!isBefore(earliestDate, timeseries[0].date)) {
     return timeseries;
   }
 
+  const missingDays = eachDayOfInterval({
+    start: earliestDate,
+    end: timeseries[0].date,
+  });
+
   return [
-    ...eachDayOfInterval({
-      start: earliestDate,
-      end: subDays(timeseries[0].date, 1),
-    }).map((date) => ({
+    ...missingDays.slice(0, missingDays.length - 1).map((date) => ({
       date,
       cases: 0,
       cases_daily: 0,

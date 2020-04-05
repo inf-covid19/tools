@@ -1,5 +1,5 @@
 import * as d3 from "d3";
-import { subDays } from "date-fns";
+import { subDays, startOfDay } from "date-fns";
 import get from "lodash/get";
 import last from "lodash/last";
 import sortBy from "lodash/sortBy";
@@ -29,17 +29,17 @@ function CustomizableChart(props: CustomizableChartProps, ref: React.Ref<any>) {
       return [];
     }
 
-    const earliestDate = subDays(new Date(), dayInterval);
+    const earliestDate = subDays(startOfDay(new Date()), dayInterval);
     return Object.entries(data).map(([region, regionData]) => {
       if (alignAt > 0) {
         return {
           name: last(region.split("."))!.replace(/_/g, " "),
           key: region,
           data: regionData
-            .filter(v => v[metric] >= alignAt)
+            .filter((v) => v[metric] >= alignAt)
             .map((v, index) => ({
               x: index + 1,
-              y: isCumulative ? v[metric] : v[`${metric}_daily` as 'cases_daily' | 'deaths_daily'],
+              y: isCumulative ? v[metric] : v[`${metric}_daily` as "cases_daily" | "deaths_daily"],
             })),
         };
       }
@@ -47,16 +47,21 @@ function CustomizableChart(props: CustomizableChartProps, ref: React.Ref<any>) {
       return {
         name: last(region.split("."))!.replace(/_/g, " "),
         key: region,
-        data: alignTimeseries(regionData, earliestDate).slice(-dayInterval).map(row => ({
-          x: row.date.getTime(),
-          y: row[`${metric}${isCumulative ? '' : '_daily'}` as 'cases' | 'deaths' | 'cases_daily' | 'deaths_daily']
-        })),
+        data: alignTimeseries(regionData, earliestDate)
+          .slice(-dayInterval)
+          .map((row) => ({
+            x: row.date.getTime(),
+            y: row[`${metric}${isCumulative ? "" : "_daily"}` as "cases" | "deaths" | "cases_daily" | "deaths_daily"],
+          })),
       };
     });
   }, [loading, data, dayInterval, alignAt, metric, isCumulative]);
 
   const sortedSeries = useMemo(() => {
-    return sortBy(series.filter(s => !!selectedRegions[s.key]), s => get(s.data, [s.data.length - 1, "y"]));
+    return sortBy(
+      series.filter((s) => !!selectedRegions[s.key]),
+      (s) => get(s.data, [s.data.length - 1, "y"])
+    );
   }, [series, selectedRegions]);
 
   const seriesColors = useSeriesColors(sortedSeries);
