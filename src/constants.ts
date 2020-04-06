@@ -63,4 +63,4 @@ export const PLACE_TYPE_LABEL_MAPPING: Record<string, string> = {
   departamento: "Departments",
   provincia: "Provinces",
 };
-export const CHART_REFERENCE = "See more charts like this at https://inf-convid19.github.io/tools";
+export const CHART_REFERENCE = "See more charts like this at https://covid19.ufrgs.dev/tools";
