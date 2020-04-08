@@ -16,6 +16,7 @@
     "apexcharts": "^3.17.1",
     "d3": "^5.15.0",
     "date-fns": "^2.11.1",
+    "fuse.js": "^5.1.0",
     "lodash": "^4.17.15",
     "material-color-hash": "^0.1.6",
     "ml-regression-exponential": "^2.0.0",

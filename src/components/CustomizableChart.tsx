@@ -22,7 +22,7 @@ function CustomizableChart(props: CustomizableChartProps, ref: React.Ref<any>) {
 
   const regionsIds = useMemo(() => Object.keys(selectedRegions), [selectedRegions]);
 
-  const { data, loading } = useRegionData(regionsIds);
+  const { data, loading, error } = useRegionData(regionsIds);
 
   const series = useMemo(() => {
     if (loading || !data) {
@@ -140,6 +140,15 @@ function CustomizableChart(props: CustomizableChartProps, ref: React.Ref<any>) {
     return (
       <div style={{ height: props.height, display: "flex", justifyContent: "center", alignItems: "center" }}>
         <Loader active inline />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div style={{ height: props.height, display: "flex", justifyContent: "center", alignItems: "center", textAlign: "center" }}>
+        Ooops! Something is wrong.
+        <br/>Please try it later or choose different regions.
       </div>
     );
   }

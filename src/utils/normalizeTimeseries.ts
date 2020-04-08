@@ -55,7 +55,7 @@ export function alignTimeseries(timeseries: TimeseriesRow[], earliestDate: Date)
   });
 
   return [
-    ...missingDays.slice(0, missingDays.length - 1).map((date) => ({
+    ...missingDays.slice(0, -1).map((date) => ({
       date,
       cases: 0,
       cases_daily: 0,
