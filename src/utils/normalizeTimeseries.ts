@@ -55,7 +55,7 @@ export function alignTimeseries(timeseries: TimeseriesRow[], earliestDate: Date)
   });
 
   return [
-    ...missingDays.slice(0, missingDays.length - 1).map((date) => ({
+    ...missingDays.slice(0, -1).map((date) => ({
       date,
       cases: 0,
       cases_daily: 0,
@@ -68,7 +68,8 @@ export function alignTimeseries(timeseries: TimeseriesRow[], earliestDate: Date)
 
 export default function normalizeTimeseries(regionId: string, timeseriesRaw: DSVRowArray) {
   const country = first(regionId.split("."))!;
-  const region = last(regionId.split("."))!;
+  const region = last(last(regionId.split("."))!.split(":"))!;
+
   const isCountry = country === regionId;
 
   let timeseries: DSVRowString[] = timeseriesRaw;

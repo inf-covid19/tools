@@ -1,8 +1,8 @@
 import React, { Fragment, useEffect, useMemo, useRef, useState } from "react";
-import { Button, Card, Checkbox, Form, Grid, Header, Icon, Image, Segment, Select } from "semantic-ui-react";
+import { Button, Card, Checkbox, Container, Form, Grid, Header, Icon, Image, Segment } from "semantic-ui-react";
 import { DEFAULT_COUNTRIES, DEFAULT_OPTIONS } from "../constants";
-import useMetadata from "../hooks/useMetadata";
 import "./Editor.css";
+import RegionSelector from "./RegionSelector";
 
 type ScaleType = "linear" | "log";
 type ChartType = "heatmap" | "bar" | "area" | "line";
@@ -60,6 +60,13 @@ const getDefaultsValues = (id?: string): ChartOptions => {
         parsedDefaults.selectedRegions = parsedDefaults.selectedCountries;
         delete parsedDefaults.selectedCountries;
       }
+
+      Object.entries(parsedDefaults.selectedRegions).forEach(([key, enabled]) => {
+        if (!enabled) {
+          delete parsedDefaults.selectedRegions[key];
+        }
+      });
+
       return {
         ...defaults,
         ...parsedDefaults,
@@ -97,26 +104,6 @@ function Editor(props: EditorProps) {
   const [saving, setSaving] = useState(false);
   const [predictionDays, setPredictionDays] = useState(defaultsValues.predictionDays);
 
-  const { data: metadata } = useMetadata();
-
-  const regionsOptions = Object.entries(metadata).flatMap(([country, countryData]) => {
-    const countryName = countryData.name.replace(/_/g, " ");
-    return [
-      {
-        key: country,
-        value: country,
-        text: countryName,
-      },
-      ...Object.entries(countryData.regions as Record<string, any>).map(([key, regionData]) => ({
-        key: `${country}.regions.${key}`,
-        text: `${regionData.name}${regionData.parent ? `, ${regionData.parent}` : ""}, ${countryName}`,
-        value: `${country}.regions.${key}`,
-      })),
-    ];
-  });
-
-  const selectedRegionOptions = useMemo(() => Object.keys(selectedRegions).filter((k) => selectedRegions[k]), [selectedRegions]);
-
   useEffect(() => {
     localStorage.setItem(`${SAVED_CHARTS_KEY}${id ? `.${id}` : ""}`, JSON.stringify(savedCharts));
   }, [id, savedCharts]);
@@ -143,6 +130,11 @@ function Editor(props: EditorProps) {
 
   return (
     <div>
+      {availableOptions.includes("selectedRegions") && (
+        <Container>
+          <RegionSelector value={selectedRegions} onChange={setSelectedRegions} />
+        </Container>
+      )}
       <Grid padded>
         <Grid.Row>
           <Grid.Column width={12}>
@@ -252,29 +244,6 @@ function Editor(props: EditorProps) {
                       onBlur={({ target }: any) => setDayInterval(parseInt(target.value) || dayInterval)}
                     />
                   </Form.Field>
-                )}
-
-                {availableOptions.includes("selectedRegions") && (
-                  <Form.Field
-                    control={Select}
-                    searchInput={{ id: "editor-countries-select" }}
-                    clearable
-                    label={{ children: "Choose regions (click to add more)", htmlFor: "editor-countries-select" }}
-                    value={selectedRegionOptions}
-                    onChange={(_: any, { value }: any) =>
-                      setSelectedRegions((curr) => {
-                        const next = { ...curr };
-                        const invertedIndex = Object.fromEntries((value as string[]).map((k) => [k, true]));
-                        Object.keys({ ...next, ...invertedIndex }).forEach((k) => {
-                          next[k] = invertedIndex[k] || false;
-                        });
-                        return next;
-                      })
-                    }
-                    search
-                    multiple
-                    options={regionsOptions}
-                  />
                 )}
 
                 {availableOptions.includes("showDataLabels") && (

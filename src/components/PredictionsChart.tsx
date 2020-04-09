@@ -41,7 +41,7 @@ function PredictionsChart(props: PredictionsChartProps, ref: React.Ref<any>) {
 
     return Object.entries(data).map(([key, data]) => {
       return {
-        name: last(key.split("."))!.replace(/_/g, " "),
+        name: last(key.split("."))!.replace(/_/g, " ").split(":").reverse().join(", "),
         key,
         data,
       };

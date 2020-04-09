@@ -32,7 +32,7 @@ function TrendChart(props: TrendChartProps, ref: React.Ref<any>) {
     const series = Object.entries(data).map(([regionId, regionData]) => {
       return {
         key: regionId,
-        name: last(regionId.split("."))!.replace(/_/g, " "),
+        name: last(regionId.split("."))!.replace(/_/g, " ").split(":").reverse().join(", "),
         data: regionData.flatMap((row, index) => {
           const valueColumn = metric;
           const valueDailyColumn = `${metric}_daily`;
@@ -72,12 +72,18 @@ function TrendChart(props: TrendChartProps, ref: React.Ref<any>) {
       });
     });
 
-    const xScaler = scale === 'log' ? d3.scaleLog().domain([Math.max(0.01, Math.pow(10, Math.floor(Math.log10(minX)))), Math.pow(10, Math.ceil(Math.log10(maxX)))]) : d3.scaleLinear().domain([minX, maxX]);
-    const yScaler =  scale === 'log' ? d3.scaleLog().domain([Math.max(0.01, Math.pow(10, Math.floor(Math.log10(minY)))), Math.pow(10, Math.ceil(Math.log10(maxY)))]) : d3.scaleLinear().domain([minY, maxY]);
+    const xScaler =
+      scale === "log"
+        ? d3.scaleLog().domain([Math.max(0.01, Math.pow(10, Math.floor(Math.log10(minX)))), Math.pow(10, Math.ceil(Math.log10(maxX)))])
+        : d3.scaleLinear().domain([minX, maxX]);
+    const yScaler =
+      scale === "log"
+        ? d3.scaleLog().domain([Math.max(0.01, Math.pow(10, Math.floor(Math.log10(minY)))), Math.pow(10, Math.ceil(Math.log10(maxY)))])
+        : d3.scaleLinear().domain([minY, maxY]);
 
-    const scaledSeries = filteredSeries.map(series => ({
+    const scaledSeries = filteredSeries.map((series) => ({
       ...series,
-      data: series.data.map(item => ({
+      data: series.data.map((item) => ({
         ...item,
         x: xScaler(item.x),
         y: yScaler(item.y),
@@ -141,8 +147,8 @@ function TrendChart(props: TrendChartProps, ref: React.Ref<any>) {
       },
       xaxis: {
         type: "numeric",
-        max: scale === 'log' ? xScaler(last(xTicks)!) : undefined,
-        min: scale === 'log' ? xScaler(first(xTicks)!) : undefined,
+        max: scale === "log" ? xScaler(last(xTicks)!) : undefined,
+        min: scale === "log" ? xScaler(first(xTicks)!) : undefined,
         labels: {
           formatter: withXScaler((n: number) => (n < 1000 ? Math.round(n) : numberFormatter(n))),
         },
@@ -154,8 +160,8 @@ function TrendChart(props: TrendChartProps, ref: React.Ref<any>) {
         },
       },
       yaxis: {
-        max: scale === 'log' ? yScaler(last(yTicks)!) : undefined,
-        min: scale === 'log' ? yScaler(first(yTicks)!) : undefined,
+        max: scale === "log" ? yScaler(last(yTicks)!) : undefined,
+        min: scale === "log" ? yScaler(first(yTicks)!) : undefined,
         labels: {
           formatter: withYScaler((n: number) => (n < 1000 ? Math.round(n) : numberFormatter(n))),
         },
