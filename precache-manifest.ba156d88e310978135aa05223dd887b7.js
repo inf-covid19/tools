@@ -1,23 +1,23 @@
 self.__precacheManifest = (self.__precacheManifest || []).concat([
   {
-    "revision": "856d9ffd72ae60481eae3bc36cec97be",
+    "revision": "37a347304a720e3b20a0540e88868a82",
     "url": "https://inf-covid19.github.io/tools/index.html"
   },
   {
-    "revision": "bccd078c8c4959850618",
+    "revision": "a3e253e1974de0aaa38e",
     "url": "https://inf-covid19.github.io/tools/static/css/main.6ae72ceb.chunk.css"
   },
   {
-    "revision": "94c5324736d41e073196",
-    "url": "https://inf-covid19.github.io/tools/static/js/2.3e788b53.chunk.js"
+    "revision": "410d6fe3a6fdb2622c94",
+    "url": "https://inf-covid19.github.io/tools/static/js/2.042646e0.chunk.js"
   },
   {
     "revision": "c40c81b79238138d75df6dbd6ab1a423",
-    "url": "https://inf-covid19.github.io/tools/static/js/2.3e788b53.chunk.js.LICENSE.txt"
+    "url": "https://inf-covid19.github.io/tools/static/js/2.042646e0.chunk.js.LICENSE.txt"
   },
   {
-    "revision": "bccd078c8c4959850618",
-    "url": "https://inf-covid19.github.io/tools/static/js/main.c76758b0.chunk.js"
+    "revision": "a3e253e1974de0aaa38e",
+    "url": "https://inf-covid19.github.io/tools/static/js/main.396b2767.chunk.js"
   },
   {
     "revision": "c9a7eb91d1c92a42f032",
