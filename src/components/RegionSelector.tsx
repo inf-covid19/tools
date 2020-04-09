@@ -125,7 +125,7 @@ export default function RegionSelector({ value, onChange }: Props) {
       </Header>
       <Dropdown
         style={{ zIndex: 12 }}
-        placeholder={fromValue === "all" ? "Search for countries, states, provincies..." : `Choose regions from ${fromValue}...`}
+        placeholder={fromValue === "all" ? "Search for countries, states, provinces..." : `Choose regions from ${fromValue}...`}
         clearable
         fluid
         category
