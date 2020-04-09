@@ -68,7 +68,8 @@ export function alignTimeseries(timeseries: TimeseriesRow[], earliestDate: Date)
 
 export default function normalizeTimeseries(regionId: string, timeseriesRaw: DSVRowArray) {
   const country = first(regionId.split("."))!;
-  const region = last(regionId.split("."))!;
+  const region = last(last(regionId.split("."))!.split(":"))!;
+
   const isCountry = country === regionId;
 
   let timeseries: DSVRowString[] = timeseriesRaw;

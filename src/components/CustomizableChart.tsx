@@ -33,7 +33,7 @@ function CustomizableChart(props: CustomizableChartProps, ref: React.Ref<any>) {
     return Object.entries(data).map(([region, regionData]) => {
       if (alignAt > 0) {
         return {
-          name: last(region.split("."))!.replace(/_/g, " "),
+          name: last(region.split("."))!.replace(/_/g, " ").split(":").reverse().join(", "),
           key: region,
           data: regionData
             .filter((v) => v[metric] >= alignAt)
@@ -45,7 +45,7 @@ function CustomizableChart(props: CustomizableChartProps, ref: React.Ref<any>) {
       }
 
       return {
-        name: last(region.split("."))!.replace(/_/g, " "),
+        name: last(region.split("."))!.replace(/_/g, " ").split(":").reverse().join(", "),
         key: region,
         data: alignTimeseries(regionData, earliestDate)
           .slice(-dayInterval)
@@ -148,7 +148,8 @@ function CustomizableChart(props: CustomizableChartProps, ref: React.Ref<any>) {
     return (
       <div style={{ height: props.height, display: "flex", justifyContent: "center", alignItems: "center", textAlign: "center" }}>
         Ooops! Something is wrong.
-        <br/>Please try it later or choose different regions.
+        <br />
+        Please try it later or choose different regions.
       </div>
     );
   }
