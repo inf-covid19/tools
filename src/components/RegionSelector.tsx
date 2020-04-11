@@ -5,6 +5,7 @@ import debounce from "lodash/debounce";
 import Fuse from "fuse.js";
 import { keyBy, sortBy, isEmpty, groupBy } from "lodash";
 import get from "lodash/get";
+import { PLACE_TYPE_LABEL_MAPPING } from "../constants";
 
 type Props = {
   value: Record<string, boolean>;
@@ -31,10 +32,11 @@ export default function RegionSelector({ value, onChange }: Props) {
         parent: `${regionData.parent || country}`,
         flag: (countryData.geoId as string).toLowerCase(),
         text: `${regionData.name}${regionData.parent ? `, ${regionData.parent}` : ""}, ${countryName}`,
+        type: `${regionData.place_type}`,
         country,
       }));
 
-      groups[country] = groupBy(regions, "parent")!;
+      groups[country] = groupBy(regions, (r) => `${r.parent}:${r.type}`)!;
 
       return [
         {
@@ -132,7 +134,7 @@ export default function RegionSelector({ value, onChange }: Props) {
         style={{
           display: "flex",
           justifyContent: "space-between",
-          marginBottom:'1rem',
+          marginBottom: "1rem",
         }}
       >
         <div>
@@ -158,9 +160,16 @@ export default function RegionSelector({ value, onChange }: Props) {
                       <Dropdown.Header>
                         <Flag name={get(metadata, [country, "geoId"], "").toLowerCase()} /> {countryName}
                       </Dropdown.Header>
-                      {Object.entries(regions).map(([group, items]) => (
-                        <Dropdown.Item text={group === country ? `All from ${countryName}` : `${group}`} onClick={() => setSelected(items.map((i) => i.value))} />
-                      ))}
+                      {Object.entries(regions).map(([group, items]) => {
+                        const [groupName, type] = group.split(":", 2);
+
+                        return (
+                          <Dropdown.Item
+                            text={`${PLACE_TYPE_LABEL_MAPPING[type]} from ${groupName.replace(/_/g, " ")}`}
+                            onClick={() => setSelected(items.map((i) => i.value))}
+                          />
+                        );
+                      })}
                     </Fragment>
                   );
                 })}

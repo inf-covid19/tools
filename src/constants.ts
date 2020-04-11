@@ -47,3 +47,17 @@ export const DATA_SOURCES = [
     url: "https://www.gov.uk/government/publications/covid-19-track-coronavirus-cases",
   },
 ];
+
+export const PLACE_TYPE_LABEL_MAPPING: Record<string, string> = {
+  state: "States",
+  city: "Cities",
+  autonomous_community: "Autonomous Communities",
+  country: "Countries",
+  county: "Counties",
+  nhsr: "NHSRs",
+  utla: "UTLAs",
+  health_board: "Health Boards",
+  lgd: "LGDs",
+  unknown: 'Other regions',
+  region: 'Regions'
+};
