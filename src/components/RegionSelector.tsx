@@ -1,9 +1,10 @@
-import React, { useMemo, useState, useEffect, useCallback } from "react";
+import React, { useMemo, useState, useEffect, useCallback, Fragment } from "react";
 import useMetadata from "../hooks/useMetadata";
-import { Dropdown, Header } from "semantic-ui-react";
+import { Dropdown, Header, Flag } from "semantic-ui-react";
 import debounce from "lodash/debounce";
 import Fuse from "fuse.js";
-import { keyBy, sortBy } from "lodash";
+import { keyBy, sortBy, isEmpty, groupBy } from "lodash";
+import get from "lodash/get";
 
 type Props = {
   value: Record<string, boolean>;
@@ -16,11 +17,24 @@ export default function RegionSelector({ value, onChange }: Props) {
   const [selected, setSelected] = useState<string[]>(Object.keys(value).filter((k) => value[k]));
   const { data: metadata, loading } = useMetadata();
 
-  const regions = useMemo(() => {
-    if (!metadata) return {};
+  const [regions, groups] = useMemo(() => {
+    if (!metadata) return [{}, {}];
+
+    const groups: Record<string, Record<string, Array<{ value: string; name: string; parent: string; flag: string; text: string; country: string }>>> = {};
 
     const arr = Object.entries(metadata).flatMap(([country, countryData]) => {
       const countryName = countryData.name.replace(/_/g, " ") as string;
+
+      const regions = Object.entries(countryData.regions as Record<string, any>).map(([region, regionData]) => ({
+        value: `${country}.regions.${region}`,
+        name: regionData.name as string,
+        parent: `${regionData.parent || country}`,
+        flag: (countryData.geoId as string).toLowerCase(),
+        text: `${regionData.name}${regionData.parent ? `, ${regionData.parent}` : ""}, ${countryName}`,
+        country,
+      }));
+
+      groups[country] = groupBy(regions, "parent")!;
 
       return [
         {
@@ -29,25 +43,20 @@ export default function RegionSelector({ value, onChange }: Props) {
           text: countryName,
           flag: countryData.geoId.toLowerCase(),
         },
-        ...Object.entries(countryData.regions as Record<string, any>).map(([region, regionData]) => ({
-          value: `${country}.regions.${region}`,
-          name: regionData.name as string,
-          parent: regionData.parent as string,
-          flag: countryData.geoId.toLowerCase(),
-          text: `${regionData.name}${regionData.parent ? `, ${regionData.parent}` : ""}, ${countryName}`,
-          country,
-        })),
+        ...regions,
       ];
     });
 
-    return keyBy(arr, "value");
+    return [keyBy(arr, "value"), groups];
   }, [metadata]);
 
   const fromOptions = useMemo(() => {
     const defaultFromOptions = [
       {
+        content: "Everywhere",
         text: "everywhere",
         value: "all",
+        icon: "globe",
       },
     ];
 
@@ -66,7 +75,7 @@ export default function RegionSelector({ value, onChange }: Props) {
       ];
     });
 
-    return defaultFromOptions.concat(fromOptions);
+    return [...defaultFromOptions, ...fromOptions];
   }, [metadata]);
 
   const fuse = useMemo(() => {
@@ -90,7 +99,7 @@ export default function RegionSelector({ value, onChange }: Props) {
       return selectedOptions.concat(
         sortBy(
           Object.values(regions).filter((region) => "country" in region && region.country === fromValue),
-          "text"
+          ["value"]
         )
       );
     }
@@ -119,10 +128,47 @@ export default function RegionSelector({ value, onChange }: Props) {
 
   return (
     <div>
-      <Header>
-        Select regions from <Dropdown
-        style={{ zIndex: 13 }} inline options={fromOptions} value={fromValue} onChange={(_: any, { value }: any) => setFromValue(value)} />
-      </Header>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          marginBottom:'1rem',
+        }}
+      >
+        <div>
+          <Header as="h4">
+            Select regions from{" "}
+            <Dropdown style={{ zIndex: 13 }} header="Adjust scope" inline options={fromOptions} value={fromValue} onChange={(_: any, { value }: any) => setFromValue(value)} />
+          </Header>
+        </div>
+
+        <div>
+          <Header as="h4" color="grey">
+            <Dropdown style={{ zIndex: 13 }} text="Select region group" inline direction="left" scrolling>
+              <Dropdown.Menu>
+                {Object.entries(groups).flatMap(([country, regions]) => {
+                  if (isEmpty(regions)) {
+                    return null;
+                  }
+
+                  const countryName = country.replace(/_/g, " ");
+
+                  return (
+                    <Fragment>
+                      <Dropdown.Header>
+                        <Flag name={get(metadata, [country, "geoId"], "").toLowerCase()} /> {countryName}
+                      </Dropdown.Header>
+                      {Object.entries(regions).map(([group, items]) => (
+                        <Dropdown.Item text={group === country ? `All from ${countryName}` : `${group}`} onClick={() => setSelected(items.map((i) => i.value))} />
+                      ))}
+                    </Fragment>
+                  );
+                })}
+              </Dropdown.Menu>
+            </Dropdown>
+          </Header>
+        </div>
+      </div>
       <Dropdown
         style={{ zIndex: 12 }}
         placeholder={fromValue === "all" ? "Search for countries, states, provinces..." : `Choose regions from ${fromValue}...`}
