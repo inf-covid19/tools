@@ -76,7 +76,7 @@ export default function normalizeTimeseries(regionId: string, timeseriesRaw: DSV
 
   // filtering based on region, because it can have multiple regions in the same csv
   if (!isCountry) {
-    timeseries = timeseries.filter((row) => row[PLACE_TYPE_MAPPING[row["place_type"]!]] === region);
+    timeseries = timeseries.filter((row) => row[get(PLACE_TYPE_MAPPING, row.place_type!, 'region')] === region);
   }
 
   // ensure order (more recent sits at the end of the timeseries)
