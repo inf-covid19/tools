@@ -1,5 +1,5 @@
 import * as d3 from "d3";
-import { addDays, eachDayOfInterval, format, isAfter, subDays } from "date-fns";
+import { addDays, eachDayOfInterval, format, isAfter, subDays, startOfDay } from "date-fns";
 import findLastIndex from "lodash/findLastIndex";
 import get from "lodash/get";
 import last from "lodash/last";
@@ -12,6 +12,7 @@ import { Loader } from "semantic-ui-react";
 import useRegionData from "../hooks/useRegionData";
 import useSeriesColors from "../hooks/useSeriesColors";
 import { ChartOptions } from "./Editor";
+import { alignTimeseries } from "../utils/normalizeTimeseries";
 
 const ordinalFormattter = (n: number) => numeral(n).format("Oo");
 const numberFormatter = d3.format(".2s");
@@ -20,15 +21,6 @@ type PredictionsChartProps = Omit<Props, "options" | "series" | "type"> & ChartO
 
 function PredictionsChart(props: PredictionsChartProps, ref: React.Ref<any>) {
   const { chartType = "line", title, metric, showDataLabels, isCumulative, dayInterval, selectedRegions, alignAt = 0, predictionDays, ...rest } = props;
-
-  const timeline = useMemo(
-    () =>
-      eachDayOfInterval({
-        start: subDays(new Date(), dayInterval),
-        end: new Date(),
-      }),
-    [dayInterval]
-  );
 
   const regionsIds = useMemo(() => Object.keys(selectedRegions), [selectedRegions]);
 
@@ -55,7 +47,9 @@ function PredictionsChart(props: PredictionsChartProps, ref: React.Ref<any>) {
   const seriesWithPredictions = useMemo(
     () =>
       filteredSeries.flatMap((serie) => {
-        const { X, Y } = serie.data.slice(-Math.max(dayInterval, 2)).reduce(
+        const dataSinceFirstCase = serie.data.filter(d => d.cases > 0);
+
+        const { X, Y } = dataSinceFirstCase.slice(-Math.max(dayInterval, 2)).reduce(
           (acc: any, row: any, index: number) => {
             return {
               X: [...acc.X, index],
@@ -69,19 +63,20 @@ function PredictionsChart(props: PredictionsChartProps, ref: React.Ref<any>) {
         const regression = new PolynomialRegression(X, Y, degree);
         const pred = (n: number) => Math.round(regression.predict(n));
 
-        const lastDate = (last(serie.data) as any).date;
+        const lastDate = (last(dataSinceFirstCase) as any).date;
 
         const predictionSerie = eachDayOfInterval({
           start: lastDate,
           end: addDays(lastDate, predictionDays),
         });
 
-        const predictionLastFactor = (last(serie.data) as any)[`${metric}_daily`] / pred(X.length - 1);
-
-        const K = 90 - serie.data.filter((x) => x.cases > 100).length;
+        const fActual = last(Y);
+        const fPrediction = pred(X.length - 1);
+        const F = Math.min(fPrediction, 0) === 0 ? 1 : fActual / fPrediction;
+        const K = 90 - dataSinceFirstCase.filter((x) => x.cases > 100).length;
         const nextSeriePredictions = predictionSerie.slice(1).reduce<any[]>((arr, date, index) => {
-          const predValue = pred(X.length + index) * predictionLastFactor * Math.max(0, (K - index) / K);
-          const lastMetric = (arr[index - 1] || last(serie.data))[metric] as number;
+          const predValue = pred(X.length + index) * F * Math.max(0, (K - index) / K);
+          const lastMetric = (arr[index - 1] || last(dataSinceFirstCase))[metric] as number;
 
           arr.push({
             date: date,
@@ -90,22 +85,7 @@ function PredictionsChart(props: PredictionsChartProps, ref: React.Ref<any>) {
           return arr;
         }, []);
 
-        let serieData = serie.data;
-
-        const timelineDiff = timeline.length - serieData.length;
-        if (timelineDiff > 0) {
-          serieData = [
-            ...timeline.slice(0, timelineDiff).map((d) => ({
-              date: d,
-              cases: 0,
-              cases_daily: 0,
-              deaths: 0,
-              deaths_daily: 0,
-            })),
-            ...serieData,
-          ];
-        }
-
+        const serieData = alignTimeseries(dataSinceFirstCase, subDays(startOfDay(new Date()), dayInterval));
         return [
           {
             ...serie,
@@ -119,8 +99,10 @@ function PredictionsChart(props: PredictionsChartProps, ref: React.Ref<any>) {
           },
         ];
       }),
-    [dayInterval, filteredSeries, metric, predictionDays, timeline]
+    [dayInterval, filteredSeries, metric, predictionDays]
   );
+
+  console.log("---filteredSeries--", filteredSeries, seriesWithPredictions);
 
   const sortedSeries = useMemo(() => {
     let desiredIndex = 0;
