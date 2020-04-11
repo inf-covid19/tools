@@ -13,7 +13,11 @@ export const getRegionData = (regionId: string) => {
   const metadata = JSON.parse(localStorage.getItem(METADATA_KEY) || "{}");
   const regionData = get(metadata, regionId);
 
-  if (regionData && !!regionData.parent) {
+  if (!regionData) {
+    return Promise.reject(new Error(`Key "${regionId}" doesn't exists`));
+  }
+
+  if (!!regionData.parent) {
     const s = regionId.split(".");
     regionId = [...s.slice(0, s.length - 1), regionData.parent].join(".");
   }

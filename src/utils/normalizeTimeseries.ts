@@ -5,7 +5,9 @@ import get from "lodash/get";
 import last from "lodash/last";
 import orderBy from "lodash/orderBy";
 
-const PLACE_TYPE_MAPPING: Record<string, string> = {
+
+
+const PLACE_TYPE_COLUMN_MAPPING: Record<string, string> = {
   state: "state",
   city: "city",
   autonomous_community: "region",
@@ -76,7 +78,7 @@ export default function normalizeTimeseries(regionId: string, timeseriesRaw: DSV
 
   // filtering based on region, because it can have multiple regions in the same csv
   if (!isCountry) {
-    timeseries = timeseries.filter((row) => row[get(PLACE_TYPE_MAPPING, row.place_type!, 'region')] === region);
+    timeseries = timeseries.filter((row) => row[get(PLACE_TYPE_COLUMN_MAPPING, row.place_type!, 'region')] === region);
   }
 
   // ensure order (more recent sits at the end of the timeseries)
