@@ -10,13 +10,7 @@ import orderBy from "lodash/orderBy";
 const PLACE_TYPE_COLUMN_MAPPING: Record<string, string> = {
   state: "state",
   city: "city",
-  autonomous_community: "region",
-  country: "region",
   county: "county",
-  nhsr: "region",
-  utla: "region",
-  health_board: "region",
-  lgd: "region",
 };
 
 const REGION_CUSTOM_CONFIG = {

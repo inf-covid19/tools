@@ -59,5 +59,6 @@ export const PLACE_TYPE_LABEL_MAPPING: Record<string, string> = {
   health_board: "Health Boards",
   lgd: "LGDs",
   unknown: 'Other regions',
-  region: 'Regions'
+  region: 'Regions',
+  departamento: 'Departments'
 };
