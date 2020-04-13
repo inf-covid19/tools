@@ -8,7 +8,7 @@ export default function PredictionsEditor() {
       id="predictions"
       availableOptions={["chartType", "metric", "showDataLabels", "title", "dayInterval", "selectedRegions", "predictionDays"]}
       render={(ref, options) => {
-        return <PredictionsChart ref={ref} {...options} height={600} />;
+        return <PredictionsChart ref={ref} {...options} height={Math.max(600, 15 * Object.keys(options.selectedRegions).length)} />;
       }}
     />
   );

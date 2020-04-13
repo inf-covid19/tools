@@ -62,7 +62,7 @@ export function alignTimeseries(timeseries: TimeseriesRow[], earliestDate: Date)
   ];
 }
 
-export default function normalizeTimeseries(regionId: string, timeseriesRaw: DSVRowArray) {
+export default function normalizeTimeseries(regionId: string, timeseriesRaw: DSVRowArray, regionData: Record<string, any>) {
   const country = first(regionId.split("."))!;
   const region = last(last(regionId.split("."))!.split(":"))!;
 
@@ -72,7 +72,7 @@ export default function normalizeTimeseries(regionId: string, timeseriesRaw: DSV
 
   // filtering based on region, because it can have multiple regions in the same csv
   if (!isCountry) {
-    timeseries = timeseries.filter((row) => row[get(PLACE_TYPE_COLUMN_MAPPING, row.place_type!, 'region')] === region);
+    timeseries = timeseries.filter((row) => regionData.place_type === row.place_type && row[get(PLACE_TYPE_COLUMN_MAPPING, row.place_type!, 'region')] === region);
   }
 
   // ensure order (more recent sits at the end of the timeseries)

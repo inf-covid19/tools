@@ -3,7 +3,7 @@ import { getMetadata } from "../store";
 export const METADATA_KEY = "covid19-tools.metadata.v1";
 
 export default function useMetadata() {
-  const [data, setData] = useState<Record<string, any>>({});
+  const [data, setData] = useState<Record<string, any>>();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 

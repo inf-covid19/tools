@@ -1,7 +1,5 @@
-import { differenceInHours } from "date-fns";
 import { csv } from "d3";
-import { METADATA_KEY } from "../hooks/useMetadata";
-import get from "lodash/get";
+import { differenceInHours } from "date-fns";
 
 const STORAGE_KEY = "covid19-tools.api.cache.v3";
 
@@ -9,24 +7,8 @@ export const getMetadata = () => {
   return withCache("metadata", () => fetch("https://raw.githubusercontent.com/inf-covid19/covid19-data/master/data/metadata.json").then(resp => resp.json()));
 };
 
-export const getRegionData = (regionId: string) => {
-  let regionPath = regionId.split('.');
-  if (regionPath.length >= 3) {
-    regionPath = [...regionPath.slice(0, 2), regionPath.slice(2).join('.')];
-  }
-
-  const metadata = JSON.parse(localStorage.getItem(METADATA_KEY) || "{}");
-  const regionData = get(metadata, regionPath);
-
-  if (!regionData) {
-    return Promise.reject(new Error(`Key "${regionId}" doesn't exists`));
-  }
-
-  if (!!regionData.parent) {
-    regionPath = [...regionPath.slice(0, regionPath.length - 1), regionData.parent];
-  }
-
-  return csv(`https://raw.githubusercontent.com/inf-covid19/covid19-data/master/${get(metadata, [...regionPath, 'file'])}?v=2`);
+export const getRegionData = (regionFile: string) => {
+  return csv(`https://raw.githubusercontent.com/inf-covid19/covid19-data/master/${regionFile}?v=2`);
 };
 
 function initializeCache() {
