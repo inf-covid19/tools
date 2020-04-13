@@ -3,9 +3,11 @@ import useMetadata from "../hooks/useMetadata";
 import { Dropdown, Header, Flag } from "semantic-ui-react";
 import debounce from "lodash/debounce";
 import Fuse from "fuse.js";
-import { keyBy, sortBy, isEmpty, groupBy } from "lodash";
+import { keyBy, sortBy, isEmpty, groupBy, uniq } from "lodash";
 import get from "lodash/get";
 import { PLACE_TYPE_LABEL_MAPPING } from "../constants";
+
+import './RegionSelector.css';
 
 type Props = {
   value: Record<string, boolean>;
@@ -133,11 +135,10 @@ export default function RegionSelector({ value, onChange }: Props) {
       <div
         style={{
           display: "flex",
-          justifyContent: "space-between",
           marginBottom: "1rem",
         }}
       >
-        <div>
+        <div style={{marginRight: '2rem'}}>
           <Header as="h4">
             Select regions from{" "}
             <Dropdown style={{ zIndex: 13 }} header="Adjust scope" inline options={fromOptions} value={fromValue} onChange={(_: any, { value }: any) => setFromValue(value)} />
@@ -165,9 +166,12 @@ export default function RegionSelector({ value, onChange }: Props) {
 
                         return (
                           <Dropdown.Item
-                            text={`${PLACE_TYPE_LABEL_MAPPING[type]} from ${groupName.replace(/_/g, " ")}`}
-                            onClick={() => setSelected(items.map((i) => i.value))}
-                          />
+                            className="RegionSelector--group--item"
+                             onClick={() => setSelected(prev => uniq(prev.concat(items.map((i) => i.value))))}
+                          >
+                            {`${PLACE_TYPE_LABEL_MAPPING[type]} from ${groupName.replace(/_/g, " ")}`}
+                            <span className="RegionSelector--group--item--only" onClick={() => setSelected(items.map((i) => i.value))}>only</span>
+                          </Dropdown.Item>
                         );
                       })}
                     </Fragment>
