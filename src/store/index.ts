@@ -10,19 +10,23 @@ export const getMetadata = () => {
 };
 
 export const getRegionData = (regionId: string) => {
+  let regionPath = regionId.split('.');
+  if (regionPath.length >= 3) {
+    regionPath = [...regionPath.slice(0, 2), regionPath.slice(2).join('.')];
+  }
+
   const metadata = JSON.parse(localStorage.getItem(METADATA_KEY) || "{}");
-  const regionData = get(metadata, regionId);
+  const regionData = get(metadata, regionPath);
 
   if (!regionData) {
     return Promise.reject(new Error(`Key "${regionId}" doesn't exists`));
   }
 
   if (!!regionData.parent) {
-    const s = regionId.split(".");
-    regionId = [...s.slice(0, s.length - 1), regionData.parent].join(".");
+    regionPath = [...regionPath.slice(0, regionPath.length - 1), regionData.parent];
   }
 
-  return csv(`https://raw.githubusercontent.com/inf-covid19/covid19-data/master/${get(metadata, regionId).file}?v=2`);
+  return csv(`https://raw.githubusercontent.com/inf-covid19/covid19-data/master/${get(metadata, [...regionPath, 'file'])}?v=2`);
 };
 
 function initializeCache() {

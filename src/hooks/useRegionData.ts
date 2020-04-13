@@ -32,6 +32,7 @@ export default function useRegionData(regionIds: string[]) {
       .catch((err) => {
         if (cancelled) return;
 
+        console.error("Failed to fetch region data:", err);
         setError(err);
       })
       .finally(() => {
