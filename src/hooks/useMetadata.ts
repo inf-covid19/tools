@@ -3,7 +3,7 @@ import { getMetadata } from "../store";
 export const METADATA_KEY = "covid19-tools.metadata.v1";
 
 export default function useMetadata() {
-  const [data, setData] = useState<Record<string, any>>({});
+  const [data, setData] = useState<Record<string, any>>();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -14,17 +14,22 @@ export default function useMetadata() {
     setError(null);
 
     getMetadata()
-      .then(data => {
+      .then((data) => {
         if (cancelled) return;
 
         localStorage.setItem(METADATA_KEY, JSON.stringify(data));
 
         setData(data);
       })
-      .catch(error => {
-        setError(error);
+      .catch((err) => {
+        if (cancelled) return;
+
+        console.error("Failed to fetch metadata:", err);
+        setError(err);
       })
       .finally(() => {
+        if (cancelled) return;
+
         setLoading(false);
       });
 

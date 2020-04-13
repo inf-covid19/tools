@@ -1,5 +1,5 @@
 import { DSVRowArray, DSVRowString } from "d3";
-import { differenceInDays, eachDayOfInterval, isBefore, parse, startOfDay } from "date-fns";
+import { differenceInDays, eachDayOfInterval, isBefore, parse, startOfDay, isAfter, subDays } from "date-fns";
 import first from "lodash/first";
 import get from "lodash/get";
 import last from "lodash/last";
@@ -42,7 +42,7 @@ export function alignTimeseries(timeseries: TimeseriesRow[], earliestDate: Date)
   }
 
   if (!isBefore(earliestDate, timeseries[0].date)) {
-    return timeseries;
+    return timeseries.filter((d) => isAfter(d.date, subDays(earliestDate, 1)));
   }
 
   const missingDays = eachDayOfInterval({
@@ -62,7 +62,7 @@ export function alignTimeseries(timeseries: TimeseriesRow[], earliestDate: Date)
   ];
 }
 
-export default function normalizeTimeseries(regionId: string, timeseriesRaw: DSVRowArray) {
+export default function normalizeTimeseries(regionId: string, timeseriesRaw: DSVRowArray, regionData: Record<string, any>) {
   const country = first(regionId.split("."))!;
   const region = last(last(regionId.split("."))!.split(":"))!;
 
@@ -72,7 +72,7 @@ export default function normalizeTimeseries(regionId: string, timeseriesRaw: DSV
 
   // filtering based on region, because it can have multiple regions in the same csv
   if (!isCountry) {
-    timeseries = timeseries.filter((row) => row[get(PLACE_TYPE_COLUMN_MAPPING, row.place_type!, 'region')] === region);
+    timeseries = timeseries.filter((row) => regionData.place_type === row.place_type && row[get(PLACE_TYPE_COLUMN_MAPPING, row.place_type!, 'region')] === region);
   }
 
   // ensure order (more recent sits at the end of the timeseries)
@@ -107,10 +107,10 @@ export default function normalizeTimeseries(regionId: string, timeseriesRaw: DSV
     }
 
     const cases = isCountry ? totalCases + Number(get(row, casesColumn, 0)) : Number(get(row, casesColumn, totalCases));
-    const cases_daily = cases - totalCases;
+    const cases_daily = Math.max(0, cases - totalCases);
 
     const deaths = isCountry ? totalDeaths + Number(get(row, deathsColumn, 0)) : Number(get(row, deathsColumn, totalDeaths));
-    const deaths_daily = deaths - totalDeaths;
+    const deaths_daily = Math.max(0, deaths - totalDeaths);
 
     data.push({ date, cases, cases_daily, deaths, deaths_daily });
 

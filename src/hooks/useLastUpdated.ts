@@ -14,7 +14,7 @@ export default function useLastUpdated() {
         setDate(new Date(json.commit.commit.author.date));
       })
       .catch(error => {
-        console.warn("Unable to fetch last updated date.", error);
+        console.error("Unable to fetch last updated date.", error);
       });
 
     return () => {
