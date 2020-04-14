@@ -8,6 +8,8 @@ import { Loader } from "semantic-ui-react";
 import useRegionData from "../hooks/useRegionData";
 import useSeriesColors from "../hooks/useSeriesColors";
 import { ChartOptions } from "./Editor";
+import { getNameByRegionId } from "../utils/metadata";
+import useMetadata from "../hooks/useMetadata";
 
 const numberFormatter = d3.format(".2s");
 
@@ -25,6 +27,7 @@ function TrendChart(props: TrendChartProps, ref: React.Ref<any>) {
   }, [selectedRegions]);
 
   const { data, loading } = useRegionData(regionsIds);
+  const { data: metadata } = useMetadata();
 
   const series = useMemo(() => {
     if (!data) return [];
@@ -32,7 +35,7 @@ function TrendChart(props: TrendChartProps, ref: React.Ref<any>) {
     const series = Object.entries(data).map(([regionId, regionData]) => {
       return {
         key: regionId,
-        name: last(regionId.split("."))!.replace(/_/g, " ").split(":").reverse().join(", "),
+        name: getNameByRegionId(metadata, regionId),
         data: regionData.flatMap((row, index) => {
           const valueColumn = metric;
           const valueDailyColumn = `${metric}_daily`;
@@ -51,7 +54,7 @@ function TrendChart(props: TrendChartProps, ref: React.Ref<any>) {
     });
 
     return series;
-  }, [data, metric, alignAt]);
+  }, [data, metadata, metric, alignAt]);
 
   const filteredSeries = useMemo(() => {
     return series.filter(({ key }) => !!selectedRegions[key]);

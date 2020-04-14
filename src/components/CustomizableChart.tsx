@@ -1,17 +1,19 @@
 import * as d3 from "d3";
-import { subDays, startOfDay } from "date-fns";
+import { startOfDay, subDays } from "date-fns";
 import get from "lodash/get";
-import last from "lodash/last";
 import sortBy from "lodash/sortBy";
 import numeral from "numeral";
 import React, { useMemo } from "react";
 import ReactApexChart, { Props } from "react-apexcharts";
 import { Loader } from "semantic-ui-react";
+import useMetadata from "../hooks/useMetadata";
 import useRegionData from "../hooks/useRegionData";
 import useSeriesColors from "../hooks/useSeriesColors";
+import { getNameByRegionId } from "../utils/metadata";
 import { alignTimeseries } from "../utils/normalizeTimeseries";
 import { ChartOptions } from "./Editor";
 
+const displayNumberFormatter = d3.format(",");
 const ordinalFormattter = (n: number) => numeral(n).format("Oo");
 const numberFormatter = d3.format(".2s");
 
@@ -23,6 +25,7 @@ function CustomizableChart(props: CustomizableChartProps, ref: React.Ref<any>) {
   const regionsIds = useMemo(() => Object.keys(selectedRegions), [selectedRegions]);
 
   const { data, loading, error } = useRegionData(regionsIds);
+  const { data: metadata } = useMetadata();
 
   const series = useMemo(() => {
     if (loading || !data) {
@@ -31,9 +34,11 @@ function CustomizableChart(props: CustomizableChartProps, ref: React.Ref<any>) {
 
     const earliestDate = subDays(startOfDay(new Date()), dayInterval);
     return Object.entries(data).map(([region, regionData]) => {
+      const name = getNameByRegionId(metadata, region);
+
       if (alignAt > 0) {
         return {
-          name: last(region.split("."))!.replace(/_/g, " ").split(":").reverse().join(", "),
+          name,
           key: region,
           data: regionData
             .filter((v) => v[metric] >= alignAt)
@@ -45,17 +50,16 @@ function CustomizableChart(props: CustomizableChartProps, ref: React.Ref<any>) {
       }
 
       return {
-        name: last(region.split("."))!.replace(/_/g, " ").split(":").reverse().join(", "),
+        name,
         key: region,
         data: alignTimeseries(regionData, earliestDate)
-          .slice(-dayInterval)
           .map((row) => ({
             x: row.date.getTime(),
             y: row[`${metric}${isCumulative ? "" : "_daily"}` as "cases" | "deaths" | "cases_daily" | "deaths_daily"],
           })),
       };
     });
-  }, [loading, data, dayInterval, alignAt, metric, isCumulative]);
+  }, [loading, data, dayInterval, alignAt, metric, isCumulative, metadata]);
 
   const sortedSeries = useMemo(() => {
     return sortBy(
@@ -84,7 +88,7 @@ function CustomizableChart(props: CustomizableChartProps, ref: React.Ref<any>) {
       colors: seriesColors,
       tooltip: {
         y: {
-          formatter: (value: string) => `${value} ${metric}`,
+          formatter: (value: number) => `${displayNumberFormatter(value)} ${metric}`,
         },
         x: {
           formatter: alignAt > 0 ? (value: number) => `${ordinalFormattter(value)} day after ${alignAt >= 1000 ? numberFormatter(alignAt) : alignAt} ${metric}` : undefined,
