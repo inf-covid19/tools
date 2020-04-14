@@ -1,8 +1,7 @@
 import { DSVRowArray, DSVRowString } from "d3";
-import { differenceInDays, eachDayOfInterval, isBefore, parse, startOfDay, isAfter, subDays } from "date-fns";
+import { differenceInDays, eachDayOfInterval, isAfter, isBefore, parse, startOfDay, subDays } from "date-fns";
 import first from "lodash/first";
 import get from "lodash/get";
-import last from "lodash/last";
 import orderBy from "lodash/orderBy";
 
 
@@ -64,15 +63,13 @@ export function alignTimeseries(timeseries: TimeseriesRow[], earliestDate: Date)
 
 export default function normalizeTimeseries(regionId: string, timeseriesRaw: DSVRowArray, regionData: Record<string, any>) {
   const country = first(regionId.split("."))!;
-  const region = last(last(regionId.split("."))!.split(":"))!;
-
   const isCountry = country === regionId;
 
   let timeseries: DSVRowString[] = timeseriesRaw;
 
   // filtering based on region, because it can have multiple regions in the same csv
   if (!isCountry) {
-    timeseries = timeseries.filter((row) => regionData.place_type === row.place_type && row[get(PLACE_TYPE_COLUMN_MAPPING, row.place_type!, 'region')] === region);
+    timeseries = timeseries.filter((row) => regionData.place_type === row.place_type && row[get(PLACE_TYPE_COLUMN_MAPPING, row.place_type!, 'region')] === regionData.name);
   }
 
   // ensure order (more recent sits at the end of the timeseries)
