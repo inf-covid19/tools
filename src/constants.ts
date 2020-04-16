@@ -60,5 +60,6 @@ export const PLACE_TYPE_LABEL_MAPPING: Record<string, string> = {
   lgd: "LGDs",
   unknown: 'Other regions',
   region: 'Regions',
-  departamento: 'Departments'
+  departamento: 'Departments',
+  provincia: 'Provinces',
 };
