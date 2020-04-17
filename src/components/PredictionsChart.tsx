@@ -47,66 +47,64 @@ function PredictionsChart(props: PredictionsChartProps, ref: React.Ref<any>) {
     return series.filter((s) => !!selectedRegions[s.key]);
   }, [series, selectedRegions]);
 
-  const seriesWithPredictions = useMemo(
-    () =>
-      filteredSeries.flatMap((serie) => {
-        const dataSinceFirstCase = serie.data.filter((d) => d.cases > 0);
-
-        const getNextSeriesPrediction = () => {
-          const { X, Y } = dataSinceFirstCase.slice(-Math.max(dayInterval, 2)).reduce(
-            (acc: any, row: any, index: number) => {
-              return {
-                X: [...acc.X, index],
-                Y: [...acc.Y, row[`${metric}_daily`]],
-              };
-            },
-            { X: [], Y: [] }
-          );
-
-          const degree = X.length > 2 ? 3 : 1;
-          const regression = new PolynomialRegression(X, Y, degree);
-          const pred = (n: number) => Math.round(regression.predict(n));
-
-          const lastDate = (last(dataSinceFirstCase) as any).date;
-
-          const predictionSerie = eachDayOfInterval({
-            start: lastDate,
-            end: addDays(lastDate, predictionDays),
-          });
-
-          const fActual = last(Y);
-          const fPrediction = pred(X.length - 1);
-          const F = Math.min(fPrediction, 0) === 0 ? 1 : fActual / fPrediction;
-          const K = 90 - dataSinceFirstCase.filter((x) => x.cases > 100).length;
-          return predictionSerie.slice(1).reduce<any[]>((arr, date, index) => {
-            const predValue = pred(X.length + index) * F * Math.max(0, (K - index) / K);
-            const lastMetric = (arr[index - 1] || last(dataSinceFirstCase))[metric] as number;
-
-            arr.push({
-              date: date,
-              [metric]: Math.round(Math.max(lastMetric + predValue, lastMetric)),
-              isPrediction: true,
-            });
-            return arr;
-          }, []);
-        };
-
-        const nextSeriePredictions = dataSinceFirstCase.length > 2 ? getNextSeriesPrediction() : [];
-
-        const serieData = alignTimeseries(dataSinceFirstCase, subDays(startOfDay(new Date()), dayInterval));
-        return [
-          {
-            ...serie,
-            data: serieData.concat(nextSeriePredictions).map((row: any) => ({
-              x: row.date.getTime(),
-              y: row[metric],
-              isPrediction: row.isPrediction || false,
-            })),
+  const seriesWithPredictions = useMemo(() => {
+    return filteredSeries.flatMap((serie) => {
+      const dataSinceFirstCase = serie.data.filter((d) => d.cases > 0);
+      const getNextSeriesPrediction = () => {
+        const { X, Y } = dataSinceFirstCase.slice(-Math.max(dayInterval, 2)).reduce(
+          (acc: any, row: any, index: number) => {
+            return {
+              X: [...acc.X, index],
+              Y: [...acc.Y, row[`${metric}_daily`]],
+            };
           },
-        ];
-      }),
-    [dayInterval, filteredSeries, metric, predictionDays]
-  );
+          { X: [], Y: [] }
+        );
+        const degree = X.length > 2 ? 3 : 1;
+        const regression = new PolynomialRegression(X, Y, degree);
+        const pred = (n: number) => Math.round(regression.predict(n));
+        const lastDate = (last(dataSinceFirstCase) as any).date;
+        const predictionSerie = eachDayOfInterval({
+          start: lastDate,
+          end: addDays(lastDate, predictionDays),
+        });
+        const fActual = last(Y);
+        const fPrediction = pred(X.length - 1);
+        const F = Math.max(fPrediction, 0) === 0 ? 1 : fActual / fPrediction;
+
+        const Ka = dataSinceFirstCase.filter((x) => x.cases > 100).length;
+        const K = Math.max(0, 90 - Ka);
+
+        return predictionSerie.slice(1).reduce<any[]>((arr, date, index) => {
+          const Ki = K === 0 ? 0 : Math.max(0, (K - index) / K);
+          const predValue = pred(X.length + index) * F * Ki;
+          const lastMetric = (arr[index - 1] || last(dataSinceFirstCase))[metric] as number;
+
+          arr.push({
+            date: date,
+            [metric]: Math.round(Math.max(lastMetric + predValue, lastMetric)),
+            isPrediction: true,
+          });
+          return arr;
+        }, []);
+      };
+
+      const nextSeriePredictions = dataSinceFirstCase.length > 2 ? getNextSeriesPrediction() : [];
+
+      const serieData = alignTimeseries(dataSinceFirstCase, subDays(startOfDay(new Date()), dayInterval));
+
+      return [
+        {
+          ...serie,
+          data: serieData.concat(nextSeriePredictions).map((row: any) => ({
+            x: row.date.getTime(),
+            y: row[metric],
+            isPrediction: row.isPrediction || false,
+          })),
+        },
+      ];
+    });
+  }, [dayInterval, filteredSeries, metric, predictionDays]);
 
   const sortedSeries = useMemo(() => {
     return sortBy(seriesWithPredictions, (s) => get(s.data, [s.data.length - 1, "y"], 0));
