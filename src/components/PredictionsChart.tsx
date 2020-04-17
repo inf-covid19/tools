@@ -52,42 +52,46 @@ function PredictionsChart(props: PredictionsChartProps, ref: React.Ref<any>) {
       filteredSeries.flatMap((serie) => {
         const dataSinceFirstCase = serie.data.filter((d) => d.cases > 0);
 
-        const { X, Y } = dataSinceFirstCase.slice(-Math.max(dayInterval, 2)).reduce(
-          (acc: any, row: any, index: number) => {
-            return {
-              X: [...acc.X, index],
-              Y: [...acc.Y, row[`${metric}_daily`]],
-            };
-          },
-          { X: [], Y: [] }
-        );
+        const getNextSeriesPrediction = () => {
+          const { X, Y } = dataSinceFirstCase.slice(-Math.max(dayInterval, 2)).reduce(
+            (acc: any, row: any, index: number) => {
+              return {
+                X: [...acc.X, index],
+                Y: [...acc.Y, row[`${metric}_daily`]],
+              };
+            },
+            { X: [], Y: [] }
+          );
 
-        const degree = X.length > 2 ? 3 : 1;
-        const regression = new PolynomialRegression(X, Y, degree);
-        const pred = (n: number) => Math.round(regression.predict(n));
+          const degree = X.length > 2 ? 3 : 1;
+          const regression = new PolynomialRegression(X, Y, degree);
+          const pred = (n: number) => Math.round(regression.predict(n));
 
-        const lastDate = (last(dataSinceFirstCase) as any).date;
+          const lastDate = (last(dataSinceFirstCase) as any).date;
 
-        const predictionSerie = eachDayOfInterval({
-          start: lastDate,
-          end: addDays(lastDate, predictionDays),
-        });
-
-        const fActual = last(Y);
-        const fPrediction = pred(X.length - 1);
-        const F = Math.min(fPrediction, 0) === 0 ? 1 : fActual / fPrediction;
-        const K = 90 - dataSinceFirstCase.filter((x) => x.cases > 100).length;
-        const nextSeriePredictions = predictionSerie.slice(1).reduce<any[]>((arr, date, index) => {
-          const predValue = pred(X.length + index) * F * Math.max(0, (K - index) / K);
-          const lastMetric = (arr[index - 1] || last(dataSinceFirstCase))[metric] as number;
-
-          arr.push({
-            date: date,
-            [metric]: Math.round(Math.max(lastMetric + predValue, lastMetric)),
-            isPrediction: true,
+          const predictionSerie = eachDayOfInterval({
+            start: lastDate,
+            end: addDays(lastDate, predictionDays),
           });
-          return arr;
-        }, []);
+
+          const fActual = last(Y);
+          const fPrediction = pred(X.length - 1);
+          const F = Math.min(fPrediction, 0) === 0 ? 1 : fActual / fPrediction;
+          const K = 90 - dataSinceFirstCase.filter((x) => x.cases > 100).length;
+          return predictionSerie.slice(1).reduce<any[]>((arr, date, index) => {
+            const predValue = pred(X.length + index) * F * Math.max(0, (K - index) / K);
+            const lastMetric = (arr[index - 1] || last(dataSinceFirstCase))[metric] as number;
+
+            arr.push({
+              date: date,
+              [metric]: Math.round(Math.max(lastMetric + predValue, lastMetric)),
+              isPrediction: true,
+            });
+            return arr;
+          }, []);
+        };
+
+        const nextSeriePredictions = dataSinceFirstCase.length > 2 ? getNextSeriesPrediction() : [];
 
         const serieData = alignTimeseries(dataSinceFirstCase, subDays(startOfDay(new Date()), dayInterval));
         return [
@@ -128,7 +132,10 @@ function PredictionsChart(props: PredictionsChartProps, ref: React.Ref<any>) {
       colors: seriesColors,
       tooltip: {
         y: {
-          formatter: (value: number) => `${displayNumberFormatter(value)} ${metric}`,
+          formatter: (value: number, point: any) => {
+            const pointData = point?.w?.config?.series[point.seriesIndex].data[point.dataPointIndex];
+            return `${displayNumberFormatter(value)} ${metric}${pointData && pointData.isPrediction ? " (Prediction)" : ""}`;
+          },
         },
         x: {
           formatter:
