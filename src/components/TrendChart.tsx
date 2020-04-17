@@ -106,6 +106,9 @@ function TrendChart(props: TrendChartProps, ref: React.Ref<any>) {
 
     return {
       chart: {
+        animations: {
+          animateGradually: { enabled: false },
+        },
         toolbar: {
           tools: {
             download: true,

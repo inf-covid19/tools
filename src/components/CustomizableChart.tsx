@@ -52,11 +52,10 @@ function CustomizableChart(props: CustomizableChartProps, ref: React.Ref<any>) {
       return {
         name,
         key: region,
-        data: alignTimeseries(regionData, earliestDate)
-          .map((row) => ({
-            x: row.date.getTime(),
-            y: row[`${metric}${isCumulative ? "" : "_daily"}` as "cases" | "deaths" | "cases_daily" | "deaths_daily"],
-          })),
+        data: alignTimeseries(regionData, earliestDate).map((row) => ({
+          x: row.date.getTime(),
+          y: row[`${metric}${isCumulative ? "" : "_daily"}` as "cases" | "deaths" | "cases_daily" | "deaths_daily"],
+        })),
       };
     });
   }, [loading, data, dayInterval, alignAt, metric, isCumulative, metadata]);
@@ -73,6 +72,9 @@ function CustomizableChart(props: CustomizableChartProps, ref: React.Ref<any>) {
   const chartOptions = useMemo(() => {
     return {
       chart: {
+        animations: {
+          animateGradually: { enabled: false },
+        },
         toolbar: {
           tools: {
             download: true,

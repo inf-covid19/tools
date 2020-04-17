@@ -112,11 +112,28 @@ function PredictionsChart(props: PredictionsChartProps, ref: React.Ref<any>) {
     return sortBy(seriesWithPredictions, (s) => get(s.data, [s.data.length - 1, "y"], 0));
   }, [seriesWithPredictions]);
 
+  const [predictionX1, predictionX2] = useMemo(() => {
+    let x1 = startOfDay(new Date()).getTime();
+    let x2 = addDays(startOfDay(new Date()), predictionDays).getTime();
+
+    sortedSeries.forEach(({ data }) => {
+      const predictions = data.filter((d) => d.isPrediction);
+
+      x1 = Math.min(x1, ...predictions.map((d) => d.x));
+      x2 = Math.max(x2, ...predictions.map((d) => d.x));
+    });
+
+    return [x1, x2];
+  }, [sortedSeries, predictionDays]);
+
   const seriesColors = useSeriesColors(sortedSeries);
 
   const chartOptions = useMemo(() => {
     return {
       chart: {
+        animations: {
+          animateGradually: { enabled: false },
+        },
         toolbar: {
           tools: {
             download: true,
@@ -141,10 +158,7 @@ function PredictionsChart(props: PredictionsChartProps, ref: React.Ref<any>) {
           formatter:
             alignAt > 0
               ? (value: number) => `${ordinalFormattter(value)} day after ${alignAt >= 1000 ? numberFormatter(alignAt) : alignAt} ${metric}`
-              : (date: number, point: any) => {
-                  const pointData = point?.w?.config?.series[point.seriesIndex].data[point.dataPointIndex];
-                  return `${format(new Date(date), "PPP")}${pointData && pointData.isPrediction ? " (Prediction)" : ""}`;
-                },
+              : (date: number) => `${format(new Date(date), "PPP")}`,
         },
       },
       xaxis: {
@@ -156,8 +170,8 @@ function PredictionsChart(props: PredictionsChartProps, ref: React.Ref<any>) {
       annotations: {
         xaxis: [
           {
-            x: startOfDay(new Date()).getTime(), // TODO: get this from where we calculated predictions
-            x2: addDays(startOfDay(new Date()), predictionDays).getTime(), // TODO: get this from where we calculated predictions
+            x: predictionX1,
+            x2: predictionX2,
             fillColor: "#0000FF",
             opacity: chartType === "heatmap" ? 0.0 : 0.1,
             label: {
@@ -204,7 +218,7 @@ function PredictionsChart(props: PredictionsChartProps, ref: React.Ref<any>) {
         },
       },
     };
-  }, [title, metric, isCumulative, showDataLabels, alignAt, predictionDays, chartType, seriesColors]);
+  }, [title, metric, isCumulative, showDataLabels, alignAt, chartType, seriesColors, predictionX1, predictionX2]);
 
   if (loading) {
     return (
