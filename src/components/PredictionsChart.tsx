@@ -47,11 +47,10 @@ function PredictionsChart(props: PredictionsChartProps, ref: React.Ref<any>) {
     return series.filter((s) => !!selectedRegions[s.key]);
   }, [series, selectedRegions]);
 
-  const seriesWithPredictions = useMemo(
-    () =>
-      filteredSeries.flatMap((serie) => {
-        const dataSinceFirstCase = serie.data.filter((d) => d.cases > 0);
-
+  const seriesWithPredictions = useMemo(() => {
+    return filteredSeries.flatMap((serie) => {
+      const dataSinceFirstCase = serie.data.filter((d) => d.cases > 0);
+      const getNextSeriesPrediction = () => {
         const { X, Y } = dataSinceFirstCase.slice(-Math.max(dayInterval, 2)).reduce(
           (acc: any, row: any, index: number) => {
             return {
@@ -61,24 +60,24 @@ function PredictionsChart(props: PredictionsChartProps, ref: React.Ref<any>) {
           },
           { X: [], Y: [] }
         );
-
         const degree = X.length > 2 ? 3 : 1;
         const regression = new PolynomialRegression(X, Y, degree);
         const pred = (n: number) => Math.round(regression.predict(n));
-
         const lastDate = (last(dataSinceFirstCase) as any).date;
-
         const predictionSerie = eachDayOfInterval({
           start: lastDate,
           end: addDays(lastDate, predictionDays),
         });
-
         const fActual = last(Y);
         const fPrediction = pred(X.length - 1);
-        const F = Math.min(fPrediction, 0) === 0 ? 1 : fActual / fPrediction;
-        const K = 90 - dataSinceFirstCase.filter((x) => x.cases > 100).length;
-        const nextSeriePredictions = predictionSerie.slice(1).reduce<any[]>((arr, date, index) => {
-          const predValue = pred(X.length + index) * F * Math.max(0, (K - index) / K);
+        const F = Math.max(fPrediction, 0) === 0 ? 1 : fActual / fPrediction;
+
+        const Ka = dataSinceFirstCase.filter((x) => x.cases > 100).length;
+        const K = Math.max(0, 90 - Ka);
+
+        return predictionSerie.slice(1).reduce<any[]>((arr, date, index) => {
+          const Ki = K === 0 ? 0 : Math.max(0, (K - index) / K);
+          const predValue = pred(X.length + index) * F * Ki;
           const lastMetric = (arr[index - 1] || last(dataSinceFirstCase))[metric] as number;
 
           arr.push({
@@ -88,31 +87,51 @@ function PredictionsChart(props: PredictionsChartProps, ref: React.Ref<any>) {
           });
           return arr;
         }, []);
+      };
 
-        const serieData = alignTimeseries(dataSinceFirstCase, subDays(startOfDay(new Date()), dayInterval));
-        return [
-          {
-            ...serie,
-            data: serieData.concat(nextSeriePredictions).map((row: any) => ({
-              x: row.date.getTime(),
-              y: row[metric],
-              isPrediction: row.isPrediction || false,
-            })),
-          },
-        ];
-      }),
-    [dayInterval, filteredSeries, metric, predictionDays]
-  );
+      const nextSeriePredictions = dataSinceFirstCase.length > 2 ? getNextSeriesPrediction() : [];
+
+      const serieData = alignTimeseries(dataSinceFirstCase, subDays(startOfDay(new Date()), dayInterval));
+
+      return [
+        {
+          ...serie,
+          data: serieData.concat(nextSeriePredictions).map((row: any) => ({
+            x: row.date.getTime(),
+            y: row[metric],
+            isPrediction: row.isPrediction || false,
+          })),
+        },
+      ];
+    });
+  }, [dayInterval, filteredSeries, metric, predictionDays]);
 
   const sortedSeries = useMemo(() => {
-    return sortBy(seriesWithPredictions, (s) => get(s.data, [s.data.length - 1, "y"]));
+    return sortBy(seriesWithPredictions, (s) => get(s.data, [s.data.length - 1, "y"], 0));
   }, [seriesWithPredictions]);
+
+  const [predictionX1, predictionX2] = useMemo(() => {
+    let x1 = startOfDay(new Date()).getTime();
+    let x2 = addDays(startOfDay(new Date()), predictionDays).getTime();
+
+    sortedSeries.forEach(({ data }) => {
+      const predictions = data.filter((d) => d.isPrediction);
+
+      x1 = Math.min(x1, ...predictions.map((d) => d.x));
+      x2 = Math.max(x2, ...predictions.map((d) => d.x));
+    });
+
+    return [x1, x2];
+  }, [sortedSeries, predictionDays]);
 
   const seriesColors = useSeriesColors(sortedSeries);
 
   const chartOptions = useMemo(() => {
     return {
       chart: {
+        animations: {
+          animateGradually: { enabled: false },
+        },
         toolbar: {
           tools: {
             download: true,
@@ -128,16 +147,16 @@ function PredictionsChart(props: PredictionsChartProps, ref: React.Ref<any>) {
       colors: seriesColors,
       tooltip: {
         y: {
-          formatter: (value: number) => `${displayNumberFormatter(value)} ${metric}`,
+          formatter: (value: number, point: any) => {
+            const pointData = point?.w?.config?.series[point.seriesIndex].data[point.dataPointIndex];
+            return `${displayNumberFormatter(value)} ${metric}${pointData && pointData.isPrediction ? " (Prediction)" : ""}`;
+          },
         },
         x: {
           formatter:
             alignAt > 0
               ? (value: number) => `${ordinalFormattter(value)} day after ${alignAt >= 1000 ? numberFormatter(alignAt) : alignAt} ${metric}`
-              : (date: number, point: any) => {
-                  const pointData = point?.w?.config?.series[point.seriesIndex].data[point.dataPointIndex];
-                  return `${format(new Date(date), "PPP")}${pointData && pointData.isPrediction ? " (Prediction)" : ""}`;
-                },
+              : (date: number) => `${format(new Date(date), "PPP")}`,
         },
       },
       xaxis: {
@@ -149,8 +168,8 @@ function PredictionsChart(props: PredictionsChartProps, ref: React.Ref<any>) {
       annotations: {
         xaxis: [
           {
-            x: startOfDay(new Date()).getTime(), // TODO: get this from where we calculated predictions
-            x2: addDays(startOfDay(new Date()), predictionDays).getTime(), // TODO: get this from where we calculated predictions
+            x: predictionX1,
+            x2: predictionX2,
             fillColor: "#0000FF",
             opacity: chartType === "heatmap" ? 0.0 : 0.1,
             label: {
@@ -197,7 +216,7 @@ function PredictionsChart(props: PredictionsChartProps, ref: React.Ref<any>) {
         },
       },
     };
-  }, [title, metric, isCumulative, showDataLabels, alignAt, predictionDays, chartType, seriesColors]);
+  }, [title, metric, isCumulative, showDataLabels, alignAt, chartType, seriesColors, predictionX1, predictionX2]);
 
   if (loading) {
     return (
