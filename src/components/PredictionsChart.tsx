@@ -105,7 +105,7 @@ function PredictionsChart(props: PredictionsChartProps, ref: React.Ref<any>) {
   );
 
   const sortedSeries = useMemo(() => {
-    return sortBy(seriesWithPredictions, (s) => get(s.data, [s.data.length - 1, "y"]));
+    return sortBy(seriesWithPredictions, (s) => get(s.data, [s.data.length - 1, "y"], 0));
   }, [seriesWithPredictions]);
 
   const seriesColors = useSeriesColors(sortedSeries);

@@ -64,7 +64,7 @@ function CustomizableChart(props: CustomizableChartProps, ref: React.Ref<any>) {
   const sortedSeries = useMemo(() => {
     return sortBy(
       series.filter((s) => !!selectedRegions[s.key]),
-      (s) => get(s.data, [s.data.length - 1, "y"])
+      (s) => get(s.data, [s.data.length - 1, "y"], 0)
     );
   }, [series, selectedRegions]);
 
