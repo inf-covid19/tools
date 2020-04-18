@@ -332,7 +332,7 @@ function Editor(props: EditorProps) {
                     {availableOptions.includes("minDist") && (
                       <Form.Field>
                         <label>UMAP: minDist</label>
-                        <input type="number" placeholder="Enter a number" defaultValue={minDist} onBlur={({ target }: any) => setMinDist(parseInt(target.value) || 0)} />
+                        <input type="number" placeholder="Enter a number" defaultValue={minDist} onBlur={({ target }: any) => setMinDist(parseFloat(target.value) || 0)} />
                       </Form.Field>
                     )}
                   </React.Fragment>
