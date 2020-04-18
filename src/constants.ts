@@ -9,9 +9,9 @@ export const DEFAULT_OPTIONS = {
   alignAt: 0,
   scale: "log",
   predictionDays: 7,
-  epsilon: 10,
+  epsilon: 100,
   perplexity: 30,
-  iterations: 5000,
+  iterations: 1000,
   timeserieSlice: 20,
 };
 

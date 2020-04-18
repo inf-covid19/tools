@@ -2,7 +2,6 @@ import * as d3 from "d3";
 import { startOfDay, subDays } from "date-fns";
 import get from "lodash/get";
 import sortBy from "lodash/sortBy";
-import numeral from "numeral";
 import React, { useMemo } from "react";
 import ReactApexChart, { Props } from "react-apexcharts";
 import { Loader } from "semantic-ui-react";
@@ -12,10 +11,8 @@ import useSeriesColors from "../hooks/useSeriesColors";
 import { getNameByRegionId } from "../utils/metadata";
 import { alignTimeseries } from "../utils/normalizeTimeseries";
 import { ChartOptions } from "./Editor";
-import tsnejs from "../utils/tsne";
+import TSNE from "tsne-js";
 
-const displayNumberFormatter = d3.format(",");
-const ordinalFormattter = (n: number) => numeral(n).format("Oo");
 const numberFormatter = d3.format(".2s");
 
 type ProjectionsChartProps = Omit<Props, "options" | "series" | "type"> & ChartOptions;
@@ -71,47 +68,44 @@ function ProjectionsChart(props: ProjectionsChartProps, ref: React.Ref<any>) {
   const seriesColors = useSeriesColors(sortedSeries);
 
   const tsneSeries = useMemo(() => {
-    console.log("sortedSeries", sortedSeries);
-    const tsneData = sortedSeries.map((serie) => {
+    const validSeries = sortedSeries.filter((serie) => serie.data.length >= timeserieSlice);
+
+    const tsneData = validSeries.map((serie) => {
       const data = serie.data.slice(0, timeserieSlice).map((cord) => cord.y);
       return data;
     });
-    console.log("tsneData", tsneData);
 
     if (tsneData.length === 0) {
       return [];
     }
 
-    var tsne = new tsnejs.tSNE({
-      epsilon,
-      perplexity,
+    const model = new TSNE({
       dim: 2,
+      earlyExaggeration: 4.0,
+      perplexity: perplexity,
+      learningRate: epsilon,
+      nIter: iterations,
+      metric: "euclidean",
     });
-    tsne.initDataDist(tsneData);
+    model.init({
+      data: tsneData,
+      type: "dense",
+    });
+    model.run();
 
-    for (var k = 0; k < iterations; k++) {
-      tsne.step();
-    }
-
-    var Y = tsne.getSolution();
-
-    console.log("tsne solution", Y);
-
-    return sortedSeries.map((serie, index) => {
+    const output = model.getOutput();
+    return validSeries.map((serie, index) => {
       return {
         ...serie,
         data: [
           {
-            x: Y[index][0],
-            y: Y[index][1],
+            x: output[index][0],
+            y: output[index][1],
           },
         ],
       };
     });
   }, [epsilon, iterations, perplexity, sortedSeries, timeserieSlice]);
-
-  console.log("tsnejs");
-  console.log(tsneSeries);
 
   const chartOptions = useMemo(() => {
     return {
@@ -170,7 +164,7 @@ function ProjectionsChart(props: ProjectionsChartProps, ref: React.Ref<any>) {
         },
       },
     };
-  }, [title, metric, isCumulative, showDataLabels, alignAt, seriesColors]);
+  }, [title, metric, isCumulative, showDataLabels, seriesColors]);
 
   if (loading) {
     return (
