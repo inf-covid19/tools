@@ -7,6 +7,7 @@ import RegionSelector from "./RegionSelector";
 type ScaleType = "linear" | "log";
 type ChartType = "heatmap" | "bar" | "area" | "line" | "scatter";
 type MetricType = "cases" | "deaths";
+type ProjectionType = "tsne" | "umap";
 type SelectedCountriesMap = Record<string, boolean>;
 export type ChartOptions = {
   chartType: ChartType;
@@ -19,10 +20,14 @@ export type ChartOptions = {
   selectedRegions: SelectedCountriesMap;
   scale: ScaleType;
   predictionDays: number;
+  projectionType: ProjectionType;
   epsilon: number;
   perplexity: number;
   iterations: number;
   timeserieSlice: number;
+  spread: number;
+  neighbors: number;
+  minDist: number;
 };
 
 const SAVED_CHARTS_KEY = "covid19-tools.editor.savedCharts.v2";
@@ -107,10 +112,14 @@ function Editor(props: EditorProps) {
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
   const [predictionDays, setPredictionDays] = useState(defaultsValues.predictionDays);
+  const [projectionType, setProjectionType] = useState(defaultsValues.projectionType);
   const [epsilon, setEpsilon] = useState(defaultsValues.epsilon);
   const [perplexity, setPerplexity] = useState(defaultsValues.perplexity);
   const [iterations, setIterations] = useState(defaultsValues.iterations);
   const [timeserieSlice, setTimeserieSlice] = useState(defaultsValues.timeserieSlice);
+  const [spread, setSpread] = useState(defaultsValues.spread);
+  const [neighbors, setNeighbors] = useState(defaultsValues.neighbors);
+  const [minDist, setMinDist] = useState(defaultsValues.minDist);
 
   useEffect(() => {
     localStorage.setItem(`${SAVED_CHARTS_KEY}${id ? `.${id}` : ""}`, JSON.stringify(savedCharts));
@@ -162,6 +171,10 @@ function Editor(props: EditorProps) {
                 perplexity,
                 iterations,
                 timeserieSlice,
+                projectionType,
+                spread,
+                neighbors,
+                minDist,
               })}
             </Segment>
           </Grid.Column>
@@ -258,31 +271,71 @@ function Editor(props: EditorProps) {
                     />
                   </Form.Field>
                 )}
-
-                {availableOptions.includes("epsilon") && (
-                  <Form.Field>
-                    <label>t-SNE: epsilon</label>
-                    <input type="number" placeholder="Enter a number" defaultValue={epsilon} onBlur={({ target }: any) => setEpsilon(parseInt(target.value) || 0)} />
-                  </Form.Field>
-                )}
-
-                {availableOptions.includes("perplexity") && (
-                  <Form.Field>
-                    <label>t-SNE: perplexity</label>
-                    <input type="number" placeholder="Enter a number" defaultValue={perplexity} onBlur={({ target }: any) => setPerplexity(parseInt(target.value) || 0)} />
-                  </Form.Field>
-                )}
                 {availableOptions.includes("timeserieSlice") && (
                   <Form.Field>
-                    <label>t-SNE: region vector size</label>
+                    <label>Region vector size</label>
                     <input type="number" placeholder="Enter a number" defaultValue={timeserieSlice} onBlur={({ target }: any) => setTimeserieSlice(parseInt(target.value) || 0)} />
                   </Form.Field>
                 )}
-                {availableOptions.includes("iterations") && (
-                  <Form.Field>
-                    <label>t-SNE: number of iterations</label>
-                    <input type="number" placeholder="Enter a number" defaultValue={iterations} onBlur={({ target }: any) => setIterations(parseInt(target.value) || 0)} />
-                  </Form.Field>
+
+                {availableOptions.includes("projectionType") && (
+                  <Form.Select
+                    label="Choose projection technique"
+                    value={projectionType}
+                    onChange={(_, { value }) => setProjectionType(value as ProjectionType)}
+                    options={[
+                      { key: "umap", text: "UMAP", value: "umap" },
+                      { key: "tsne", text: "t-SNE", value: "tsne" },
+                    ]}
+                  />
+                )}
+
+                {projectionType === "tsne" && (
+                  <React.Fragment>
+                    {availableOptions.includes("epsilon") && (
+                      <Form.Field>
+                        <label>t-SNE: epsilon</label>
+                        <input type="number" placeholder="Enter a number" defaultValue={epsilon} onBlur={({ target }: any) => setEpsilon(parseInt(target.value) || 0)} />
+                      </Form.Field>
+                    )}
+
+                    {availableOptions.includes("perplexity") && (
+                      <Form.Field>
+                        <label>t-SNE: perplexity</label>
+                        <input type="number" placeholder="Enter a number" defaultValue={perplexity} onBlur={({ target }: any) => setPerplexity(parseInt(target.value) || 0)} />
+                      </Form.Field>
+                    )}
+                    {availableOptions.includes("iterations") && (
+                      <Form.Field>
+                        <label>Number of iterations</label>
+                        <input type="number" placeholder="Enter a number" defaultValue={iterations} onBlur={({ target }: any) => setIterations(parseInt(target.value) || 0)} />
+                      </Form.Field>
+                    )}
+                  </React.Fragment>
+                )}
+                {projectionType === "umap" && (
+                  <React.Fragment>
+                    {availableOptions.includes("spread") && (
+                      <Form.Field>
+                        <label>UMAP: spread</label>
+                        <input type="number" placeholder="Enter a number" defaultValue={spread} onBlur={({ target }: any) => setSpread(parseInt(target.value) || 0)} />
+                      </Form.Field>
+                    )}
+
+                    {availableOptions.includes("neighbors") && (
+                      <Form.Field>
+                        <label>UMAP: neighbors</label>
+                        <input type="number" placeholder="Enter a number" defaultValue={neighbors} onBlur={({ target }: any) => setNeighbors(parseInt(target.value) || 0)} />
+                      </Form.Field>
+                    )}
+
+                    {availableOptions.includes("minDist") && (
+                      <Form.Field>
+                        <label>UMAP: minDist</label>
+                        <input type="number" placeholder="Enter a number" defaultValue={minDist} onBlur={({ target }: any) => setMinDist(parseInt(target.value) || 0)} />
+                      </Form.Field>
+                    )}
+                  </React.Fragment>
                 )}
 
                 {availableOptions.includes("showDataLabels") && (
@@ -315,6 +368,10 @@ function Editor(props: EditorProps) {
                           perplexity,
                           iterations,
                           timeserieSlice,
+                          projectionType,
+                          spread,
+                          neighbors,
+                          minDist,
                         },
                       ];
                       setSavedCharts(newSavedCharts);

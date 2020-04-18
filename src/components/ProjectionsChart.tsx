@@ -12,13 +12,31 @@ import { getNameByRegionId } from "../utils/metadata";
 import { alignTimeseries } from "../utils/normalizeTimeseries";
 import { ChartOptions } from "./Editor";
 import TSNE from "tsne-js";
+import { UMAP } from "umap-js";
 
 const numberFormatter = d3.format(".2s");
 
 type ProjectionsChartProps = Omit<Props, "options" | "series" | "type"> & ChartOptions;
 
 function ProjectionsChart(props: ProjectionsChartProps, ref: React.Ref<any>) {
-  const { title, metric, showDataLabels, isCumulative, dayInterval, selectedRegions, alignAt = 0, epsilon, iterations, perplexity, timeserieSlice, ...rest } = props;
+  const {
+    title,
+    metric,
+    showDataLabels,
+    isCumulative,
+    dayInterval,
+    selectedRegions,
+    alignAt = 0,
+    epsilon,
+    iterations,
+    perplexity,
+    timeserieSlice,
+    projectionType,
+    spread,
+    minDist,
+    neighbors,
+    ...rest
+  } = props;
 
   const regionsIds = useMemo(() => Object.keys(selectedRegions), [selectedRegions]);
 
@@ -79,33 +97,51 @@ function ProjectionsChart(props: ProjectionsChartProps, ref: React.Ref<any>) {
       return [];
     }
 
-    const model = new TSNE({
-      dim: 2,
-      earlyExaggeration: 4.0,
-      perplexity: perplexity,
-      learningRate: epsilon,
-      nIter: iterations,
-      metric: "euclidean",
-    });
-    model.init({
-      data: tsneData,
-      type: "dense",
-    });
-    model.run();
+    let projectionOutput: any = [];
 
-    const output = model.getOutput();
+    switch (projectionType) {
+      case "tsne":
+        const model = new TSNE({
+          dim: 2,
+          earlyExaggeration: 4.0,
+          perplexity: perplexity,
+          learningRate: epsilon,
+          nIter: iterations,
+          metric: "euclidean",
+        });
+        model.init({
+          data: tsneData,
+          type: "dense",
+        });
+        model.run();
+
+        projectionOutput = model.getOutput();
+        break;
+      case "umap":
+        const umap = new UMAP({
+          nComponents: 2,
+          nNeighbors: neighbors,
+          spread: spread,
+          minDist: minDist,
+        });
+        const embedding = umap.fit(tsneData);
+
+        projectionOutput = embedding;
+        break;
+    }
+
     return validSeries.map((serie, index) => {
       return {
         ...serie,
         data: [
           {
-            x: output[index][0],
-            y: output[index][1],
+            x: projectionOutput[index][0],
+            y: projectionOutput[index][1],
           },
         ],
       };
     });
-  }, [epsilon, iterations, perplexity, sortedSeries, timeserieSlice]);
+  }, [epsilon, iterations, minDist, neighbors, perplexity, projectionType, sortedSeries, spread, timeserieSlice]);
 
   const chartOptions = useMemo(() => {
     return {

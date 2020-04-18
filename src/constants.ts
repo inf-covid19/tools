@@ -9,10 +9,14 @@ export const DEFAULT_OPTIONS = {
   alignAt: 0,
   scale: "log",
   predictionDays: 7,
+  projectionType: "umap",
   epsilon: 100,
   perplexity: 30,
   iterations: 1000,
   timeserieSlice: 20,
+  spread: 1,
+  neighbors: 2,
+  minDist: 0.1,
 };
 
 export const DEFAULT_COUNTRIES = [
