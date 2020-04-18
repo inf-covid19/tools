@@ -5,7 +5,7 @@ import "./Editor.css";
 import RegionSelector from "./RegionSelector";
 
 type ScaleType = "linear" | "log";
-type ChartType = "heatmap" | "bar" | "area" | "line";
+type ChartType = "heatmap" | "bar" | "area" | "line" | "scatter";
 type MetricType = "cases" | "deaths";
 type SelectedCountriesMap = Record<string, boolean>;
 export type ChartOptions = {
@@ -19,6 +19,10 @@ export type ChartOptions = {
   selectedRegions: SelectedCountriesMap;
   scale: ScaleType;
   predictionDays: number;
+  epsilon: number;
+  perplexity: number;
+  iterations: number;
+  timeserieSlice: number;
 };
 
 const SAVED_CHARTS_KEY = "covid19-tools.editor.savedCharts.v2";
@@ -103,6 +107,10 @@ function Editor(props: EditorProps) {
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
   const [predictionDays, setPredictionDays] = useState(defaultsValues.predictionDays);
+  const [epsilon, setEpsilon] = useState(defaultsValues.epsilon);
+  const [perplexity, setPerplexity] = useState(defaultsValues.perplexity);
+  const [iterations, setIterations] = useState(defaultsValues.iterations);
+  const [timeserieSlice, setTimeserieSlice] = useState(defaultsValues.timeserieSlice);
 
   useEffect(() => {
     localStorage.setItem(`${SAVED_CHARTS_KEY}${id ? `.${id}` : ""}`, JSON.stringify(savedCharts));
@@ -150,6 +158,10 @@ function Editor(props: EditorProps) {
                 alignAt,
                 scale,
                 predictionDays,
+                epsilon,
+                perplexity,
+                iterations,
+                timeserieSlice,
               })}
             </Segment>
           </Grid.Column>
@@ -175,6 +187,7 @@ function Editor(props: EditorProps) {
                       { key: "line", text: "Line", value: "line" },
                       { key: "area", text: "Area", value: "area" },
                       { key: "bar", text: "Bar", value: "bar" },
+                      { key: "scatter", text: "Scatter", value: "scatter" },
                     ]}
                   />
                 )}
@@ -246,6 +259,32 @@ function Editor(props: EditorProps) {
                   </Form.Field>
                 )}
 
+                {availableOptions.includes("epsilon") && (
+                  <Form.Field>
+                    <label>t-SNE: epsilon</label>
+                    <input type="number" placeholder="Enter a number" defaultValue={epsilon} onBlur={({ target }: any) => setEpsilon(parseInt(target.value) || 0)} />
+                  </Form.Field>
+                )}
+
+                {availableOptions.includes("perplexity") && (
+                  <Form.Field>
+                    <label>t-SNE: perplexity</label>
+                    <input type="number" placeholder="Enter a number" defaultValue={perplexity} onBlur={({ target }: any) => setPerplexity(parseInt(target.value) || 0)} />
+                  </Form.Field>
+                )}
+                {availableOptions.includes("timeserieSlice") && (
+                  <Form.Field>
+                    <label>t-SNE: region vector size</label>
+                    <input type="number" placeholder="Enter a number" defaultValue={timeserieSlice} onBlur={({ target }: any) => setTimeserieSlice(parseInt(target.value) || 0)} />
+                  </Form.Field>
+                )}
+                {availableOptions.includes("iterations") && (
+                  <Form.Field>
+                    <label>t-SNE: number of iterations</label>
+                    <input type="number" placeholder="Enter a number" defaultValue={iterations} onBlur={({ target }: any) => setIterations(parseInt(target.value) || 0)} />
+                  </Form.Field>
+                )}
+
                 {availableOptions.includes("showDataLabels") && (
                   <Form.Field>
                     <Checkbox toggle checked={showDataLabels} onChange={() => setShowDataLabels(!showDataLabels)} label="Show data labels" />
@@ -272,6 +311,10 @@ function Editor(props: EditorProps) {
                           chartType,
                           scale,
                           predictionDays,
+                          epsilon,
+                          perplexity,
+                          iterations,
+                          timeserieSlice,
                         },
                       ];
                       setSavedCharts(newSavedCharts);

@@ -12,6 +12,7 @@ import { DATA_SOURCES } from "./constants";
 import useLastUpdated from "./hooks/useLastUpdated";
 import useMetadata from "./hooks/useMetadata";
 import PredictionsEditor from "./components/PredictionsEditor";
+import ProjectionsEditor from "./components/ProjectionsEditor";
 
 const LAST_TAB_KEY = "covid19-tools.api.lastTab";
 
@@ -21,7 +22,7 @@ function App() {
   const [tab, setTab] = useState(localStorage.getItem(LAST_TAB_KEY) || "editor");
 
   useEffect(() => {
-    localStorage.setItem(LAST_TAB_KEY, tab)
+    localStorage.setItem(LAST_TAB_KEY, tab);
   }, [tab]);
 
   if (loading) {
@@ -47,13 +48,15 @@ function App() {
           <Menu.Item name="Trend Visualizer" active={tab === "trends"} onClick={() => setTab("trends")} />
           <Menu.Item name="Prediction Visualizer" active={tab === "predictions"} onClick={() => setTab("predictions")}>
             Prediction Visualizer
-            <Label color='teal'>Beta</Label>
+            <Label color="teal">Beta</Label>
           </Menu.Item>
+          <Menu.Item name="Projection Visualizer" active={tab === "projections"} onClick={() => setTab("projections")} />
         </Menu>
 
         {tab === "editor" && <ChartEditor />}
         {tab === "trends" && <TrendEditor />}
         {tab === "predictions" && <PredictionsEditor />}
+        {tab === "projections" && <ProjectionsEditor />}
       </Container>
 
       <footer className="App--footer">
