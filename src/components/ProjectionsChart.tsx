@@ -85,15 +85,15 @@ function ProjectionsChart(props: ProjectionsChartProps, ref: React.Ref<any>) {
 
   const seriesColors = useSeriesColors(sortedSeries);
 
-  const tsneSeries = useMemo(() => {
+  const projectionSeries = useMemo(() => {
     const validSeries = sortedSeries.filter((serie) => serie.data.length >= timeserieSlice);
 
-    const tsneData = validSeries.map((serie) => {
+    const projectionData = validSeries.map((serie) => {
       const data = serie.data.slice(0, timeserieSlice).map((cord) => cord.y);
       return data;
     });
 
-    if (tsneData.length === 0) {
+    if (projectionData.length === 0) {
       return [];
     }
 
@@ -110,7 +110,7 @@ function ProjectionsChart(props: ProjectionsChartProps, ref: React.Ref<any>) {
           metric: "euclidean",
         });
         model.init({
-          data: tsneData,
+          data: projectionData,
           type: "dense",
         });
         model.run();
@@ -118,13 +118,17 @@ function ProjectionsChart(props: ProjectionsChartProps, ref: React.Ref<any>) {
         projectionOutput = model.getOutput();
         break;
       case "umap":
+        if (projectionData.length <= neighbors) {
+          return [];
+        }
+
         const umap = new UMAP({
           nComponents: 2,
           nNeighbors: neighbors,
           spread: spread,
           minDist: minDist,
         });
-        const embedding = umap.fit(tsneData);
+        const embedding = umap.fit(projectionData);
 
         projectionOutput = embedding;
         break;
@@ -146,6 +150,10 @@ function ProjectionsChart(props: ProjectionsChartProps, ref: React.Ref<any>) {
   const chartOptions = useMemo(() => {
     return {
       chart: {
+        zoom: {
+          enabled: true,
+          type: "xy",
+        },
         animations: {
           animateGradually: { enabled: false },
         },
@@ -153,15 +161,16 @@ function ProjectionsChart(props: ProjectionsChartProps, ref: React.Ref<any>) {
           tools: {
             download: true,
             selection: false,
-            zoom: false,
-            zoomin: false,
-            zoomout: false,
             pan: false,
-            reset: false,
+            zoom: true,
+            zoomin: true,
+            zoomout: true,
+            reset: true,
           },
         },
       },
       xaxis: {
+        type: "numeric",
         labels: {
           show: false,
         },
@@ -174,9 +183,10 @@ function ProjectionsChart(props: ProjectionsChartProps, ref: React.Ref<any>) {
       colors: seriesColors,
       tooltip: {
         y: {
-          formatter: (value: number) => value,
+          formatter: (value: number) => "",
         },
         x: {
+          show: false,
           formatter: (value: number) => value,
         },
       },
@@ -197,6 +207,11 @@ function ProjectionsChart(props: ProjectionsChartProps, ref: React.Ref<any>) {
         style: {
           fontSize: "14px",
           fontFamily: "Lato, 'Helvetica Neue', Arial, Helvetica, sans-serif",
+        },
+      },
+      markers: {
+        hover: {
+          sizeOffset: 5,
         },
       },
     };
@@ -220,7 +235,7 @@ function ProjectionsChart(props: ProjectionsChartProps, ref: React.Ref<any>) {
     );
   }
 
-  return <ReactApexChart key="scatter" ref={ref} options={chartOptions} series={tsneSeries} type="scatter" {...rest} />;
+  return <ReactApexChart key="scatter" ref={ref} options={chartOptions} series={projectionSeries} type="scatter" {...rest} />;
 }
 
 export default React.forwardRef(ProjectionsChart);

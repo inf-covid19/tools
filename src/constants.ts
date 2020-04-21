@@ -14,7 +14,7 @@ export const DEFAULT_OPTIONS = {
   perplexity: 30,
   iterations: 1000,
   timeserieSlice: 20,
-  spread: 1,
+  spread: 5,
   neighbors: 2,
   minDist: 0.1,
 };
