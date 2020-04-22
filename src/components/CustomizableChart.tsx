@@ -20,7 +20,7 @@ const numberFormatter = d3.format(".2s");
 type CustomizableChartProps = Omit<Props, "options" | "series" | "type"> & ChartOptions;
 
 function CustomizableChart(props: CustomizableChartProps, ref: React.Ref<any>) {
-  const { chartType = "heatmap", title, metric, showDataLabels, isCumulative, dayInterval, selectedRegions, alignAt = 0, ...rest } = props;
+  const { chartType = "heatmap", title, metric, showDataLabels, isCumulative, dayInterval, selectedRegions, alignAt = 0, timeserieSlice, ...rest } = props;
 
   const regionsIds = useMemo(() => Object.keys(selectedRegions), [selectedRegions]);
 
@@ -62,10 +62,15 @@ function CustomizableChart(props: CustomizableChartProps, ref: React.Ref<any>) {
 
   const sortedSeries = useMemo(() => {
     return sortBy(
-      series.filter((s) => !!selectedRegions[s.key]),
+      series
+        .filter((s) => !!selectedRegions[s.key])
+        .map((s) => ({
+          ...s,
+          data: s.data.slice(0, timeserieSlice),
+        })),
       (s) => get(s.data, [s.data.length - 1, "y"], 0)
     );
-  }, [series, selectedRegions]);
+  }, [timeserieSlice, series, selectedRegions]);
 
   const seriesColors = useSeriesColors(sortedSeries);
 

@@ -7,7 +7,7 @@ import { keyBy, sortBy, isEmpty, groupBy, uniq } from "lodash";
 import get from "lodash/get";
 import { PLACE_TYPE_LABEL_MAPPING } from "../constants";
 
-import './RegionSelector.css';
+import "./RegionSelector.css";
 
 type Props = {
   value: Record<string, boolean>;
@@ -138,7 +138,7 @@ export default function RegionSelector({ value, onChange }: Props) {
           marginBottom: "1rem",
         }}
       >
-        <div style={{marginRight: '2rem'}}>
+        <div style={{ marginRight: "2rem" }}>
           <Header as="h4">
             Select regions from{" "}
             <Dropdown style={{ zIndex: 13 }} header="Adjust scope" inline options={fromOptions} value={fromValue} onChange={(_: any, { value }: any) => setFromValue(value)} />
@@ -149,7 +149,7 @@ export default function RegionSelector({ value, onChange }: Props) {
           <Header as="h4" color="grey">
             <Dropdown style={{ zIndex: 13 }} text="Select region group" inline direction="left" scrolling>
               <Dropdown.Menu>
-                {Object.entries(groups).flatMap(([country, regions]) => {
+                {Object.entries(groups).flatMap(([country, regions], index) => {
                   if (isEmpty(regions)) {
                     return null;
                   }
@@ -157,20 +157,19 @@ export default function RegionSelector({ value, onChange }: Props) {
                   const countryName = country.replace(/_/g, " ");
 
                   return (
-                    <Fragment>
+                    <Fragment key={index}>
                       <Dropdown.Header>
                         <Flag name={get(metadata, [country, "geoId"], "").toLowerCase()} /> {countryName}
                       </Dropdown.Header>
-                      {Object.entries(regions).map(([group, items]) => {
+                      {Object.entries(regions).map(([group, items], index) => {
                         const [groupName, type] = group.split(":", 2);
 
                         return (
-                          <Dropdown.Item
-                            className="RegionSelector--group--item"
-                             onClick={() => setSelected(prev => uniq(prev.concat(items.map((i) => i.value))))}
-                          >
+                          <Dropdown.Item key={index} className="RegionSelector--group--item" onClick={() => setSelected((prev) => uniq(prev.concat(items.map((i) => i.value))))}>
                             {`${PLACE_TYPE_LABEL_MAPPING[type]} from ${groupName.replace(/_/g, " ")}`}
-                            <span className="RegionSelector--group--item--only" onClick={() => setSelected(items.map((i) => i.value))}>only</span>
+                            <span className="RegionSelector--group--item--only" onClick={() => setSelected(items.map((i) => i.value))}>
+                              only
+                            </span>
                           </Dropdown.Item>
                         );
                       })}

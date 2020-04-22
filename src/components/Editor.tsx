@@ -24,7 +24,7 @@ export type ChartOptions = {
   epsilon: number;
   perplexity: number;
   iterations: number;
-  timeserieSlice: number;
+  timeserieSlice?: number;
   spread: number;
   neighbors: number;
   minDist: number;

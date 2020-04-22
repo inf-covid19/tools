@@ -1,5 +1,4 @@
 import * as d3 from "d3";
-import { startOfDay, subDays, format } from "date-fns";
 import get from "lodash/get";
 import sortBy from "lodash/sortBy";
 import React, { useMemo } from "react";
@@ -9,13 +8,13 @@ import useMetadata from "../hooks/useMetadata";
 import useRegionData from "../hooks/useRegionData";
 import useSeriesColors from "../hooks/useSeriesColors";
 import { getNameByRegionId } from "../utils/metadata";
-import { alignTimeseries } from "../utils/normalizeTimeseries";
 import { ChartOptions } from "./Editor";
 import TSNE from "tsne-js";
 import { UMAP } from "umap-js";
 import last from "lodash/last";
 import first from "lodash/first";
 import { median } from "../utils/math";
+import { format } from "date-fns";
 
 const numberFormatter = d3.format(".2s");
 
@@ -27,9 +26,8 @@ function ProjectionsChart(props: ProjectionsChartProps, ref: React.Ref<any>) {
     metric,
     showDataLabels,
     isCumulative,
-    dayInterval,
     selectedRegions,
-    alignAt = 0,
+    alignAt,
     epsilon,
     iterations,
     perplexity,
@@ -38,6 +36,7 @@ function ProjectionsChart(props: ProjectionsChartProps, ref: React.Ref<any>) {
     spread,
     minDist,
     neighbors,
+    chartType,
     ...rest
   } = props;
 
@@ -51,7 +50,6 @@ function ProjectionsChart(props: ProjectionsChartProps, ref: React.Ref<any>) {
       return [];
     }
 
-    const earliestDate = subDays(startOfDay(new Date()), dayInterval);
     return Object.entries(data).flatMap(([region, regionData]) => {
       const name = getNameByRegionId(metadata, region);
       const regionDataWithValues = regionData.filter((v) => v[metric] > 0);
@@ -65,25 +63,6 @@ function ProjectionsChart(props: ProjectionsChartProps, ref: React.Ref<any>) {
       const total = last(regionDataWithValues)?.[metric];
       const avg = median(regionDataWithValues.map((v) => v[`${metric}_daily` as "cases_daily" | "deaths_daily"]));
 
-      if (alignAt > 0) {
-        return [
-          {
-            name,
-            key: region,
-            startDate,
-            endDate,
-            total,
-            avg,
-            data: regionData
-              .filter((v) => v[metric] >= alignAt)
-              .map((v, index) => ({
-                x: index + 1,
-                y: isCumulative ? v[metric] : v[`${metric}_daily` as "cases_daily" | "deaths_daily"],
-              })),
-          },
-        ];
-      }
-
       return [
         {
           name,
@@ -92,14 +71,16 @@ function ProjectionsChart(props: ProjectionsChartProps, ref: React.Ref<any>) {
           endDate,
           total,
           avg,
-          data: alignTimeseries(regionData, earliestDate).map((row) => ({
-            x: row.date.getTime(),
-            y: row[`${metric}${isCumulative ? "" : "_daily"}` as "cases" | "deaths" | "cases_daily" | "deaths_daily"],
-          })),
+          data: regionData
+            .filter((v) => v[metric] >= alignAt)
+            .map((v, index) => ({
+              x: index + 1,
+              y: isCumulative ? v[metric] : v[`${metric}_daily` as "cases_daily" | "deaths_daily"],
+            })),
         },
       ];
     });
-  }, [loading, data, dayInterval, alignAt, metric, isCumulative, metadata]);
+  }, [loading, data, metadata, metric, alignAt, isCumulative]);
 
   const sortedSeries = useMemo(() => {
     return sortBy(
@@ -109,7 +90,7 @@ function ProjectionsChart(props: ProjectionsChartProps, ref: React.Ref<any>) {
   }, [series, selectedRegions]);
 
   const projectionSeries = useMemo(() => {
-    const validSeries = sortedSeries.filter((serie) => serie.data.length >= timeserieSlice);
+    const validSeries = sortedSeries.filter((serie) => serie.data.length >= (timeserieSlice || 0));
 
     const projectionData = validSeries.map((serie) => {
       const data = serie.data.slice(0, timeserieSlice).map((cord) => cord.y);
@@ -220,8 +201,8 @@ function ProjectionsChart(props: ProjectionsChartProps, ref: React.Ref<any>) {
         },
         x: {
           formatter: (value: number, point: any) => {
-            const seriesData = point?.w?.config?.series[point.seriesIndex];
-            return `From ${format(new Date(seriesData.startDate), "PPP")} to ${format(new Date(seriesData.endDate), "PPP")}`;
+            const seriesData = projectionSeries[point.seriesIndex];
+            return `From ${format(new Date(seriesData.startDate || ""), "PPP")} to ${format(new Date(seriesData.endDate || ""), "PPP")}`;
           },
         },
       },
@@ -265,7 +246,7 @@ function ProjectionsChart(props: ProjectionsChartProps, ref: React.Ref<any>) {
         },
       },
     };
-  }, [title, metric, isCumulative, showDataLabels, seriesColors]);
+  }, [seriesColors, showDataLabels, title, isCumulative, metric, projectionSeries]);
 
   if (loading) {
     return (

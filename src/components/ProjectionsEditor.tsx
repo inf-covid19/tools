@@ -10,6 +10,7 @@ export default function ProjectionsEditor() {
       availableOptions={[
         "epsilon",
         "projectionType",
+        "chartType",
         "spread",
         "neighbors",
         "minDist",
@@ -26,7 +27,7 @@ export default function ProjectionsEditor() {
         return (
           <Fragment>
             <ProjectionsChart ref={ref} {...options} height={350} />
-            <CustomizableChart ref={ref} {...options} height={350} chartType="line" />
+            <CustomizableChart ref={ref} {...{ ...options, alignAt: options.alignAt || 1 }} height={Math.max(600, 15 * Object.keys(options.selectedRegions).length)} />
           </Fragment>
         );
       }}
