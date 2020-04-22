@@ -1,6 +1,7 @@
 import React, { Fragment } from "react";
 import Editor from "./Editor";
 import ProjectionsChart from "./ProjectionsChart";
+import CustomizableChart from "./CustomizableChart";
 
 export default function ProjectionsEditor() {
   return (
@@ -25,6 +26,7 @@ export default function ProjectionsEditor() {
         return (
           <Fragment>
             <ProjectionsChart ref={ref} {...options} height={350} />
+            <CustomizableChart ref={ref} {...options} height={350} chartType="line" />
           </Fragment>
         );
       }}

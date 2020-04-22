@@ -108,8 +108,6 @@ function ProjectionsChart(props: ProjectionsChartProps, ref: React.Ref<any>) {
     );
   }, [series, selectedRegions]);
 
-  const seriesColors = useSeriesColors(sortedSeries);
-
   const projectionSeries = useMemo(() => {
     const validSeries = sortedSeries.filter((serie) => serie.data.length >= timeserieSlice);
 
@@ -173,6 +171,8 @@ function ProjectionsChart(props: ProjectionsChartProps, ref: React.Ref<any>) {
       };
     });
   }, [epsilon, iterations, minDist, neighbors, perplexity, projectionType, sortedSeries, spread, timeserieSlice]);
+
+  const seriesColors = useSeriesColors(projectionSeries);
 
   const chartOptions = useMemo(() => {
     return {
@@ -252,6 +252,7 @@ function ProjectionsChart(props: ProjectionsChartProps, ref: React.Ref<any>) {
         },
       },
       grid: {
+        strokeDashArray: 7,
         xaxis: {
           lines: {
             show: true,
@@ -284,7 +285,7 @@ function ProjectionsChart(props: ProjectionsChartProps, ref: React.Ref<any>) {
     );
   }
 
-  return <ReactApexChart key="scatter" ref={ref} options={chartOptions} series={projectionSeries} type="scatter" {...rest} />;
+  return <ReactApexChart ref={ref} options={chartOptions} series={projectionSeries} type="scatter" {...rest} />;
 }
 
 export default React.forwardRef(ProjectionsChart);
