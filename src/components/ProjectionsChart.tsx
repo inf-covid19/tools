@@ -1,5 +1,5 @@
 import * as d3 from "d3";
-import { startOfDay, subDays } from "date-fns";
+import { startOfDay, subDays, format } from "date-fns";
 import get from "lodash/get";
 import sortBy from "lodash/sortBy";
 import React, { useMemo } from "react";
@@ -13,6 +13,9 @@ import { alignTimeseries } from "../utils/normalizeTimeseries";
 import { ChartOptions } from "./Editor";
 import TSNE from "tsne-js";
 import { UMAP } from "umap-js";
+import last from "lodash/last";
+import first from "lodash/first";
+import { median } from "../utils/math";
 
 const numberFormatter = d3.format(".2s");
 
@@ -49,30 +52,52 @@ function ProjectionsChart(props: ProjectionsChartProps, ref: React.Ref<any>) {
     }
 
     const earliestDate = subDays(startOfDay(new Date()), dayInterval);
-    return Object.entries(data).map(([region, regionData]) => {
+    return Object.entries(data).flatMap(([region, regionData]) => {
       const name = getNameByRegionId(metadata, region);
+      const regionDataWithValues = regionData.filter((v) => v[metric] > 0);
 
-      if (alignAt > 0) {
-        return {
-          name,
-          key: region,
-          data: regionData
-            .filter((v) => v[metric] >= alignAt)
-            .map((v, index) => ({
-              x: index + 1,
-              y: isCumulative ? v[metric] : v[`${metric}_daily` as "cases_daily" | "deaths_daily"],
-            })),
-        };
+      if (regionDataWithValues.length === 0) {
+        return [];
       }
 
-      return {
-        name,
-        key: region,
-        data: alignTimeseries(regionData, earliestDate).map((row) => ({
-          x: row.date.getTime(),
-          y: row[`${metric}${isCumulative ? "" : "_daily"}` as "cases" | "deaths" | "cases_daily" | "deaths_daily"],
-        })),
-      };
+      const startDate = first(regionDataWithValues)?.date;
+      const endDate = last(regionDataWithValues)?.date;
+      const total = last(regionDataWithValues)?.[metric];
+      const avg = median(regionDataWithValues.map((v) => v[`${metric}_daily` as "cases_daily" | "deaths_daily"]));
+
+      if (alignAt > 0) {
+        return [
+          {
+            name,
+            key: region,
+            startDate,
+            endDate,
+            total,
+            avg,
+            data: regionData
+              .filter((v) => v[metric] >= alignAt)
+              .map((v, index) => ({
+                x: index + 1,
+                y: isCumulative ? v[metric] : v[`${metric}_daily` as "cases_daily" | "deaths_daily"],
+              })),
+          },
+        ];
+      }
+
+      return [
+        {
+          name,
+          key: region,
+          startDate,
+          endDate,
+          total,
+          avg,
+          data: alignTimeseries(regionData, earliestDate).map((row) => ({
+            x: row.date.getTime(),
+            y: row[`${metric}${isCumulative ? "" : "_daily"}` as "cases" | "deaths" | "cases_daily" | "deaths_daily"],
+          })),
+        },
+      ];
     });
   }, [loading, data, dayInterval, alignAt, metric, isCumulative, metadata]);
 
@@ -100,7 +125,7 @@ function ProjectionsChart(props: ProjectionsChartProps, ref: React.Ref<any>) {
     let projectionOutput: any = [];
 
     switch (projectionType) {
-      case "tsne":
+      case "tsne": {
         const model = new TSNE({
           dim: 2,
           earlyExaggeration: 4.0,
@@ -117,7 +142,8 @@ function ProjectionsChart(props: ProjectionsChartProps, ref: React.Ref<any>) {
 
         projectionOutput = model.getOutput();
         break;
-      case "umap":
+      }
+      case "umap": {
         if (projectionData.length <= neighbors) {
           return [];
         }
@@ -132,6 +158,7 @@ function ProjectionsChart(props: ProjectionsChartProps, ref: React.Ref<any>) {
 
         projectionOutput = embedding;
         break;
+      }
     }
 
     return validSeries.map((serie, index) => {
@@ -174,6 +201,9 @@ function ProjectionsChart(props: ProjectionsChartProps, ref: React.Ref<any>) {
         labels: {
           show: false,
         },
+        tooltip: {
+          enabled: false,
+        },
       },
       yaxis: {
         labels: {
@@ -183,11 +213,16 @@ function ProjectionsChart(props: ProjectionsChartProps, ref: React.Ref<any>) {
       colors: seriesColors,
       tooltip: {
         y: {
-          formatter: (value: number) => "",
+          formatter: (value: number, point: any) => {
+            const seriesData = point?.w?.config?.series[point.seriesIndex];
+            return `${seriesData.total} ${metric}`;
+          },
         },
         x: {
-          show: false,
-          formatter: (value: number) => value,
+          formatter: (value: number, point: any) => {
+            const seriesData = point?.w?.config?.series[point.seriesIndex];
+            return `From ${format(new Date(seriesData.startDate), "PPP")} to ${format(new Date(seriesData.endDate), "PPP")}`;
+          },
         },
       },
       dataLabels: {
@@ -210,8 +245,22 @@ function ProjectionsChart(props: ProjectionsChartProps, ref: React.Ref<any>) {
         },
       },
       markers: {
+        strokeWidth: 1,
+        strokeColors: "#909090",
         hover: {
           sizeOffset: 5,
+        },
+      },
+      grid: {
+        xaxis: {
+          lines: {
+            show: true,
+          },
+        },
+        yaxis: {
+          lines: {
+            show: true,
+          },
         },
       },
     };

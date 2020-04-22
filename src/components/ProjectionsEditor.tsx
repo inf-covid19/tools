@@ -1,4 +1,4 @@
-import React from "react";
+import React, { Fragment } from "react";
 import Editor from "./Editor";
 import ProjectionsChart from "./ProjectionsChart";
 
@@ -22,7 +22,11 @@ export default function ProjectionsEditor() {
         "selectedRegions",
       ]}
       render={(ref, options) => {
-        return <ProjectionsChart ref={ref} {...options} height={Math.max(600, 15 * Object.keys(options.selectedRegions).length)} />;
+        return (
+          <Fragment>
+            <ProjectionsChart ref={ref} {...options} height={350} />
+          </Fragment>
+        );
       }}
     />
   );
