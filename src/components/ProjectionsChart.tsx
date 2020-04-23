@@ -1,20 +1,19 @@
 import * as d3 from "d3";
-import get from "lodash/get";
+import { format } from "date-fns";
+import first from "lodash/first";
+import last from "lodash/last";
 import sortBy from "lodash/sortBy";
 import React, { useMemo } from "react";
 import ReactApexChart, { Props } from "react-apexcharts";
 import { Loader } from "semantic-ui-react";
+import TSNE from "tsne-js";
+import { UMAP } from "umap-js";
 import useMetadata from "../hooks/useMetadata";
 import useRegionData from "../hooks/useRegionData";
 import useSeriesColors from "../hooks/useSeriesColors";
+import { median } from "../utils/math";
 import { getNameByRegionId } from "../utils/metadata";
 import { ChartOptions } from "./Editor";
-import TSNE from "tsne-js";
-import { UMAP } from "umap-js";
-import last from "lodash/last";
-import first from "lodash/first";
-import { median } from "../utils/math";
-import { format } from "date-fns";
 
 const numberFormatter = d3.format(".2s");
 
@@ -83,11 +82,8 @@ function ProjectionsChart(props: ProjectionsChartProps, ref: React.Ref<any>) {
   }, [loading, data, metadata, metric, alignAt, isCumulative]);
 
   const sortedSeries = useMemo(() => {
-    return sortBy(
-      series.filter((s) => !!selectedRegions[s.key]),
-      (s) => get(s.data, [s.data.length - 1, "y"])
-    );
-  }, [series, selectedRegions]);
+    return sortBy(series, "name");
+  }, [series]);
 
   const projectionSeries = useMemo(() => {
     const validSeries = sortedSeries.filter((serie) => serie.data.length >= (timeserieSlice || 0));
@@ -194,15 +190,28 @@ function ProjectionsChart(props: ProjectionsChartProps, ref: React.Ref<any>) {
       colors: seriesColors,
       tooltip: {
         y: {
-          formatter: (value: number, point: any) => {
+          formatter: (_: number, point: any) => {
             const seriesData = point?.w?.config?.series[point.seriesIndex];
-            return `${seriesData.total} ${metric}`;
+            return seriesData?.total >= 0 ? `${seriesData.total} ${metric}` : "-";
           },
         },
         x: {
-          formatter: (value: number, point: any) => {
+          formatter: (_: number, point: any) => {
             const seriesData = point?.w?.config?.series[point.seriesIndex];
-            return `From ${format(new Date(seriesData.startDate || ""), "PPP")} to ${format(new Date(seriesData.endDate || ""), "PPP")}`;
+
+            if (seriesData?.startDate && seriesData?.endDate) {
+              return `From ${format(new Date(seriesData.startDate), "PPP")} to ${format(new Date(seriesData.endDate), "PPP")}`;
+            }
+
+            if (seriesData?.startDate) {
+              return `Since ${format(new Date(seriesData.startDate), "PPP")}`;
+            }
+
+            if (seriesData?.endDate) {
+              return `Until ${format(new Date(seriesData.endDate), "PPP")}`;
+            }
+
+            return `No eligible data`;
           },
         },
       },

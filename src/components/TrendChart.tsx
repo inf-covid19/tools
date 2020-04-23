@@ -1,6 +1,6 @@
 import * as d3 from "d3";
 import { format } from "date-fns";
-import { first, last } from "lodash";
+import { first, last, sortBy } from "lodash";
 import get from "lodash/get";
 import React, { useMemo } from "react";
 import ReactApexChart, { Props } from "react-apexcharts";
@@ -56,17 +56,13 @@ function TrendChart(props: TrendChartProps, ref: React.Ref<any>) {
     return series;
   }, [data, metadata, metric, alignAt]);
 
-  const filteredSeries = useMemo(() => {
-    return series.filter(({ key }) => !!selectedRegions[key]);
-  }, [series, selectedRegions]);
-
   const [xScaler, yScaler, scaledSeries] = useMemo(() => {
     let minX = Number.POSITIVE_INFINITY;
     let minY = Number.POSITIVE_INFINITY;
     let maxX = Number.NEGATIVE_INFINITY;
     let maxY = Number.NEGATIVE_INFINITY;
 
-    filteredSeries.forEach(({ data }) => {
+    series.forEach(({ data }) => {
       data.forEach(({ x, y }) => {
         minX = Math.min(x, minX);
         maxX = Math.max(x, maxX);
@@ -84,7 +80,7 @@ function TrendChart(props: TrendChartProps, ref: React.Ref<any>) {
         ? d3.scaleLog().domain([Math.max(0.01, Math.pow(10, Math.floor(Math.log10(minY)))), Math.pow(10, Math.ceil(Math.log10(maxY)))])
         : d3.scaleLinear().domain([minY, maxY]);
 
-    const scaledSeries = filteredSeries.map((series) => ({
+    const scaledSeries = series.map((series) => ({
       ...series,
       data: series.data.map((item) => ({
         ...item,
@@ -94,9 +90,13 @@ function TrendChart(props: TrendChartProps, ref: React.Ref<any>) {
     }));
 
     return [xScaler, yScaler, scaledSeries] as const;
-  }, [filteredSeries, scale]);
+  }, [series, scale]);
 
-  const seriesColors = useSeriesColors(scaledSeries);
+  const sortedSeries = useMemo(() => {
+    return sortBy(scaledSeries, "name");
+  }, [scaledSeries]);
+
+  const seriesColors = useSeriesColors(sortedSeries);
 
   const chartOptions = useMemo(() => {
     const xTicks = xScaler.ticks();
@@ -199,7 +199,7 @@ function TrendChart(props: TrendChartProps, ref: React.Ref<any>) {
     );
   }
 
-  return <ReactApexChart ref={ref} options={chartOptions} series={scaledSeries} type="line" {...rest} />;
+  return <ReactApexChart ref={ref} options={chartOptions} series={sortedSeries} type="line" {...rest} />;
 }
 
 export default React.forwardRef(TrendChart);

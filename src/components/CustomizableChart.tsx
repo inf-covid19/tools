@@ -62,15 +62,15 @@ function CustomizableChart(props: CustomizableChartProps, ref: React.Ref<any>) {
 
   const sortedSeries = useMemo(() => {
     return sortBy(
-      series
-        .filter((s) => !!selectedRegions[s.key])
-        .map((s) => ({
-          ...s,
-          data: s.data.slice(0, timeserieSlice),
-        })),
-      (s) => get(s.data, [s.data.length - 1, "y"], 0)
+      series.map((s) => ({
+        ...s,
+        data: s.data.slice(0, timeserieSlice),
+      })),
+      chartType === "heatmap" ? (s) => get(s.data, [s.data.length - 1, "y"], 0) : "name"
     );
-  }, [timeserieSlice, series, selectedRegions]);
+  }, [series, chartType, timeserieSlice]);
+
+  console.log("---Sorted---", series.map(s => s.name), sortedSeries.map(s => s.name))
 
   const seriesColors = useSeriesColors(sortedSeries);
 
