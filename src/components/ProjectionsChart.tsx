@@ -14,6 +14,7 @@ import useSeriesColors from "../hooks/useSeriesColors";
 import { median } from "../utils/math";
 import { getNameByRegionId } from "../utils/metadata";
 import { ChartOptions } from "./Editor";
+import { getSammonStress } from "../utils/sammonStress";
 
 const numberFormatter = d3.format(".2s");
 
@@ -85,7 +86,7 @@ function ProjectionsChart(props: ProjectionsChartProps, ref: React.Ref<any>) {
     return sortBy(series, "name");
   }, [series]);
 
-  const projectionSeries = useMemo(() => {
+  const [projectionSeries, sammonStress] = useMemo(() => {
     const validSeries = sortedSeries.filter((serie) => serie.data.length >= (timeserieSlice || 0));
 
     const projectionData = validSeries.map((serie) => {
@@ -94,7 +95,7 @@ function ProjectionsChart(props: ProjectionsChartProps, ref: React.Ref<any>) {
     });
 
     if (projectionData.length === 0) {
-      return [];
+      return [[], 0];
     }
 
     let projectionOutput: any = [];
@@ -113,14 +114,14 @@ function ProjectionsChart(props: ProjectionsChartProps, ref: React.Ref<any>) {
           data: projectionData,
           type: "dense",
         });
-        model.run();
+        console.log("run", model.run());
 
         projectionOutput = model.getOutput();
         break;
       }
       case "umap": {
         if (projectionData.length <= neighbors) {
-          return [];
+          return [[], 0];
         }
 
         const umap = new UMAP({
@@ -136,17 +137,20 @@ function ProjectionsChart(props: ProjectionsChartProps, ref: React.Ref<any>) {
       }
     }
 
-    return validSeries.map((serie, index) => {
-      return {
-        ...serie,
-        data: [
-          {
-            x: projectionOutput[index][0],
-            y: projectionOutput[index][1],
-          },
-        ],
-      };
-    });
+    return [
+      validSeries.map((serie, index) => {
+        return {
+          ...serie,
+          data: [
+            {
+              x: projectionOutput[index][0],
+              y: projectionOutput[index][1],
+            },
+          ],
+        };
+      }),
+      getSammonStress(projectionData, projectionOutput),
+    ];
   }, [epsilon, iterations, minDist, neighbors, perplexity, projectionType, sortedSeries, spread, timeserieSlice]);
 
   const seriesColors = useSeriesColors(projectionSeries);
@@ -227,7 +231,7 @@ function ProjectionsChart(props: ProjectionsChartProps, ref: React.Ref<any>) {
         },
       },
       subtitle: {
-        text: `${isCumulative ? "Total" : "Daily"} number of ${metric}`,
+        text: `${isCumulative ? "Total" : "Daily"} number of ${metric}. Sammon’s stress = ${sammonStress}`,
         floating: true,
         style: {
           fontSize: "14px",
@@ -255,7 +259,7 @@ function ProjectionsChart(props: ProjectionsChartProps, ref: React.Ref<any>) {
         },
       },
     };
-  }, [seriesColors, showDataLabels, title, isCumulative, metric]);
+  }, [seriesColors, showDataLabels, title, isCumulative, metric, sammonStress]);
 
   if (loading) {
     return (
