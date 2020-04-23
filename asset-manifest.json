@@ -1,25 +1,25 @@
 {
   "files": {
-    "main.css": "https://inf-covid19.github.io/tools/static/css/main.e4f01386.chunk.css",
-    "main.js": "https://inf-covid19.github.io/tools/static/js/main.43c34d44.chunk.js",
-    "main.js.map": "https://inf-covid19.github.io/tools/static/js/main.43c34d44.chunk.js.map",
+    "main.css": "https://inf-covid19.github.io/tools/static/css/main.81c640ff.chunk.css",
+    "main.js": "https://inf-covid19.github.io/tools/static/js/main.5db08bc3.chunk.js",
+    "main.js.map": "https://inf-covid19.github.io/tools/static/js/main.5db08bc3.chunk.js.map",
     "runtime-main.js": "https://inf-covid19.github.io/tools/static/js/runtime-main.6ae7fe7f.js",
     "runtime-main.js.map": "https://inf-covid19.github.io/tools/static/js/runtime-main.6ae7fe7f.js.map",
-    "static/js/2.dcdc7f49.chunk.js": "https://inf-covid19.github.io/tools/static/js/2.dcdc7f49.chunk.js",
-    "static/js/2.dcdc7f49.chunk.js.map": "https://inf-covid19.github.io/tools/static/js/2.dcdc7f49.chunk.js.map",
+    "static/js/2.1f62ea94.chunk.js": "https://inf-covid19.github.io/tools/static/js/2.1f62ea94.chunk.js",
+    "static/js/2.1f62ea94.chunk.js.map": "https://inf-covid19.github.io/tools/static/js/2.1f62ea94.chunk.js.map",
     "index.html": "https://inf-covid19.github.io/tools/index.html",
-    "precache-manifest.45213ee7e9f3e637ee5d678c23c94f93.js": "https://inf-covid19.github.io/tools/precache-manifest.45213ee7e9f3e637ee5d678c23c94f93.js",
+    "precache-manifest.091adad33451c0f999d980c9e83e2868.js": "https://inf-covid19.github.io/tools/precache-manifest.091adad33451c0f999d980c9e83e2868.js",
     "service-worker.js": "https://inf-covid19.github.io/tools/service-worker.js",
-    "static/css/main.e4f01386.chunk.css.map": "https://inf-covid19.github.io/tools/static/css/main.e4f01386.chunk.css.map",
-    "static/js/2.dcdc7f49.chunk.js.LICENSE.txt": "https://inf-covid19.github.io/tools/static/js/2.dcdc7f49.chunk.js.LICENSE.txt",
+    "static/css/main.81c640ff.chunk.css.map": "https://inf-covid19.github.io/tools/static/css/main.81c640ff.chunk.css.map",
+    "static/js/2.1f62ea94.chunk.js.LICENSE.txt": "https://inf-covid19.github.io/tools/static/js/2.1f62ea94.chunk.js.LICENSE.txt",
     "static/media/logo.0fb68d66.svg": "https://inf-covid19.github.io/tools/static/media/logo.0fb68d66.svg",
     "static/media/ufrgs-inf.png": "https://inf-covid19.github.io/tools/static/media/ufrgs-inf.1abd8f9e.png",
     "static/media/ufrgs.png": "https://inf-covid19.github.io/tools/static/media/ufrgs.6440c8a1.png"
   },
   "entrypoints": [
     "static/js/runtime-main.6ae7fe7f.js",
-    "static/js/2.dcdc7f49.chunk.js",
-    "static/css/main.e4f01386.chunk.css",
-    "static/js/main.43c34d44.chunk.js"
+    "static/js/2.1f62ea94.chunk.js",
+    "static/css/main.81c640ff.chunk.css",
+    "static/js/main.5db08bc3.chunk.js"
   ]
 }
