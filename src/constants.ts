@@ -9,6 +9,14 @@ export const DEFAULT_OPTIONS = {
   alignAt: 0,
   scale: "log",
   predictionDays: 7,
+  projectionType: "umap",
+  epsilon: 100,
+  perplexity: 30,
+  iterations: 1000,
+  timeserieSlice: 20,
+  spread: 5,
+  neighbors: 2,
+  minDist: 0.1,
 };
 
 export const DEFAULT_COUNTRIES = [
@@ -58,8 +66,8 @@ export const PLACE_TYPE_LABEL_MAPPING: Record<string, string> = {
   utla: "UTLAs",
   health_board: "Health Boards",
   lgd: "LGDs",
-  unknown: 'Other regions',
-  region: 'Regions',
-  departamento: 'Departments',
-  provincia: 'Provinces',
+  unknown: "Other regions",
+  region: "Regions",
+  departamento: "Departments",
+  provincia: "Provinces",
 };
