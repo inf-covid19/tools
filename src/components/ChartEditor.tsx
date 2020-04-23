@@ -1,13 +1,16 @@
 import React from "react";
-import Editor from "./Editor";
+import Editor, { ChartOptions } from "./Editor";
 import CustomizableChart from "./CustomizableChart";
+import pick from 'lodash/pick';
+
+const AVAILABLE_OPTIONS: Array<keyof ChartOptions> = ["chartType", "metric", "isCumulative", "alignAt", "showDataLabels", "title", "dayInterval", "selectedRegions"]
 
 export default function ChartEditor() {
   return (
     <Editor
-      availableOptions={["chartType", "metric", "isCumulative", "alignAt", "showDataLabels", "title", "dayInterval", "selectedRegions"]}
+      availableOptions={AVAILABLE_OPTIONS}
       render={(ref, options) => {
-        return <CustomizableChart ref={ref} {...options} height={Math.max(600, 15 * Object.keys(options.selectedRegions).length)} />;
+        return <CustomizableChart ref={ref} {...pick(options, AVAILABLE_OPTIONS)} height={Math.max(600, (options.chartType === 'heatmap' ? 20 : 0) * Object.keys(options.selectedRegions).length)} />;
       }}
     />
   );

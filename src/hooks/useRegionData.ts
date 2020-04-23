@@ -25,13 +25,24 @@ export default function useRegionData(regionIds: string[]) {
     setError(null);
     setData(null);
 
-    Promise.all(regionIds.map((id) => getRegionData(getFileByRegionId(metadata, id))))
+    const regionFileMapped: Record<string, string[]> = {};
+    regionIds.forEach((id) => {
+      const regionFile = getFileByRegionId(metadata, id);
+      regionFileMapped[regionFile] = [...(regionFileMapped[regionFile] || []), id];
+    });
+
+    const regionFiles = Object.keys(regionFileMapped);
+
+    Promise.all(regionFiles.map((file) => getRegionData(file)))
       .then((results) => {
         if (cancelled) return;
 
         const data: Record<string, TimeseriesRow[]> = {};
         results.forEach((res, index) => {
-          data[regionIds[index]] = normalizeTimeseries(regionIds[index], res, getByRegionId(metadata, regionIds[index]));
+          const ids = regionFileMapped[regionFiles[index]];
+          ids.forEach((regionId) => {
+            data[regionId] = normalizeTimeseries(regionId, res, getByRegionId(metadata, regionId));
+          });
         });
         setData(data);
       })

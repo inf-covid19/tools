@@ -1,18 +1,19 @@
 import * as d3 from "d3";
-import { startOfDay, subDays } from "date-fns";
-import get from "lodash/get";
+import { format } from "date-fns";
+import first from "lodash/first";
+import last from "lodash/last";
 import sortBy from "lodash/sortBy";
 import React, { useMemo } from "react";
 import ReactApexChart, { Props } from "react-apexcharts";
 import { Loader } from "semantic-ui-react";
+import TSNE from "tsne-js";
+import { UMAP } from "umap-js";
 import useMetadata from "../hooks/useMetadata";
 import useRegionData from "../hooks/useRegionData";
 import useSeriesColors from "../hooks/useSeriesColors";
+import { median } from "../utils/math";
 import { getNameByRegionId } from "../utils/metadata";
-import { alignTimeseries } from "../utils/normalizeTimeseries";
 import { ChartOptions } from "./Editor";
-import TSNE from "tsne-js";
-import { UMAP } from "umap-js";
 
 const numberFormatter = d3.format(".2s");
 
@@ -24,9 +25,8 @@ function ProjectionsChart(props: ProjectionsChartProps, ref: React.Ref<any>) {
     metric,
     showDataLabels,
     isCumulative,
-    dayInterval,
     selectedRegions,
-    alignAt = 0,
+    alignAt,
     epsilon,
     iterations,
     perplexity,
@@ -35,6 +35,7 @@ function ProjectionsChart(props: ProjectionsChartProps, ref: React.Ref<any>) {
     spread,
     minDist,
     neighbors,
+    chartType,
     ...rest
   } = props;
 
@@ -48,45 +49,44 @@ function ProjectionsChart(props: ProjectionsChartProps, ref: React.Ref<any>) {
       return [];
     }
 
-    const earliestDate = subDays(startOfDay(new Date()), dayInterval);
-    return Object.entries(data).map(([region, regionData]) => {
+    return Object.entries(data).flatMap(([region, regionData]) => {
       const name = getNameByRegionId(metadata, region);
+      const regionDataWithValues = regionData.filter((v) => v[metric] > 0);
 
-      if (alignAt > 0) {
-        return {
+      if (regionDataWithValues.length === 0) {
+        return [];
+      }
+
+      const startDate = first(regionDataWithValues)?.date;
+      const endDate = last(regionDataWithValues)?.date;
+      const total = last(regionDataWithValues)?.[metric];
+      const avg = median(regionDataWithValues.map((v) => v[`${metric}_daily` as "cases_daily" | "deaths_daily"]));
+
+      return [
+        {
           name,
           key: region,
+          startDate,
+          endDate,
+          total,
+          avg,
           data: regionData
             .filter((v) => v[metric] >= alignAt)
             .map((v, index) => ({
               x: index + 1,
               y: isCumulative ? v[metric] : v[`${metric}_daily` as "cases_daily" | "deaths_daily"],
             })),
-        };
-      }
-
-      return {
-        name,
-        key: region,
-        data: alignTimeseries(regionData, earliestDate).map((row) => ({
-          x: row.date.getTime(),
-          y: row[`${metric}${isCumulative ? "" : "_daily"}` as "cases" | "deaths" | "cases_daily" | "deaths_daily"],
-        })),
-      };
+        },
+      ];
     });
-  }, [loading, data, dayInterval, alignAt, metric, isCumulative, metadata]);
+  }, [loading, data, metadata, metric, alignAt, isCumulative]);
 
   const sortedSeries = useMemo(() => {
-    return sortBy(
-      series.filter((s) => !!selectedRegions[s.key]),
-      (s) => get(s.data, [s.data.length - 1, "y"])
-    );
-  }, [series, selectedRegions]);
-
-  const seriesColors = useSeriesColors(sortedSeries);
+    return sortBy(series, "name");
+  }, [series]);
 
   const projectionSeries = useMemo(() => {
-    const validSeries = sortedSeries.filter((serie) => serie.data.length >= timeserieSlice);
+    const validSeries = sortedSeries.filter((serie) => serie.data.length >= (timeserieSlice || 0));
 
     const projectionData = validSeries.map((serie) => {
       const data = serie.data.slice(0, timeserieSlice).map((cord) => cord.y);
@@ -100,7 +100,7 @@ function ProjectionsChart(props: ProjectionsChartProps, ref: React.Ref<any>) {
     let projectionOutput: any = [];
 
     switch (projectionType) {
-      case "tsne":
+      case "tsne": {
         const model = new TSNE({
           dim: 2,
           earlyExaggeration: 4.0,
@@ -117,7 +117,8 @@ function ProjectionsChart(props: ProjectionsChartProps, ref: React.Ref<any>) {
 
         projectionOutput = model.getOutput();
         break;
-      case "umap":
+      }
+      case "umap": {
         if (projectionData.length <= neighbors) {
           return [];
         }
@@ -132,6 +133,7 @@ function ProjectionsChart(props: ProjectionsChartProps, ref: React.Ref<any>) {
 
         projectionOutput = embedding;
         break;
+      }
     }
 
     return validSeries.map((serie, index) => {
@@ -146,6 +148,8 @@ function ProjectionsChart(props: ProjectionsChartProps, ref: React.Ref<any>) {
       };
     });
   }, [epsilon, iterations, minDist, neighbors, perplexity, projectionType, sortedSeries, spread, timeserieSlice]);
+
+  const seriesColors = useSeriesColors(projectionSeries);
 
   const chartOptions = useMemo(() => {
     return {
@@ -174,6 +178,9 @@ function ProjectionsChart(props: ProjectionsChartProps, ref: React.Ref<any>) {
         labels: {
           show: false,
         },
+        tooltip: {
+          enabled: false,
+        },
       },
       yaxis: {
         labels: {
@@ -183,11 +190,29 @@ function ProjectionsChart(props: ProjectionsChartProps, ref: React.Ref<any>) {
       colors: seriesColors,
       tooltip: {
         y: {
-          formatter: (value: number) => "",
+          formatter: (_: number, point: any) => {
+            const seriesData = point?.w?.config?.series[point.seriesIndex];
+            return seriesData?.total >= 0 ? `${seriesData.total} ${metric}` : "-";
+          },
         },
         x: {
-          show: false,
-          formatter: (value: number) => value,
+          formatter: (_: number, point: any) => {
+            const seriesData = point?.w?.config?.series[point.seriesIndex];
+
+            if (seriesData?.startDate && seriesData?.endDate) {
+              return `From ${format(new Date(seriesData.startDate), "PPP")} to ${format(new Date(seriesData.endDate), "PPP")}`;
+            }
+
+            if (seriesData?.startDate) {
+              return `Since ${format(new Date(seriesData.startDate), "PPP")}`;
+            }
+
+            if (seriesData?.endDate) {
+              return `Until ${format(new Date(seriesData.endDate), "PPP")}`;
+            }
+
+            return `No eligible data`;
+          },
         },
       },
       dataLabels: {
@@ -210,12 +235,27 @@ function ProjectionsChart(props: ProjectionsChartProps, ref: React.Ref<any>) {
         },
       },
       markers: {
+        strokeWidth: 1,
+        strokeColors: "#909090",
         hover: {
           sizeOffset: 5,
         },
       },
+      grid: {
+        strokeDashArray: 7,
+        xaxis: {
+          lines: {
+            show: true,
+          },
+        },
+        yaxis: {
+          lines: {
+            show: true,
+          },
+        },
+      },
     };
-  }, [title, metric, isCumulative, showDataLabels, seriesColors]);
+  }, [seriesColors, showDataLabels, title, isCumulative, metric]);
 
   if (loading) {
     return (
@@ -235,7 +275,7 @@ function ProjectionsChart(props: ProjectionsChartProps, ref: React.Ref<any>) {
     );
   }
 
-  return <ReactApexChart key="scatter" ref={ref} options={chartOptions} series={projectionSeries} type="scatter" {...rest} />;
+  return <ReactApexChart ref={ref} options={chartOptions} series={projectionSeries} type="scatter" {...rest} />;
 }
 
 export default React.forwardRef(ProjectionsChart);

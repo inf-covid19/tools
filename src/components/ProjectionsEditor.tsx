@@ -1,6 +1,7 @@
-import React from "react";
+import React, { Fragment } from "react";
 import Editor from "./Editor";
 import ProjectionsChart from "./ProjectionsChart";
+import CustomizableChart from "./CustomizableChart";
 
 export default function ProjectionsEditor() {
   return (
@@ -9,6 +10,7 @@ export default function ProjectionsEditor() {
       availableOptions={[
         "epsilon",
         "projectionType",
+        "chartType",
         "spread",
         "neighbors",
         "minDist",
@@ -20,9 +22,19 @@ export default function ProjectionsEditor() {
         "alignAt",
         "title",
         "selectedRegions",
+        "showDataLabels",
       ]}
       render={(ref, options) => {
-        return <ProjectionsChart ref={ref} {...options} height={Math.max(600, 15 * Object.keys(options.selectedRegions).length)} />;
+        return (
+          <Fragment>
+            <ProjectionsChart ref={ref} {...options} alignAt={options.alignAt || 1} showDataLabels={false} height={350} />
+            <CustomizableChart
+              {...options}
+              alignAt={options.alignAt || 1}
+              height={Math.max(350, (options.chartType === "heatmap" ? 20 : 0) * Object.keys(options.selectedRegions).length)}
+            />
+          </Fragment>
+        );
       }}
     />
   );

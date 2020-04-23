@@ -107,8 +107,8 @@ function PredictionsChart(props: PredictionsChartProps, ref: React.Ref<any>) {
   }, [dayInterval, filteredSeries, metric, predictionDays]);
 
   const sortedSeries = useMemo(() => {
-    return sortBy(seriesWithPredictions, (s) => get(s.data, [s.data.length - 1, "y"], 0));
-  }, [seriesWithPredictions]);
+    return sortBy(seriesWithPredictions, chartType === 'heatmap' ? (s) => get(s.data, [s.data.length - 1, "y"], 0) : 'name');
+  }, [chartType, seriesWithPredictions]);
 
   const [predictionX1, predictionX2] = useMemo(() => {
     let x1 = startOfDay(new Date()).getTime();

@@ -20,7 +20,7 @@ const numberFormatter = d3.format(".2s");
 type CustomizableChartProps = Omit<Props, "options" | "series" | "type"> & ChartOptions;
 
 function CustomizableChart(props: CustomizableChartProps, ref: React.Ref<any>) {
-  const { chartType = "heatmap", title, metric, showDataLabels, isCumulative, dayInterval, selectedRegions, alignAt = 0, ...rest } = props;
+  const { chartType = "heatmap", title, metric, showDataLabels, isCumulative, dayInterval, selectedRegions, alignAt = 0, timeserieSlice, ...rest } = props;
 
   const regionsIds = useMemo(() => Object.keys(selectedRegions), [selectedRegions]);
 
@@ -62,10 +62,13 @@ function CustomizableChart(props: CustomizableChartProps, ref: React.Ref<any>) {
 
   const sortedSeries = useMemo(() => {
     return sortBy(
-      series.filter((s) => !!selectedRegions[s.key]),
-      (s) => get(s.data, [s.data.length - 1, "y"], 0)
+      series.map((s) => ({
+        ...s,
+        data: s.data.slice(0, timeserieSlice),
+      })),
+      chartType === "heatmap" ? (s) => get(s.data, [s.data.length - 1, "y"], 0) : "name"
     );
-  }, [series, selectedRegions]);
+  }, [series, chartType, timeserieSlice]);
 
   const seriesColors = useSeriesColors(sortedSeries);
 
@@ -126,15 +129,15 @@ function CustomizableChart(props: CustomizableChartProps, ref: React.Ref<any>) {
           shadeIntensity: 0.0,
           colorScale: {
             ranges: [
-              { from: 0, to: 10, name: "0-10", color: "#ffffd9", foreColor: "#0d0d0d" },
-              { from: 11, to: 50, name: "11-50", color: "#edf8b1", foreColor: "#0d0d0d" },
-              { from: 51, to: 100, name: "51-100", color: "#c7e9b4", foreColor: "#0d0d0d" },
-              { from: 101, to: 250, name: "101-250", color: "#7fcdbb" },
-              { from: 251, to: 500, name: "251-500", color: "#41b6c4" },
-              { from: 501, to: 1000, name: "501-1000", color: "#1d91c0" },
-              { from: 1001, to: 5000, name: "1001-5000", color: "#225ea8" },
-              { from: 5001, to: 10000, name: "5001-10000", color: "#253494" },
-              { from: 10001, to: 999999, name: "> 10000", color: "#081d58" },
+              { from: 0, to: 10, name: "0-10", color: "#ffffd9", foreColor: "#4d4d4d" },
+              { from: 11, to: 50, name: "11-50", color: "#edf8b1", foreColor: "#4d4d4d" },
+              { from: 51, to: 100, name: "51-100", color: "#c7e9b4", foreColor: "#4d4d4d" },
+              { from: 101, to: 250, name: "101-250", color: "#7fcdbb", foreColor: "#4d4d4d" },
+              { from: 251, to: 500, name: "251-500", color: "#41b6c4", foreColor: "#ffffff" },
+              { from: 501, to: 1000, name: "501-1000", color: "#1d91c0", foreColor: "#ffffff" },
+              { from: 1001, to: 5000, name: "1001-5000", color: "#225ea8", foreColor: "#ffffff" },
+              { from: 5001, to: 10000, name: "5001-10000", color: "#253494", foreColor: "#ffffff" },
+              { from: 10001, to: 999999, name: "> 10000", color: "#081d58", foreColor: "#ffffff" },
             ],
           },
         },
