@@ -201,7 +201,7 @@ function ProjectionsChart(props: ProjectionsChartProps, ref: React.Ref<any>) {
         },
         x: {
           formatter: (value: number, point: any) => {
-            const seriesData = projectionSeries[point.seriesIndex];
+            const seriesData = point?.w?.config?.series[point.seriesIndex];
             return `From ${format(new Date(seriesData.startDate || ""), "PPP")} to ${format(new Date(seriesData.endDate || ""), "PPP")}`;
           },
         },
@@ -246,7 +246,7 @@ function ProjectionsChart(props: ProjectionsChartProps, ref: React.Ref<any>) {
         },
       },
     };
-  }, [seriesColors, showDataLabels, title, isCumulative, metric, projectionSeries]);
+  }, [seriesColors, showDataLabels, title, isCumulative, metric]);
 
   if (loading) {
     return (

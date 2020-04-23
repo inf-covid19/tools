@@ -1,19 +1,17 @@
-
 .RegionSelector--group--item--only {
-    display: none;
-    margin-left: 5px;
-    cursor: pointer;
-    text-decoration: underline;
-    color: #4183c4;
-    opacity: 0.5;
-    transition: opacity ease 0.3;
+  margin-left: 5px;
+  cursor: pointer;
+  text-decoration: underline;
+  color: #4183c4;
+  opacity: 0;
+  transition: opacity ease 0.3;
 }
 
 .RegionSelector--group--item:hover .RegionSelector--group--item--only {
-    display: unset;
+  opacity: 0.5;
 }
 
 .RegionSelector--group--item--only:hover {
-    opacity: 1;
-    color: #1e70bf;
+  opacity: 1;
+  color: #1e70bf;
 }

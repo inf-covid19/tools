@@ -149,7 +149,7 @@ export default function RegionSelector({ value, onChange }: Props) {
           <Header as="h4" color="grey">
             <Dropdown style={{ zIndex: 13 }} text="Select region group" inline direction="left" scrolling>
               <Dropdown.Menu>
-                {Object.entries(groups).flatMap(([country, regions], index) => {
+                {Object.entries(groups).flatMap(([country, regions]) => {
                   if (isEmpty(regions)) {
                     return null;
                   }
@@ -157,15 +157,15 @@ export default function RegionSelector({ value, onChange }: Props) {
                   const countryName = country.replace(/_/g, " ");
 
                   return (
-                    <Fragment key={index}>
+                    <Fragment key={country}>
                       <Dropdown.Header>
                         <Flag name={get(metadata, [country, "geoId"], "").toLowerCase()} /> {countryName}
                       </Dropdown.Header>
-                      {Object.entries(regions).map(([group, items], index) => {
+                      {Object.entries(regions).map(([group, items]) => {
                         const [groupName, type] = group.split(":", 2);
 
                         return (
-                          <Dropdown.Item key={index} className="RegionSelector--group--item" onClick={() => setSelected((prev) => uniq(prev.concat(items.map((i) => i.value))))}>
+                          <Dropdown.Item key={`${country}-${group}`} className="RegionSelector--group--item" onClick={() => setSelected((prev) => uniq(prev.concat(items.map((i) => i.value))))}>
                             {`${PLACE_TYPE_LABEL_MAPPING[type]} from ${groupName.replace(/_/g, " ")}`}
                             <span className="RegionSelector--group--item--only" onClick={() => setSelected(items.map((i) => i.value))}>
                               only
