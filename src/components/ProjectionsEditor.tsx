@@ -29,7 +29,6 @@ export default function ProjectionsEditor() {
           <Fragment>
             <ProjectionsChart ref={ref} {...options} alignAt={options.alignAt || 1} showDataLabels={false} height={350} />
             <CustomizableChart
-              ref={ref}
               {...options}
               alignAt={options.alignAt || 1}
               height={Math.max(350, (options.chartType === "heatmap" ? 20 : 0) * Object.keys(options.selectedRegions).length)}
