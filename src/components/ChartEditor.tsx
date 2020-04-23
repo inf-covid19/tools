@@ -10,7 +10,7 @@ export default function ChartEditor() {
     <Editor
       availableOptions={AVAILABLE_OPTIONS}
       render={(ref, options) => {
-        return <CustomizableChart ref={ref} {...pick(options, AVAILABLE_OPTIONS)} height={Math.max(600, 20 * Object.keys(options.selectedRegions).length)} />;
+        return <CustomizableChart ref={ref} {...pick(options, AVAILABLE_OPTIONS)} height={Math.max(600, (options.chartType === 'heatmap' ? 20 : 0) * Object.keys(options.selectedRegions).length)} />;
       }}
     />
   );
