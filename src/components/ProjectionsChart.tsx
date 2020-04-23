@@ -231,7 +231,7 @@ function ProjectionsChart(props: ProjectionsChartProps, ref: React.Ref<any>) {
         },
       },
       subtitle: {
-        text: `${isCumulative ? "Total" : "Daily"} number of ${metric}. Sammon’s stress = ${sammonStress}`,
+        text: `Projection based on the ${isCumulative ? "total" : "daily"} number of ${metric} | Sammon’s stress: ${sammonStress}`,
         floating: true,
         style: {
           fontSize: "14px",
