@@ -1,4 +1,4 @@
-import React, { Fragment, useEffect, useMemo, useRef, useState } from "react";
+import React, { Fragment, useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { Button, Card, Checkbox, Container, Form, Grid, Header, Icon, Image, Segment } from "semantic-ui-react";
 import { DEFAULT_COUNTRIES, DEFAULT_OPTIONS } from "../constants";
 import "./Editor.css";
@@ -100,37 +100,40 @@ function Editor(props: EditorProps) {
   const [savedCharts, setSavedCharts] = useState(getSavedCharts(props.id));
 
   const chartRef = useRef<any>(null);
-  const [chartType, setChartType] = useState(defaultsValues.chartType);
-  const [metric, setMetric] = useState(defaultsValues.metric);
-  const [scale, setScale] = useState(defaultsValues.scale);
-  const [alignAt, setAlignAt] = useState(defaultsValues.alignAt);
-  const [isCumulative, setIsCumulative] = useState(defaultsValues.isCumulative);
-  const [showDataLabels, setShowDataLabels] = useState(defaultsValues.showDataLabels);
-  const [title, setTitle] = useState(defaultsValues.title);
-  const [dayInterval, setDayInterval] = useState(defaultsValues.dayInterval);
-  const [selectedRegions, setSelectedRegions] = useState(defaultsValues.selectedRegions);
+
+  const [options, setOptions] = useState(defaultsValues);
+
+  const {
+    chartType,
+    metric,
+    scale,
+    alignAt,
+    isCumulative,
+    showDataLabels,
+    title,
+    dayInterval,
+    selectedRegions,
+    predictionDays,
+    projectionType,
+    epsilon,
+    perplexity,
+    iterations,
+    timeserieSlice,
+    spread,
+    neighbors,
+    minDist,
+  } = options;
+
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [predictionDays, setPredictionDays] = useState(defaultsValues.predictionDays);
-  const [projectionType, setProjectionType] = useState(defaultsValues.projectionType);
-  const [epsilon, setEpsilon] = useState(defaultsValues.epsilon);
-  const [perplexity, setPerplexity] = useState(defaultsValues.perplexity);
-  const [iterations, setIterations] = useState(defaultsValues.iterations);
-  const [timeserieSlice, setTimeserieSlice] = useState(defaultsValues.timeserieSlice);
-  const [spread, setSpread] = useState(defaultsValues.spread);
-  const [neighbors, setNeighbors] = useState(defaultsValues.neighbors);
-  const [minDist, setMinDist] = useState(defaultsValues.minDist);
 
   useEffect(() => {
     localStorage.setItem(`${SAVED_CHARTS_KEY}${id ? `.${id}` : ""}`, JSON.stringify(savedCharts));
   }, [id, savedCharts]);
 
   useEffect(() => {
-    localStorage.setItem(
-      `${DEFAULTS_KEY}${id ? `.${id}` : ""}`,
-      JSON.stringify({ metric, isCumulative, showDataLabels, title, dayInterval, selectedCountries: selectedRegions, alignAt, chartType, scale, predictionDays })
-    );
-  }, [id, metric, isCumulative, showDataLabels, title, dayInterval, selectedRegions, alignAt, chartType, scale, predictionDays]);
+    localStorage.setItem(`${DEFAULTS_KEY}${id ? `.${id}` : ""}`, JSON.stringify(options));
+  }, [id, options]);
 
   useEffect(() => {
     let cancelled = false;
@@ -144,6 +147,8 @@ function Editor(props: EditorProps) {
       cancelled = true;
     };
   }, [saved]);
+
+  const setSelectedRegions = useCallback((regions) => setOptions((opt) => ({ ...opt, selectedRegions: regions })), []);
 
   return (
     <div>
@@ -186,7 +191,7 @@ function Editor(props: EditorProps) {
                 {availableOptions.includes("title") && (
                   <Form.Field>
                     <label>Title</label>
-                    <input placeholder="Enter a title" type="text" defaultValue={title} onBlur={({ target }: any) => setTitle(target.value)} />
+                    <input placeholder="Enter a title" type="text" defaultValue={title} onBlur={({ target }: any) => setOptions({ ...options, title: target.value })} />
                   </Form.Field>
                 )}
 
@@ -194,7 +199,7 @@ function Editor(props: EditorProps) {
                   <Form.Select
                     label="Choose chart type"
                     value={chartType}
-                    onChange={(_, { value }) => setChartType(value as ChartType)}
+                    onChange={(_, { value }) => setOptions({ ...options, chartType: value as ChartType })}
                     options={[
                       { key: "heatmap", text: "Heatmap", value: "heatmap" },
                       { key: "line", text: "Line", value: "line" },
@@ -212,7 +217,7 @@ function Editor(props: EditorProps) {
                       placeholder="Enter a number"
                       min="0"
                       defaultValue={predictionDays}
-                      onBlur={({ target }: any) => setPredictionDays(parseInt(target.value) || 0)}
+                      onBlur={({ target }: any) => setOptions({ ...options, predictionDays: parseInt(target.value) || 0 })}
                     />
                   </Form.Field>
                 )}
@@ -221,7 +226,7 @@ function Editor(props: EditorProps) {
                   <Form.Select
                     label="Choose total or daily values"
                     value={isCumulative ? "total" : "daily"}
-                    onChange={(_, { value }) => setIsCumulative(value === "total")}
+                    onChange={(_, { value }) => setOptions({ ...options, isCumulative: value === "total" })}
                     options={[
                       { key: "total", text: "Total", value: "total" },
                       { key: "daily", text: "Daily", value: "daily" },
@@ -232,7 +237,7 @@ function Editor(props: EditorProps) {
                   <Form.Select
                     label="Choose cases or deaths"
                     value={metric}
-                    onChange={(_, { value }) => setMetric(value as MetricType)}
+                    onChange={(_, { value }) => setOptions({ ...options, metric: value as MetricType })}
                     options={[
                       { key: "cases", text: "Cases", value: "cases" },
                       { key: "deaths", text: "Deaths", value: "deaths" },
@@ -244,7 +249,7 @@ function Editor(props: EditorProps) {
                   <Form.Select
                     label="Choose linear or logarithmic scale"
                     value={scale}
-                    onChange={(_, { value }) => setScale(value as ScaleType)}
+                    onChange={(_, { value }) => setOptions({ ...options, scale: value as ScaleType })}
                     options={[
                       { key: "linear", text: "Linear", value: "linear" },
                       { key: "log", text: "Logarithmic", value: "log" },
@@ -255,7 +260,13 @@ function Editor(props: EditorProps) {
                 {availableOptions.includes("alignAt") && (
                   <Form.Field>
                     <label>Minimum number of {metric} to align timeline</label>
-                    <input type="number" placeholder="Enter a number" min="0" defaultValue={alignAt} onBlur={({ target }: any) => setAlignAt(parseInt(target.value) || 0)} />
+                    <input
+                      type="number"
+                      placeholder="Enter a number"
+                      min="0"
+                      defaultValue={alignAt}
+                      onBlur={({ target }: any) => setOptions({ ...options, alignAt: parseInt(target.value) || 0 })}
+                    />
                   </Form.Field>
                 )}
 
@@ -267,14 +278,19 @@ function Editor(props: EditorProps) {
                       placeholder="Enter a number"
                       min="0"
                       defaultValue={dayInterval}
-                      onBlur={({ target }: any) => setDayInterval(parseInt(target.value) || dayInterval)}
+                      onBlur={({ target }: any) => setOptions({ ...options, dayInterval: parseInt(target.value) || dayInterval })}
                     />
                   </Form.Field>
                 )}
                 {availableOptions.includes("timeserieSlice") && (
                   <Form.Field>
                     <label>Region vector size</label>
-                    <input type="number" placeholder="Enter a number" defaultValue={timeserieSlice} onBlur={({ target }: any) => setTimeserieSlice(parseInt(target.value) || 0)} />
+                    <input
+                      type="number"
+                      placeholder="Enter a number"
+                      defaultValue={timeserieSlice}
+                      onBlur={({ target }: any) => setOptions({ ...options, timeserieSlice: parseInt(target.value) || 0 })}
+                    />
                   </Form.Field>
                 )}
 
@@ -282,7 +298,7 @@ function Editor(props: EditorProps) {
                   <Form.Select
                     label="Choose projection technique"
                     value={projectionType}
-                    onChange={(_, { value }) => setProjectionType(value as ProjectionType)}
+                    onChange={(_, { value }) => setOptions({ ...options, projectionType: value as ProjectionType })}
                     options={[
                       { key: "umap", text: "UMAP", value: "umap" },
                       { key: "tsne", text: "t-SNE", value: "tsne" },
@@ -295,20 +311,35 @@ function Editor(props: EditorProps) {
                     {availableOptions.includes("epsilon") && (
                       <Form.Field>
                         <label>t-SNE: epsilon</label>
-                        <input type="number" placeholder="Enter a number" defaultValue={epsilon} onBlur={({ target }: any) => setEpsilon(parseInt(target.value) || 0)} />
+                        <input
+                          type="number"
+                          placeholder="Enter a number"
+                          defaultValue={epsilon}
+                          onBlur={({ target }: any) => setOptions({ ...options, epsilon: parseInt(target.value) || 0 })}
+                        />
                       </Form.Field>
                     )}
 
                     {availableOptions.includes("perplexity") && (
                       <Form.Field>
                         <label>t-SNE: perplexity</label>
-                        <input type="number" placeholder="Enter a number" defaultValue={perplexity} onBlur={({ target }: any) => setPerplexity(parseInt(target.value) || 0)} />
+                        <input
+                          type="number"
+                          placeholder="Enter a number"
+                          defaultValue={perplexity}
+                          onBlur={({ target }: any) => setOptions({ ...options, perplexity: parseInt(target.value) || 0 })}
+                        />
                       </Form.Field>
                     )}
                     {availableOptions.includes("iterations") && (
                       <Form.Field>
                         <label>Number of iterations</label>
-                        <input type="number" placeholder="Enter a number" defaultValue={iterations} onBlur={({ target }: any) => setIterations(parseInt(target.value) || 0)} />
+                        <input
+                          type="number"
+                          placeholder="Enter a number"
+                          defaultValue={iterations}
+                          onBlur={({ target }: any) => setOptions({ ...options, iterations: parseInt(target.value) || 0 })}
+                        />
                       </Form.Field>
                     )}
                   </React.Fragment>
@@ -318,21 +349,36 @@ function Editor(props: EditorProps) {
                     {availableOptions.includes("spread") && (
                       <Form.Field>
                         <label>UMAP: spread</label>
-                        <input type="number" placeholder="Enter a number" defaultValue={spread} onBlur={({ target }: any) => setSpread(parseInt(target.value) || 0)} />
+                        <input
+                          type="number"
+                          placeholder="Enter a number"
+                          defaultValue={spread}
+                          onBlur={({ target }: any) => setOptions({ ...options, spread: parseInt(target.value) || 0 })}
+                        />
                       </Form.Field>
                     )}
 
                     {availableOptions.includes("neighbors") && (
                       <Form.Field>
                         <label>UMAP: neighbors</label>
-                        <input type="number" placeholder="Enter a number" defaultValue={neighbors} onBlur={({ target }: any) => setNeighbors(parseInt(target.value) || 0)} />
+                        <input
+                          type="number"
+                          placeholder="Enter a number"
+                          defaultValue={neighbors}
+                          onBlur={({ target }: any) => setOptions({ ...options, neighbors: parseInt(target.value) || 0 })}
+                        />
                       </Form.Field>
                     )}
 
                     {availableOptions.includes("minDist") && (
                       <Form.Field>
                         <label>UMAP: minDist</label>
-                        <input type="number" placeholder="Enter a number" defaultValue={minDist} onBlur={({ target }: any) => setMinDist(parseFloat(target.value) || 0)} />
+                        <input
+                          type="number"
+                          placeholder="Enter a number"
+                          defaultValue={minDist}
+                          onBlur={({ target }: any) => setOptions({ ...options, minDist: parseFloat(target.value) || 0 })}
+                        />
                       </Form.Field>
                     )}
                   </React.Fragment>
@@ -340,7 +386,7 @@ function Editor(props: EditorProps) {
 
                 {availableOptions.includes("showDataLabels") && (
                   <Form.Field>
-                    <Checkbox toggle checked={showDataLabels} onChange={() => setShowDataLabels(!showDataLabels)} label="Show data labels" />
+                    <Checkbox toggle checked={showDataLabels} onChange={() => setOptions({ ...options, showDataLabels: !showDataLabels })} label="Show data labels" />
                   </Form.Field>
                 )}
                 <Button
@@ -354,24 +400,7 @@ function Editor(props: EditorProps) {
                         ...savedCharts,
                         {
                           dataURI: imgURI,
-                          alignAt,
-                          metric,
-                          title,
-                          isCumulative,
-                          selectedRegions,
-                          dayInterval,
-                          showDataLabels,
-                          chartType,
-                          scale,
-                          predictionDays,
-                          epsilon,
-                          perplexity,
-                          iterations,
-                          timeserieSlice,
-                          projectionType,
-                          spread,
-                          neighbors,
-                          minDist,
+                          ...options,
                         },
                       ];
                       setSavedCharts(newSavedCharts);
@@ -412,15 +441,7 @@ function Editor(props: EditorProps) {
                             <Button
                               primary
                               onClick={() => {
-                                setMetric(item.metric);
-                                setIsCumulative(item.isCumulative);
-                                setShowDataLabels(item.showDataLabels);
-                                setTitle(item.title);
-                                setDayInterval(item.dayInterval);
-                                setSelectedRegions(item.selectedRegions);
-                                setAlignAt(item.alignAt || 0);
-                                setChartType(item.chartType || "heatmap");
-                                setScale(item.scale || "log");
+                                setOptions(item);
                                 window.scrollTo(0, 0);
                               }}
                             >

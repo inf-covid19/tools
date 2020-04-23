@@ -5,7 +5,7 @@ export const DEFAULT_OPTIONS = {
   isCumulative: true,
   title: "Timeline Plots of Coronavirus Data",
   dayInterval: 30,
-  selectedCountries: {},
+  selectedRegions: {},
   alignAt: 0,
   scale: "log",
   predictionDays: 7,

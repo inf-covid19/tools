@@ -70,8 +70,6 @@ function CustomizableChart(props: CustomizableChartProps, ref: React.Ref<any>) {
     );
   }, [series, chartType, timeserieSlice]);
 
-  console.log("---Sorted---", series.map(s => s.name), sortedSeries.map(s => s.name))
-
   const seriesColors = useSeriesColors(sortedSeries);
 
   const chartOptions = useMemo(() => {

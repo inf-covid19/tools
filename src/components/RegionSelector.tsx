@@ -11,7 +11,7 @@ import "./RegionSelector.css";
 
 type Props = {
   value: Record<string, boolean>;
-  onChange: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
+  onChange: (value: Record<string, boolean>) => void;
 };
 
 export default function RegionSelector({ value, onChange }: Props) {
