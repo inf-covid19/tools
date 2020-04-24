@@ -53,7 +53,7 @@ function TrendChart(props: TrendChartProps, ref: React.Ref<any>) {
       };
     });
 
-    return series;
+    return series.filter(s => s.data.length > 0);
   }, [data, metadata, metric, alignAt]);
 
   const [xScaler, yScaler, scaledSeries] = useMemo(() => {

@@ -33,30 +33,38 @@ function CustomizableChart(props: CustomizableChartProps, ref: React.Ref<any>) {
     }
 
     const earliestDate = subDays(startOfDay(new Date()), dayInterval);
-    return Object.entries(data).map(([region, regionData]) => {
+    return Object.entries(data).flatMap(([region, regionData]) => {
       const name = getNameByRegionId(metadata, region);
 
       if (alignAt > 0) {
-        return {
-          name,
-          key: region,
-          data: regionData
-            .filter((v) => v[metric] >= alignAt)
-            .map((v, index) => ({
+        const alignedData = regionData.filter((v) => v[metric] >= alignAt);
+
+        if (alignedData.length === 0) {
+          return [];
+        }
+
+        return [
+          {
+            name,
+            key: region,
+            data: alignedData.map((v, index) => ({
               x: index + 1,
               y: isCumulative ? v[metric] : v[`${metric}_daily` as "cases_daily" | "deaths_daily"],
             })),
-        };
+          },
+        ];
       }
 
-      return {
-        name,
-        key: region,
-        data: alignTimeseries(regionData, earliestDate).map((row) => ({
-          x: row.date.getTime(),
-          y: row[`${metric}${isCumulative ? "" : "_daily"}` as "cases" | "deaths" | "cases_daily" | "deaths_daily"],
-        })),
-      };
+      return [
+        {
+          name,
+          key: region,
+          data: alignTimeseries(regionData, earliestDate).map((row) => ({
+            x: row.date.getTime(),
+            y: row[`${metric}${isCumulative ? "" : "_daily"}` as "cases" | "deaths" | "cases_daily" | "deaths_daily"],
+          })),
+        },
+      ];
     });
   }, [loading, data, dayInterval, alignAt, metric, isCumulative, metadata]);
 
