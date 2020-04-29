@@ -137,7 +137,7 @@ function CustomizableChart(props: CustomizableChartProps, ref: React.Ref<any>) {
               { from: 501, to: 1000, name: "501-1000", color: "#1d91c0", foreColor: "#ffffff" },
               { from: 1001, to: 5000, name: "1001-5000", color: "#225ea8", foreColor: "#ffffff" },
               { from: 5001, to: 10000, name: "5001-10000", color: "#253494", foreColor: "#ffffff" },
-              { from: 10001, to: 999999, name: "> 10000", color: "#081d58", foreColor: "#ffffff" },
+              { from: 10001, to: 99999999, name: "> 10000", color: "#081d58", foreColor: "#ffffff" },
             ],
           },
         },
