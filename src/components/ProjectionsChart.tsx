@@ -137,6 +137,8 @@ function ProjectionsChart(props: ProjectionsChartProps, ref: React.Ref<any>) {
       }
     }
 
+    const sammonStress = getSammonStress(projectionData, projectionOutput);
+
     return [
       validSeries.map((serie, index) => {
         return {
@@ -149,7 +151,7 @@ function ProjectionsChart(props: ProjectionsChartProps, ref: React.Ref<any>) {
           ],
         };
       }),
-      getSammonStress(projectionData, projectionOutput),
+      sammonStress,
     ];
   }, [epsilon, iterations, minDist, neighbors, perplexity, projectionType, sortedSeries, spread, timeserieSlice]);
 
@@ -231,7 +233,7 @@ function ProjectionsChart(props: ProjectionsChartProps, ref: React.Ref<any>) {
         },
       },
       subtitle: {
-        text: `Projection based on the ${isCumulative ? "total" : "daily"} number of ${metric} | Sammon’s stress: ${sammonStress}`,
+        text: `Projection based on the ${isCumulative ? "total" : "daily"} number of ${metric} | Sammon’s stress: ${sammonStress.toFixed(4)}`,
         floating: true,
         style: {
           fontSize: "14px",
@@ -278,7 +280,6 @@ function ProjectionsChart(props: ProjectionsChartProps, ref: React.Ref<any>) {
       </div>
     );
   }
-
   return <ReactApexChart ref={ref} options={chartOptions} series={projectionSeries} type="scatter" {...rest} />;
 }
 
