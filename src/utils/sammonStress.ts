@@ -1,5 +1,5 @@
 const normalizeMatrix = (matrix: Array<number[]>) => {
-  let normMatrix = matrix;
+  let normMatrix = JSON.parse(JSON.stringify(matrix));
 
   for (let i = 0; i < matrix.length; i++) {
     let max = Number.MIN_VALUE;
