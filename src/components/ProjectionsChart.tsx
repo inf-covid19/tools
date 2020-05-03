@@ -58,9 +58,8 @@ function ProjectionsChart(props: ProjectionsChartProps, ref: React.Ref<any>) {
         return [];
       }
 
-      const startDate = first(regionDataWithValues)?.date;
-      const endDate = last(regionDataWithValues)?.date;
-      const total = last(regionDataWithValues)?.[metric];
+      const startDate = first(regionDataWithValues)!.date;
+      const { date: endDate, cases, deaths } = last(regionDataWithValues)!;
       const avg = median(regionDataWithValues.map((v) => v[`${metric}_daily` as "cases_daily" | "deaths_daily"]));
 
       return [
@@ -69,7 +68,8 @@ function ProjectionsChart(props: ProjectionsChartProps, ref: React.Ref<any>) {
           key: region,
           startDate,
           endDate,
-          total,
+          cases,
+          deaths,
           avg,
           data: regionData
             .filter((v) => v[metric] >= alignAt)
@@ -87,18 +87,14 @@ function ProjectionsChart(props: ProjectionsChartProps, ref: React.Ref<any>) {
   }, [series]);
 
   const [projectionSeries, sammonStress] = useMemo(() => {
-    const validSeries = sortedSeries.filter((serie) => serie.data.length >= (timeserieSlice || 0));
-
-    const projectionData = validSeries.map((serie) => {
-      const data = serie.data.slice(0, timeserieSlice).map((cord) => cord.y);
-      return data;
-    });
+    const validSeries = sortedSeries.filter((series) => series.data.length >= (timeserieSlice || 0));
+    const projectionData = validSeries.map((series) => series.data.slice(0, timeserieSlice).map((cord) => cord.y));
 
     if (projectionData.length === 0) {
       return [[], 0];
     }
 
-    let projectionOutput: any = [];
+    let projectionOutput: number[][] = [];
 
     switch (projectionType) {
       case "tsne": {
@@ -114,7 +110,6 @@ function ProjectionsChart(props: ProjectionsChartProps, ref: React.Ref<any>) {
           data: projectionData,
           type: "dense",
         });
-        console.log("run", model.run());
 
         projectionOutput = model.getOutput();
         break;
@@ -197,13 +192,15 @@ function ProjectionsChart(props: ProjectionsChartProps, ref: React.Ref<any>) {
       tooltip: {
         y: {
           formatter: (_: number, point: any) => {
-            const seriesData = point?.w?.config?.series[point.seriesIndex];
-            return seriesData?.total >= 0 ? `${seriesData.total} ${metric}` : "-";
+            const seriesData = projectionSeries[point.seriesIndex];
+            const total = seriesData?.[metric];
+
+            return total >= 0 ? `${total} ${metric}` : "-";
           },
         },
         x: {
           formatter: (_: number, point: any) => {
-            const seriesData = point?.w?.config?.series[point.seriesIndex];
+            const seriesData = projectionSeries[point.seriesIndex];
 
             if (seriesData?.startDate && seriesData?.endDate) {
               return `From ${format(new Date(seriesData.startDate), "PPP")} to ${format(new Date(seriesData.endDate), "PPP")}`;
@@ -261,7 +258,7 @@ function ProjectionsChart(props: ProjectionsChartProps, ref: React.Ref<any>) {
         },
       },
     };
-  }, [seriesColors, showDataLabels, title, isCumulative, metric, sammonStress]);
+  }, [seriesColors, showDataLabels, title, isCumulative, metric, sammonStress, projectionSeries]);
 
   if (loading) {
     return (
