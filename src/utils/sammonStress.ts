@@ -1,61 +1,43 @@
-const normalizeMatrix = (matrix: Array<number[]>) => {
-  let normMatrix = JSON.parse(JSON.stringify(matrix));
+import { Matrix } from "ml-matrix";
+import * as ml from "ml-distance";
+import * as d3 from "d3";
 
-  for (let i = 0; i < matrix.length; i++) {
-    let max = Number.MIN_VALUE;
-    let min = Number.MAX_VALUE;
-    for (let j = 0; j < matrix[i].length; j++) {
-      if (matrix[i][j] > max) max = matrix[i][j];
-      if (matrix[i][j] < min) min = matrix[i][j];
-    }
-    let scale = max - min;
-    if (scale === 0) scale = 1;
-    for (let j = 0; j < matrix[i].length; j++) {
-      normMatrix[i][j] = (matrix[i][j] - min) / scale;
-    }
-  }
-  return normMatrix;
+const makeMatrix = (m: number[][]) => {
+  const matrix = new Matrix(m);
+
+  const max = matrix.max();
+  const min = matrix.min();
+  const scaleFn = d3.scaleLinear().range([0, 1]).domain([min, max]);
+
+  matrix.apply((i, j) => matrix.set(i, j, scaleFn(matrix.get(i, j))));
+
+  return matrix;
 };
 
-const computeDist = (matrix: Array<number[]>, aIndex: number, bIndex: number) => {
-  let dist = 0;
-  let term;
-  for (let i = 0; i < matrix[aIndex].length; i++) {
-    let x = matrix[aIndex][i];
-    let y = matrix[bIndex][i];
-    term = x - y;
-    dist += term * term;
-  }
-  return Math.sqrt(dist);
+const getDistance = (a: number[], b: number[]) => {
+  const distanceFn = ml.distance.euclidean;
+  return distanceFn(a, b);
 };
 
-const sammondistnormalized = (rawMatrix: Array<number[]>, reductedMatrix: Array<number[]>) => {
+// Learn more: https://en.wikipedia.org/wiki/Sammon_mapping
+export function getSammonStress(raw: number[][], projection: number[][]) {
   let scale = 0;
-  let dist2D,
-    distnD = 0;
-  let sammon_dist = 0;
-  let num, term;
+  let stress = 0;
 
-  const rawNorm = normalizeMatrix(rawMatrix);
-  const redNorm = normalizeMatrix(reductedMatrix);
+  const rawMatrix = makeMatrix(raw);
+  const projectionMatrix = makeMatrix(projection);
 
-  for (let i = 0; i < rawNorm.length - 1; i++) {
-    for (let j = i + 1; j < rawNorm.length; j++) {
-      if (i !== j) {
-        distnD = computeDist(rawNorm, i, j);
-        dist2D = computeDist(redNorm, i, j);
-        if (distnD > 0) {
-          scale += distnD;
-          num = (distnD - dist2D) * (distnD - dist2D);
-          term = num / distnD;
-          sammon_dist += term;
-        }
+  const length = rawMatrix.rows;
+  for (let i = 0; i < length - 1; i++) {
+    for (let j = i + 1; j < length; j++) {
+      const dOriginal = getDistance(rawMatrix.getRow(i), rawMatrix.getRow(j));
+      if (dOriginal > 0) {
+        const dProjection = getDistance(projectionMatrix.getRow(i), projectionMatrix.getRow(j));
+        scale += dOriginal;
+        stress += Math.pow(dOriginal - dProjection, 2) / dOriginal;
       }
     }
   }
-  return sammon_dist / scale;
-};
 
-export const getSammonStress = (rawData: Array<number[]>, reductedData: Array<number[]>) => {
-  return sammondistnormalized(rawData, reductedData);
-};
+  return (1 / scale) * stress;
+}
