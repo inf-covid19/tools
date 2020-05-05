@@ -3,6 +3,7 @@ import { Button, Card, Checkbox, Container, Form, Grid, Header, Icon, Image, Seg
 import { DEFAULT_COUNTRIES, DEFAULT_OPTIONS } from "../constants";
 import "./Editor.css";
 import RegionSelector from "./RegionSelector";
+import { omit } from "lodash";
 
 type ScaleType = "linear" | "log";
 type ChartType = "heatmap" | "bar" | "area" | "line" | "scatter";
@@ -224,7 +225,7 @@ function Editor(props: EditorProps) {
 
                 {availableOptions.includes("isCumulative") && (
                   <Form.Select
-                    label="Choose total or daily values"
+                    label="Choose total or daily"
                     value={isCumulative ? "total" : "daily"}
                     onChange={(_, { value }) => setOptions({ ...options, isCumulative: value === "total" })}
                     options={[
@@ -391,6 +392,7 @@ function Editor(props: EditorProps) {
                 )}
                 <Button
                   type="button"
+                  primary
                   loading={saving}
                   positive={saved}
                   onClick={() => {
@@ -410,6 +412,10 @@ function Editor(props: EditorProps) {
                   }}
                 >
                   {saved ? "Saved" : "Save"}
+                </Button>
+
+                <Button type="button" onClick={() => setOptions(opt => ({...opt, ...omit(DEFAULT_OPTIONS, ['selectedRegions']) }) as ChartOptions)}>
+                  Reset
                 </Button>
               </Form>
             </Segment>
