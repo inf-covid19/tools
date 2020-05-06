@@ -5,7 +5,7 @@ import debounce from "lodash/debounce";
 import Fuse from "fuse.js";
 import { keyBy, sortBy, isEmpty, groupBy, uniq } from "lodash";
 import get from "lodash/get";
-import { PLACE_TYPE_LABEL_MAPPING } from "../constants";
+import { PLACE_TYPE_LABEL_MAPPING, DEFAULT_COUNTRIES } from "../constants";
 
 import "./RegionSelector.css";
 
@@ -149,6 +149,12 @@ export default function RegionSelector({ value, onChange }: Props) {
           <Header as="h4" color="grey">
             <Dropdown style={{ zIndex: 13 }} text="Select region group" inline direction="left" scrolling>
               <Dropdown.Menu>
+                <Dropdown.Item key={`default`} className="RegionSelector--group--item" onClick={() => setSelected((prev) => uniq(prev.concat(DEFAULT_COUNTRIES)))}>
+                  Default countries
+                  <span className="RegionSelector--group--item--only" onClick={() => setSelected(() => DEFAULT_COUNTRIES)}>
+                    only
+                  </span>
+                </Dropdown.Item>
                 {Object.entries(groups).flatMap(([country, regions]) => {
                   if (isEmpty(regions)) {
                     return null;
@@ -165,7 +171,11 @@ export default function RegionSelector({ value, onChange }: Props) {
                         const [groupName, type] = group.split(":", 2);
 
                         return (
-                          <Dropdown.Item key={`${country}-${group}`} className="RegionSelector--group--item" onClick={() => setSelected((prev) => uniq(prev.concat(items.map((i) => i.value))))}>
+                          <Dropdown.Item
+                            key={`${country}-${group}`}
+                            className="RegionSelector--group--item"
+                            onClick={() => setSelected((prev) => uniq(prev.concat(items.map((i) => i.value))))}
+                          >
                             {`${PLACE_TYPE_LABEL_MAPPING[type]} from ${groupName.replace(/_/g, " ")}`}
                             <span className="RegionSelector--group--item--only" onClick={() => setSelected(items.map((i) => i.value))}>
                               only

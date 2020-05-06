@@ -10,7 +10,7 @@ function useColorScale(series: { data: { y: number }[] }[]) {
     const maxDomain = Math.max(...values);
     const minDomain = Math.max(1, Math.min(...values));
 
-    const colorscale = (d3 as any).scaleSequentialLog(d3.interpolatePuBuGn).domain([minDomain, maxDomain]);
+    const colorscale = (d3 as any).scaleSequentialLog(d3.interpolateGnBu).domain([minDomain, maxDomain]);
     const numscale = d3.scaleLog().domain(colorscale.domain());
 
     const ticks = numscale.ticks();
