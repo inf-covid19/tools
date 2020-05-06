@@ -20,7 +20,7 @@ function useColorScale(series: { data: { y: number }[] }[]) {
     const ranges = [0, ...t].flatMap((value, index, arr) => {
       const from = index === 0 ? 0 : value + 1;
       const to = arr[index + 1];
-      const name = from === 0 ? `<${to}` : to === undefined ? `>${from}` : `${from} - ${to}`;
+      const name = from === 0 ? `<${to + 1}` : to === undefined ? `>${from - 1}` : `${from} - ${to}`;
       const color = rgbToColorString(parseToRgb(colorscale(value)));
       const foreColor = meetsContrastGuidelines(color, "#4d4d4d").AA ? "#4d4d4d" : "#ffffff";
 
