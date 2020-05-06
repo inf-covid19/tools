@@ -16,6 +16,21 @@ import ProjectionsEditor from "./components/ProjectionsEditor";
 
 const LAST_TAB_KEY = "covid19-tools.api.lastTab";
 
+const MENU_ITEMS = [{
+  name: 'Chart Editor',
+  value: 'editor'
+},{
+  name: 'Trend Visualizer',
+  value: 'trends'
+},{
+  name: 'Prediction Visualizer',
+  value: 'predictions'
+},{
+  name: 'Projection Visualizer',
+  value: 'projections',
+  isBeta: true,
+}]
+
 function App() {
   const lastUpdated = useLastUpdated();
   const { loading } = useMetadata();
@@ -44,13 +59,12 @@ function App() {
 
       <Container fluid>
         <Menu className="App--menu" pointing secondary>
-          <Menu.Item name="Chart Editor" active={tab === "editor"} onClick={() => setTab("editor")} />
-          <Menu.Item name="Trend Visualizer" active={tab === "trends"} onClick={() => setTab("trends")} />
-          <Menu.Item name="Prediction Visualizer" active={tab === "predictions"} onClick={() => setTab("predictions")}>
-            Prediction Visualizer
-            <Label color="teal">Beta</Label>
-          </Menu.Item>
-          <Menu.Item name="Projection Visualizer" active={tab === "projections"} onClick={() => setTab("projections")} />
+          {MENU_ITEMS.map(item => (
+            <Menu.Item key={item.value} name={item.name} active={tab === item.value} onClick={() => setTab(item.value)}>
+              {item.name}
+              {item.isBeta && <Label color="teal">Beta</Label>}
+            </Menu.Item>
+          ))}
         </Menu>
 
         {tab === "editor" && <ChartEditor />}
