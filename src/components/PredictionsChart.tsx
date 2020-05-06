@@ -14,6 +14,7 @@ import useSeriesColors from "../hooks/useSeriesColors";
 import { getNameByRegionId } from "../utils/metadata";
 import { alignTimeseries } from "../utils/normalizeTimeseries";
 import { ChartOptions } from "./Editor";
+import useColorScale from "../hooks/useColorScale";
 
 const displayNumberFormatter = d3.format(",");
 const ordinalFormattter = (n: number) => numeral(n).format("Oo");
@@ -107,7 +108,7 @@ function PredictionsChart(props: PredictionsChartProps, ref: React.Ref<any>) {
   }, [dayInterval, filteredSeries, metric, predictionDays]);
 
   const sortedSeries = useMemo(() => {
-    return sortBy(seriesWithPredictions, chartType === 'heatmap' ? (s) => get(s.data, [s.data.length - 1, "y"], 0) : 'name');
+    return sortBy(seriesWithPredictions, chartType === "heatmap" ? (s) => get(s.data, [s.data.length - 1, "y"], 0) : "name");
   }, [chartType, seriesWithPredictions]);
 
   const [predictionX1, predictionX2] = useMemo(() => {
@@ -125,6 +126,8 @@ function PredictionsChart(props: PredictionsChartProps, ref: React.Ref<any>) {
   }, [sortedSeries, predictionDays]);
 
   const seriesColors = useSeriesColors(sortedSeries);
+
+  const colorScale = useColorScale(sortedSeries);
 
   const chartOptions = useMemo(() => {
     return {
@@ -199,24 +202,12 @@ function PredictionsChart(props: PredictionsChartProps, ref: React.Ref<any>) {
       },
       plotOptions: {
         heatmap: {
-          shadeIntensity: 0.0,
-          colorScale: {
-            ranges: [
-              { from: 0, to: 10, name: "0-10", color: "#ffffd9", foreColor: "#0d0d0d" },
-              { from: 11, to: 50, name: "11-50", color: "#edf8b1", foreColor: "#0d0d0d" },
-              { from: 51, to: 100, name: "51-100", color: "#c7e9b4", foreColor: "#0d0d0d" },
-              { from: 101, to: 250, name: "101-250", color: "#7fcdbb" },
-              { from: 251, to: 500, name: "251-500", color: "#41b6c4" },
-              { from: 501, to: 1000, name: "501-1000", color: "#1d91c0" },
-              { from: 1001, to: 5000, name: "1001-5000", color: "#225ea8" },
-              { from: 5001, to: 10000, name: "5001-10000", color: "#253494" },
-              { from: 10001, to: 999999, name: "> 10000", color: "#081d58" },
-            ],
-          },
+          shadeIntensity: 0,
+          colorScale,
         },
       },
     };
-  }, [title, metric, isCumulative, showDataLabels, alignAt, chartType, seriesColors, predictionX1, predictionX2]);
+  }, [seriesColors, alignAt, predictionX1, predictionX2, chartType, showDataLabels, title, isCumulative, metric, colorScale]);
 
   if (loading) {
     return (
