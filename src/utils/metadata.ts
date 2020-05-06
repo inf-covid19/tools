@@ -14,12 +14,8 @@ export function getByRegionId(metadata: any, regionId: string) {
 }
 
 export function getFileByRegionId(metadata: any, regionId: string) {
-  let effectiveRegionPath = getRegionPath(regionId);
   const regionData = getByRegionId(metadata, regionId);
-  if (regionData && !!regionData.parent) {
-    effectiveRegionPath = [...effectiveRegionPath.slice(0, effectiveRegionPath.length - 1), regionData.parent];
-  }
-  return get(metadata, [...effectiveRegionPath, "file"]);
+  return regionData.file;
 }
 
 export function getNameByRegionId(metadata: any, regionId: string) {
