@@ -149,12 +149,15 @@ export default function RegionSelector({ value, onChange }: Props) {
           <Header as="h4" color="grey">
             <Dropdown style={{ zIndex: 13 }} text="Select region group" inline direction="left" scrolling>
               <Dropdown.Menu>
-                <Dropdown.Item key={`default`} className="RegionSelector--group--item" onClick={() => setSelected((prev) => uniq(prev.concat(DEFAULT_COUNTRIES)))}>
-                  Default countries
-                  <span className="RegionSelector--group--item--only" onClick={() => setSelected(() => DEFAULT_COUNTRIES)}>
-                    only
-                  </span>
-                </Dropdown.Item>
+                <Fragment key={"world"}>
+                  <Dropdown.Header icon="globe" content="World" />
+                  <Dropdown.Item key={`default`} className="RegionSelector--group--item" onClick={() => setSelected((prev) => uniq(prev.concat(DEFAULT_COUNTRIES)))}>
+                    Default countries
+                    <span className="RegionSelector--group--item--only" onClick={() => setSelected(() => DEFAULT_COUNTRIES)}>
+                      only
+                    </span>
+                  </Dropdown.Item>
+                </Fragment>
                 {Object.entries(groups).flatMap(([country, regions]) => {
                   if (isEmpty(regions)) {
                     return null;
