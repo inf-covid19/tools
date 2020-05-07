@@ -4,6 +4,7 @@ import { DEFAULT_COUNTRIES, DEFAULT_OPTIONS } from "../constants";
 import "./Editor.css";
 import RegionSelector from "./RegionSelector";
 import { omit } from "lodash";
+import ExportChart from "./ExportChart";
 
 type ScaleType = "linear" | "log";
 type ChartType = "heatmap" | "bar" | "area" | "line" | "scatter";
@@ -390,33 +391,38 @@ function Editor(props: EditorProps) {
                     <Checkbox toggle checked={showDataLabels} onChange={() => setOptions({ ...options, showDataLabels: !showDataLabels })} label="Show data labels" />
                   </Form.Field>
                 )}
-                <Button
-                  type="button"
-                  primary
-                  loading={saving}
-                  positive={saved}
-                  onClick={() => {
-                    setSaving(true);
-                    chartRef.current?.chart.dataURI().then(({ imgURI }: any) => {
-                      const newSavedCharts = [
-                        ...savedCharts,
-                        {
-                          dataURI: imgURI,
-                          ...options,
-                        },
-                      ];
-                      setSavedCharts(newSavedCharts);
-                      setSaved(true);
-                      setSaving(false);
-                    });
-                  }}
-                >
-                  {saved ? "Saved" : "Save"}
-                </Button>
 
-                <Button type="button" onClick={() => setOptions(opt => ({...opt, ...omit(DEFAULT_OPTIONS, ['selectedRegions']) }) as ChartOptions)}>
-                  Reset
-                </Button>
+                <div className="Editor--actions--container">
+                  <Button
+                    type="button"
+                    primary
+                    loading={saving}
+                    positive={saved}
+                    onClick={() => {
+                      setSaving(true);
+                      chartRef.current?.chart.dataURI().then(({ imgURI }: any) => {
+                        const newSavedCharts = [
+                          ...savedCharts,
+                          {
+                            dataURI: imgURI,
+                            ...options,
+                          },
+                        ];
+                        setSavedCharts(newSavedCharts);
+                        setSaved(true);
+                        setSaving(false);
+                      });
+                    }}
+                  >
+                    {saved ? "Saved" : "Save"}
+                  </Button>
+
+                  <Button type="button" onClick={() => setOptions((opt) => ({ ...opt, ...omit(DEFAULT_OPTIONS, ["selectedRegions"]) } as ChartOptions))}>
+                    Reset
+                  </Button>
+
+                  <ExportChart title={options.title} metric={options.metric} isCumulative={options.isCumulative} chart={chartRef} />
+                </div>
               </Form>
             </Segment>
           </Grid.Column>

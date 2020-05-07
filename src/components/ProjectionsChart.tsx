@@ -164,7 +164,7 @@ function ProjectionsChart(props: ProjectionsChartProps, ref: React.Ref<any>) {
         },
         toolbar: {
           tools: {
-            download: true,
+            download: false,
             selection: false,
             pan: false,
             zoom: true,

@@ -137,7 +137,7 @@ function PredictionsChart(props: PredictionsChartProps, ref: React.Ref<any>) {
         },
         toolbar: {
           tools: {
-            download: true,
+            download: false,
             selection: false,
             zoom: false,
             zoomin: false,

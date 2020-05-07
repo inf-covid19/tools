@@ -22,3 +22,11 @@
   justify-content: center;
   min-height: 20em;
 }
+
+.Editor--actions--container {
+  display: flex;
+}
+
+.Editor--actions--container :last-child {
+  margin-left: auto;
+}
