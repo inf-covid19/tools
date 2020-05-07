@@ -111,7 +111,7 @@ function TrendChart(props: TrendChartProps, ref: React.Ref<any>) {
         },
         toolbar: {
           tools: {
-            download: true,
+            download: false,
             selection: true,
             zoom: true,
             zoomin: false,
