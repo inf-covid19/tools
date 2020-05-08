@@ -21,7 +21,7 @@ export default function ExportChart({ chart, title, isCumulative, metric }: Prop
 
   return (
     <Dropdown className="button" text="Export" loading={loading}>
-      <Dropdown.Menu direction="left">
+      <Dropdown.Menu>
         <Dropdown.Item
           text="Export as SVG"
           onClick={() => {

@@ -26,7 +26,3 @@
 .Editor--actions--container {
   display: flex;
 }
-
-.Editor--actions--container :last-child {
-  margin-left: auto;
-}

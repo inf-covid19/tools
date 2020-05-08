@@ -202,7 +202,6 @@ function PredictionsChart(props: PredictionsChartProps, ref: React.Ref<any>) {
       },
       plotOptions: {
         heatmap: {
-          shadeIntensity: 0,
           colorScale,
         },
       },

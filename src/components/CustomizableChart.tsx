@@ -136,7 +136,6 @@ function CustomizableChart(props: CustomizableChartProps, ref: React.Ref<any>) {
       },
       plotOptions: {
         heatmap: {
-          shadeIntensity: 0.0,
           colorScale,
         },
       },
