@@ -24,7 +24,7 @@ export function getNameByRegionId(metadata: any, regionId: string) {
     return "";
   }
 
-  if (!!data.parent) {
+  if (!!data.parent && !metadata.hasOwnProperty(regionId)) {
     return `${data.name.replace(/_/g, ' ')}, ${data.parent.replace(/_/g, ' ')}`;
   }
 

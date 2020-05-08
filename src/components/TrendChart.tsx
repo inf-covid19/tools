@@ -40,20 +40,20 @@ function TrendChart(props: TrendChartProps, ref: React.Ref<any>) {
           const valueColumn = metric;
           const valueDailyColumn = `${metric}_daily`;
 
-          if (row.cases < alignAt) return [];
+          if (row[metric] < alignAt) return [];
 
           return [
             {
               date: row.date,
               x: row[valueColumn],
-              y: regionData.slice(Math.max(0, index - 7), index).reduce((sum, r) => sum + get(r, valueDailyColumn, 0), 0),
+              y: regionData.slice(Math.max(0, index - 6), index + 1).reduce((sum, r) => sum + get(r, valueDailyColumn, 0), 0),
             },
           ];
         }),
       };
     });
 
-    return series.filter(s => s.data.length > 0);
+    return series.filter((s) => s.data.length > 0);
   }, [data, metadata, metric, alignAt]);
 
   const [xScaler, yScaler, scaledSeries] = useMemo(() => {
@@ -73,12 +73,12 @@ function TrendChart(props: TrendChartProps, ref: React.Ref<any>) {
 
     const xScaler =
       scale === "log"
-        ? d3.scaleLog().domain([Math.max(0.01, Math.pow(10, Math.floor(Math.log10(minX)))), Math.pow(10, Math.ceil(Math.log10(maxX)))])
-        : d3.scaleLinear().domain([minX, maxX]);
+        ? d3.scaleLog().domain([Math.max(1, Math.pow(10, Math.floor(Math.log10(minX)))), Math.pow(10, Math.ceil(Math.log10(maxX)))])
+        : d3.scaleLinear().domain([0, round(maxX)]);
     const yScaler =
       scale === "log"
-        ? d3.scaleLog().domain([Math.max(0.01, Math.pow(10, Math.floor(Math.log10(minY)))), Math.pow(10, Math.ceil(Math.log10(maxY)))])
-        : d3.scaleLinear().domain([minY, maxY]);
+        ? d3.scaleLog().domain([Math.max(1, Math.pow(10, Math.floor(Math.log10(minY)))), Math.pow(10, Math.ceil(Math.log10(maxY)))])
+        : d3.scaleLinear().domain([0, round(maxY)]);
 
     const scaledSeries = series.map((series) => ({
       ...series,
@@ -89,7 +89,7 @@ function TrendChart(props: TrendChartProps, ref: React.Ref<any>) {
       })),
     }));
 
-    return [xScaler, yScaler, scaledSeries] as const;
+    return [xScaler, yScaler, scaledSeries];
   }, [series, scale]);
 
   const sortedSeries = useMemo(() => {
@@ -101,6 +101,10 @@ function TrendChart(props: TrendChartProps, ref: React.Ref<any>) {
   const chartOptions = useMemo(() => {
     const xTicks = xScaler.ticks();
     const yTicks = yScaler.ticks();
+
+    const xTickAmount = Math.log10(last(xTicks)!) - Math.log10(first(xTicks)!);
+    const yTickAmount = Math.log10(last(yTicks)!) - Math.log10(first(yTicks)!);
+
     const withXScaler = (fn: (...args: any) => {}) => (n: number, ...args: any) => fn(Math.round(xScaler.invert(n)), ...args);
     const withYScaler = (fn: (...args: any) => {}) => (n: number, ...args: any) => fn(Math.round(yScaler.invert(n)), ...args);
 
@@ -134,6 +138,7 @@ function TrendChart(props: TrendChartProps, ref: React.Ref<any>) {
       colors: seriesColors,
       stroke: {
         width: 2,
+        curve: "straight",
       },
       tooltip: {
         shared: false,
@@ -153,8 +158,9 @@ function TrendChart(props: TrendChartProps, ref: React.Ref<any>) {
       },
       xaxis: {
         type: "numeric",
-        max: scale === "log" ? xScaler(last(xTicks)!) : undefined,
-        min: scale === "log" ? xScaler(first(xTicks)!) : undefined,
+        max: 1,
+        min: 0,
+        tickAmount: scale === "log" ? xTickAmount : undefined,
         labels: {
           formatter: withXScaler((n: number) => (n < 1000 ? Math.round(n) : numberFormatter(n))),
         },
@@ -166,8 +172,9 @@ function TrendChart(props: TrendChartProps, ref: React.Ref<any>) {
         },
       },
       yaxis: {
-        max: scale === "log" ? yScaler(last(yTicks)!) : undefined,
-        min: scale === "log" ? yScaler(first(yTicks)!) : undefined,
+        max: 1,
+        min: 0,
+        tickAmount: scale === "log" ? yTickAmount : undefined,
         labels: {
           formatter: withYScaler((n: number) => (n < 1000 ? Math.round(n) : numberFormatter(n))),
         },
@@ -184,8 +191,10 @@ function TrendChart(props: TrendChartProps, ref: React.Ref<any>) {
       },
       markers: {
         size: 3,
+        strokeWidth: 1,
+        strokeOpacity: 0.7,
         hover: {
-          size: 5,
+          sizeOffset: 3,
         },
       },
     };
@@ -203,3 +212,11 @@ function TrendChart(props: TrendChartProps, ref: React.Ref<any>) {
 }
 
 export default React.forwardRef(TrendChart);
+
+const round = (n: number) => {
+  let factor = 5;
+  for (let x = 5; x * 2 <= n; x *= 10) {
+    factor = x;
+  }
+  return Math.ceil(n / factor) * factor;
+};
