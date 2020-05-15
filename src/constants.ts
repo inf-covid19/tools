@@ -1,3 +1,8 @@
+export type ScaleType = "linear" | "log";
+export type ChartType = "heatmap" | "bar" | "area" | "line" | "scatter";
+export type MetricType = "cases" | "deaths";
+export type ProjectionType = "tsne" | "umap";
+
 export const DEFAULT_OPTIONS = {
   chartType: "heatmap",
   metric: "cases",
@@ -7,9 +12,9 @@ export const DEFAULT_OPTIONS = {
   dayInterval: 30,
   selectedRegions: {},
   alignAt: 0,
-  scale: "log",
+  scale: "log" as ScaleType,
   predictionDays: 7,
-  projectionType: "umap",
+  projectionType: "umap" as ProjectionType,
   epsilon: 5,
   perplexity: 10,
   iterations: 5000,

@@ -1,15 +1,12 @@
 import React, { Fragment, useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { Button, Card, Checkbox, Container, Form, Grid, Header, Icon, Image, Segment } from "semantic-ui-react";
-import { DEFAULT_COUNTRIES, DEFAULT_OPTIONS } from "../constants";
+import { DEFAULT_COUNTRIES, DEFAULT_OPTIONS, ChartType, MetricType, ScaleType, ProjectionType } from "../constants";
 import "./Editor.css";
 import RegionSelector from "./RegionSelector";
 import { omit } from "lodash";
 import ExportChart from "./ExportChart";
 
-type ScaleType = "linear" | "log";
-type ChartType = "heatmap" | "bar" | "area" | "line" | "scatter";
-type MetricType = "cases" | "deaths";
-type ProjectionType = "tsne" | "umap";
+
 type SelectedCountriesMap = Record<string, boolean>;
 export type ChartOptions = {
   chartType: ChartType;

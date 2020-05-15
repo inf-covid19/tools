@@ -1,6 +1,6 @@
 import * as d3 from "d3";
 import { format } from "date-fns";
-import { first, last, sortBy } from "lodash";
+import { first, last, sortBy, defaultTo } from "lodash";
 import get from "lodash/get";
 import React, { useMemo } from "react";
 import ReactApexChart, { Props } from "react-apexcharts";
@@ -46,7 +46,7 @@ function TrendChart(props: TrendChartProps, ref: React.Ref<any>) {
             {
               date: row.date,
               x: row[valueColumn],
-              y: regionData.slice(Math.max(0, index - 6), index + 1).reduce((sum, r) => sum + get(r, valueDailyColumn, 0), 0),
+              y: defaultTo(regionData.slice(Math.max(0, index - 6), index + 1).reduce((sum, r) => sum + get(r, valueDailyColumn, 0), 0), 0),
             },
           ];
         }),
@@ -85,7 +85,7 @@ function TrendChart(props: TrendChartProps, ref: React.Ref<any>) {
       data: series.data.map((item) => ({
         ...item,
         x: xScaler(item.x),
-        y: yScaler(item.y),
+        y: defaultTo(yScaler(item.y), 0),
       })),
     }));
 
