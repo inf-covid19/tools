@@ -13,6 +13,7 @@ import useLastUpdated from "./hooks/useLastUpdated";
 import useMetadata from "./hooks/useMetadata";
 import PredictionsEditor from "./components/PredictionsEditor";
 import ProjectionsEditor from "./components/ProjectionsEditor";
+import SimilarityExplorer from './components/Similarity/Explorer';
 
 const LAST_TAB_KEY = "covid19-tools.api.lastTab";
 
@@ -28,6 +29,10 @@ const MENU_ITEMS = [{
 },{
   name: 'Projection Visualizer',
   value: 'projections',
+  isBeta: true,
+},{
+  name: 'Similarity Explorer',
+  value: 'similarityExplorer',
   isBeta: true,
 }]
 
@@ -71,6 +76,7 @@ function App() {
         {tab === "trends" && <TrendEditor />}
         {tab === "predictions" && <PredictionsEditor />}
         {tab === "projections" && <ProjectionsEditor />}
+        {tab === 'similarityExplorer' && <SimilarityExplorer />}
       </Container>
 
       <footer className="App--footer">

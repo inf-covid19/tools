@@ -1,12 +1,11 @@
 import get from "lodash/get";
 
 const getRegionPath = (id: string) => {
-  let regionPath = id.split(".");
-  if (regionPath.length >= 3) {
-    regionPath = [...regionPath.slice(0, 2), regionPath.slice(2).join(".")];
+  const [country, region] = id.split(".regions.");
+  if (!!region) {
+    return [country, 'regions', region];
   }
-
-  return regionPath;
+  return [country];
 };
 
 export function getByRegionId(metadata: any, regionId: string) {

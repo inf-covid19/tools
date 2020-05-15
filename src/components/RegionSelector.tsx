@@ -3,18 +3,21 @@ import useMetadata from "../hooks/useMetadata";
 import { Dropdown, Header, Flag } from "semantic-ui-react";
 import debounce from "lodash/debounce";
 import Fuse from "fuse.js";
-import { keyBy, sortBy, isEmpty, groupBy, uniq } from "lodash";
+import { keyBy, sortBy, isEmpty, groupBy, uniq, castArray } from "lodash";
 import get from "lodash/get";
 import { PLACE_TYPE_LABEL_MAPPING, DEFAULT_COUNTRIES } from "../constants";
 
 import "./RegionSelector.css";
+import first from "lodash/first";
 
 type Props = {
   value: Record<string, boolean>;
+  multiple?: boolean;
   onChange: (value: Record<string, boolean>) => void;
+  filter?: (key: string) => boolean;
 };
 
-export default function RegionSelector({ value, onChange }: Props) {
+export default function RegionSelector({ value, onChange, multiple = true, filter = () => true }: Props) {
   const [search, setSearch] = useState("");
   const [fromValue, setFromValue] = useState("all");
   const [selected, setSelected] = useState<string[]>(Object.keys(value).filter((k) => value[k]));
@@ -98,7 +101,7 @@ export default function RegionSelector({ value, onChange }: Props) {
     return selected.map((value) => regions[value]).filter(Boolean);
   }, [regions, selected]);
 
-  const options = useMemo(() => {
+  const allOptions = useMemo(() => {
     if (fromValue !== "all") {
       return selectedOptions.concat(
         sortBy(
@@ -114,6 +117,10 @@ export default function RegionSelector({ value, onChange }: Props) {
     return selectedOptions.concat(result);
   }, [fromValue, search, selectedOptions, fuse, regions]);
 
+  const options = useMemo(() => {
+    return allOptions.filter(o => filter(o.value));
+  }, [allOptions, filter])
+
   const onSearchChangeHandler = useCallback(
     debounce((_: any, { searchQuery }: any) => {
       setSearch(searchQuery);
@@ -122,7 +129,7 @@ export default function RegionSelector({ value, onChange }: Props) {
   );
 
   const onChangeHandler = useCallback((_: any, { value }: any) => {
-    setSelected(value);
+    setSelected(castArray(value));
     setSearch("");
   }, []);
 
@@ -132,68 +139,70 @@ export default function RegionSelector({ value, onChange }: Props) {
 
   return (
     <div>
-      <div
-        style={{
-          display: "flex",
-          marginBottom: "1rem",
-        }}
-      >
-        <div style={{ marginRight: "2rem" }}>
-          <Header as="h4">
-            Select regions from{" "}
-            <Dropdown style={{ zIndex: 13 }} header="Adjust scope" inline options={fromOptions} value={fromValue} onChange={(_: any, { value }: any) => setFromValue(value)} />
-          </Header>
+      {multiple && (
+        <div
+          style={{
+            display: "flex",
+            marginBottom: "1rem",
+          }}
+        >
+          <div style={{ marginRight: "2rem" }}>
+            <Header as="h4">
+              Select regions from{" "}
+              <Dropdown style={{ zIndex: 13 }} header="Adjust scope" inline options={fromOptions} value={fromValue} onChange={(_: any, { value }: any) => setFromValue(value)} />
+            </Header>
+          </div>
+
+          <div>
+            <Header as="h4" color="grey">
+              <Dropdown style={{ zIndex: 13 }} text="Select region group" inline direction="left" scrolling>
+                <Dropdown.Menu>
+                  <Fragment key={"world"}>
+                    <Dropdown.Header icon="globe" content="World" />
+                    <Dropdown.Item key={`default`} className="RegionSelector--group--item" onClick={() => setSelected((prev) => uniq(prev.concat(DEFAULT_COUNTRIES)))}>
+                      Default countries
+                      <span className="RegionSelector--group--item--only" onClick={() => setSelected(() => DEFAULT_COUNTRIES)}>
+                        only
+                      </span>
+                    </Dropdown.Item>
+                  </Fragment>
+                  {Object.entries(groups).flatMap(([country, regions]) => {
+                    if (isEmpty(regions)) {
+                      return null;
+                    }
+
+                    const countryName = country.replace(/_/g, " ");
+
+                    return (
+                      <Fragment key={country}>
+                        <Dropdown.Header>
+                          <Flag name={get(metadata, [country, "geoId"], "").toLowerCase()} /> {countryName}
+                        </Dropdown.Header>
+                        {Object.entries(regions).map(([group, items]) => {
+                          const [groupName, type] = group.split(":", 2);
+
+                          return (
+                            <Dropdown.Item
+                              key={`${country}-${group}`}
+                              className="RegionSelector--group--item"
+                              onClick={() => setSelected((prev) => uniq(prev.concat(items.map((i) => i.value))))}
+                            >
+                              {`${PLACE_TYPE_LABEL_MAPPING[type]} from ${groupName.replace(/_/g, " ")}`}
+                              <span className="RegionSelector--group--item--only" onClick={() => setSelected(items.map((i) => i.value))}>
+                                only
+                              </span>
+                            </Dropdown.Item>
+                          );
+                        })}
+                      </Fragment>
+                    );
+                  })}
+                </Dropdown.Menu>
+              </Dropdown>
+            </Header>
+          </div>
         </div>
-
-        <div>
-          <Header as="h4" color="grey">
-            <Dropdown style={{ zIndex: 13 }} text="Select region group" inline direction="left" scrolling>
-              <Dropdown.Menu>
-                <Fragment key={"world"}>
-                  <Dropdown.Header icon="globe" content="World" />
-                  <Dropdown.Item key={`default`} className="RegionSelector--group--item" onClick={() => setSelected((prev) => uniq(prev.concat(DEFAULT_COUNTRIES)))}>
-                    Default countries
-                    <span className="RegionSelector--group--item--only" onClick={() => setSelected(() => DEFAULT_COUNTRIES)}>
-                      only
-                    </span>
-                  </Dropdown.Item>
-                </Fragment>
-                {Object.entries(groups).flatMap(([country, regions]) => {
-                  if (isEmpty(regions)) {
-                    return null;
-                  }
-
-                  const countryName = country.replace(/_/g, " ");
-
-                  return (
-                    <Fragment key={country}>
-                      <Dropdown.Header>
-                        <Flag name={get(metadata, [country, "geoId"], "").toLowerCase()} /> {countryName}
-                      </Dropdown.Header>
-                      {Object.entries(regions).map(([group, items]) => {
-                        const [groupName, type] = group.split(":", 2);
-
-                        return (
-                          <Dropdown.Item
-                            key={`${country}-${group}`}
-                            className="RegionSelector--group--item"
-                            onClick={() => setSelected((prev) => uniq(prev.concat(items.map((i) => i.value))))}
-                          >
-                            {`${PLACE_TYPE_LABEL_MAPPING[type]} from ${groupName.replace(/_/g, " ")}`}
-                            <span className="RegionSelector--group--item--only" onClick={() => setSelected(items.map((i) => i.value))}>
-                              only
-                            </span>
-                          </Dropdown.Item>
-                        );
-                      })}
-                    </Fragment>
-                  );
-                })}
-              </Dropdown.Menu>
-            </Dropdown>
-          </Header>
-        </div>
-      </div>
+      )}
       <Dropdown
         style={{ zIndex: 12 }}
         placeholder={fromValue === "all" ? "Search for countries, states, provinces..." : `Choose regions from ${fromValue}...`}
@@ -201,11 +210,11 @@ export default function RegionSelector({ value, onChange }: Props) {
         fluid
         category
         search
-        multiple
+        multiple={multiple}
         selection
         loading={loading}
         options={options}
-        value={selected}
+        value={multiple ? selected : first(selected)}
         minCharacters={1}
         noResultsMessage={search.length < 1 ? "Start typing..." : "No results found."}
         onChange={onChangeHandler}
