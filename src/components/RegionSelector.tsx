@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useEffect, useCallback, Fragment } from "react";
 import useMetadata from "../hooks/useMetadata";
-import { Dropdown, Header, Flag } from "semantic-ui-react";
+import { Dropdown, Header, Flag, FlagNameValues } from "semantic-ui-react";
 import debounce from "lodash/debounce";
 import Fuse from "fuse.js";
 import { keyBy, sortBy, isEmpty, groupBy, uniq, castArray } from "lodash";
@@ -176,7 +176,7 @@ export default function RegionSelector({ value, onChange, multiple = true, filte
                     return (
                       <Fragment key={country}>
                         <Dropdown.Header>
-                          <Flag name={get(metadata, [country, "geoId"], "").toLowerCase()} /> {countryName}
+                          <Flag name={get(metadata, [country, "geoId"], "").toLowerCase() as FlagNameValues} /> {countryName}
                         </Dropdown.Header>
                         {Object.entries(regions).map(([group, items]) => {
                           const [groupName, type] = group.split(":", 2);

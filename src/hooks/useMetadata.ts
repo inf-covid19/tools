@@ -1,42 +1,33 @@
-import { useState, useEffect, useMemo } from "react";
-import { getMetadata } from "../store";
-export const METADATA_KEY = "covid19-tools.metadata.v1";
+import { useMemo } from "react";
+import { useQuery } from "react-query";
+
+export type MetadataRegion = {
+  name: string;
+  file: string;
+  iso: string;
+  place_type: string;
+  parent?: string;
+};
+
+export type MetadataCountry = {
+  name: string;
+  file: string;
+  geoId: string;
+  countryTerritoryCode: string;
+  parent: string;
+  regions: Record<string, MetadataRegion>;
+};
+
+export type Metadata = Record<string, MetadataCountry>;
+
+const fetchMetadata = async () => {
+  const response = await fetch("https://raw.githubusercontent.com/inf-covid19/covid19-data/master/data/metadata.json");
+  const data = await response.json();
+  return data as Metadata;
+};
 
 export default function useMetadata() {
-  const [data, setData] = useState<Record<string, any>>();
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const { data = null, status, error } = useQuery("metadata", fetchMetadata);
 
-  useEffect(() => {
-    let cancelled = false;
-
-    setLoading(true);
-    setError(null);
-
-    getMetadata()
-      .then((data) => {
-        if (cancelled) return;
-
-        localStorage.setItem(METADATA_KEY, JSON.stringify(data));
-
-        setData(data);
-      })
-      .catch((err) => {
-        if (cancelled) return;
-
-        console.error("Failed to fetch metadata:", err);
-        setError(err);
-      })
-      .finally(() => {
-        if (cancelled) return;
-
-        setLoading(false);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  return useMemo(() => ({ data, loading, error }), [data, loading, error]);
+  return useMemo(() => ({ data, loading: status === "loading", error }), [data, status, error]);
 }

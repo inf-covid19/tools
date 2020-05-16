@@ -1,26 +1,21 @@
-import { useState, useEffect } from "react";
 import { subHours } from "date-fns";
+import { useMemo } from "react";
+import { useQuery } from "react-query";
+import { get } from "lodash";
+
+const defaultLastUpdated = subHours(new Date(), 2).toISOString();
+
+const fetchRepo = async () => {
+  const response = await fetch("https://api.github.com/repos/inf-covid19/data/branches/master");
+  const data = await response.json();
+
+  return get(data, "commit.commit.author.date", defaultLastUpdated);
+};
 
 export default function useLastUpdated() {
-  const [date, setDate] = useState(subHours(new Date(), 2));
+  const { data = defaultLastUpdated } = useQuery("last-updated", fetchRepo);
 
-  useEffect(() => {
-    let cancelled = false;
-
-    fetch("https://api.github.com/repos/inf-covid19/data/branches/master")
-      .then(resp => resp.json())
-      .then(json => {
-        if (cancelled) return;
-        setDate(new Date(json.commit.commit.author.date));
-      })
-      .catch(error => {
-        console.error("Unable to fetch last updated date.", error);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  return date;
+  return useMemo(() => {
+    return new Date(data);
+  }, [data]);
 }

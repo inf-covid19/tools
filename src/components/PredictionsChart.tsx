@@ -31,7 +31,7 @@ function PredictionsChart(props: PredictionsChartProps, ref: React.Ref<any>) {
   const { data: metadata } = useMetadata();
 
   const series = useMemo(() => {
-    if (!data) {
+    if (!data || !metadata) {
       return [];
     }
 
