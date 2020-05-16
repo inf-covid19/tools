@@ -20,11 +20,7 @@ export default function useRegionData(regionIds: string[]) {
       const cachedKeys: string[] = [];
       const uncachedKeys: string[] = [];
       keys.forEach((key) => {
-        if (!!cache.current[key]) {
-          cachedKeys.push(key);
-        } else {
-          uncachedKeys.push(key);
-        }
+        (!!cache.current[key] ? cachedKeys : uncachedKeys).push(key);
       });
 
       const keysByFile = groupBy(uncachedKeys, (k: string) => getFileByRegionId(metadata, k));
