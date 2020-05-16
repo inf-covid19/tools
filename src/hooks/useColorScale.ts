@@ -1,6 +1,6 @@
-import { useMemo } from "react";
 import * as d3 from "d3";
-import { rgbToColorString, parseToRgb, meetsContrastGuidelines } from "polished";
+import { parseToRgb, readableColor, rgbToColorString } from "polished";
+import { useMemo } from "react";
 
 function useColorScale(series: { data: { y: number }[] }[]) {
   const colorScale = useMemo(() => {
@@ -22,7 +22,7 @@ function useColorScale(series: { data: { y: number }[] }[]) {
       const to = arr[index + 1];
       const name = from === 0 ? `<${to + 1}` : to === undefined ? `>${from - 1}` : `${from} - ${to}`;
       const color = rgbToColorString(parseToRgb(colorscale(value)));
-      const foreColor = meetsContrastGuidelines(color, "#4d4d4d").AA ? "#4d4d4d" : "#ffffff";
+      const foreColor = readableColor(color, "#4d4d4d", "#ffffff");
 
       return {
         from,
