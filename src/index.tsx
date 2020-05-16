@@ -4,15 +4,20 @@ import "./index.css";
 import App from "./App";
 import * as serviceWorker from "./serviceWorker";
 import ReactGA from "react-ga";
+import { ReactQueryConfigProvider } from "react-query";
 
 if (process.env.REACT_APP_GA_TRACKING_CODE) {
   ReactGA.initialize(process.env.REACT_APP_GA_TRACKING_CODE);
   ReactGA.pageview(window.location.pathname + window.location.search);
 }
 
+const queryConfig = { refetchAllOnWindowFocus: false };
+
 ReactDOM.render(
   <React.StrictMode>
-    <App />
+    <ReactQueryConfigProvider config={queryConfig}>
+      <App />
+    </ReactQueryConfigProvider>
   </React.StrictMode>,
   document.getElementById("root")
 );

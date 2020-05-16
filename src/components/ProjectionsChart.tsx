@@ -46,7 +46,7 @@ function ProjectionsChart(props: ProjectionsChartProps, ref: React.Ref<any>) {
   const { data: metadata } = useMetadata();
 
   const series = useMemo(() => {
-    if (loading || !data) {
+    if (loading || !data ||!metadata) {
       return [];
     }
 

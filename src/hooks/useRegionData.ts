@@ -1,67 +1,56 @@
+import { csv } from "d3";
+import { groupBy } from "lodash";
 import sortBy from "lodash/sortBy";
-import { useEffect, useMemo, useState } from "react";
-import { getRegionData } from "../store";
+import { useCallback, useMemo, useRef } from "react";
+import { useQuery } from "react-query";
+import { getByRegionId, getFileByRegionId } from "../utils/metadata";
 import normalizeTimeseries, { TimeseriesRow } from "../utils/normalizeTimeseries";
 import useMetadata from "./useMetadata";
-import { getFileByRegionId, getByRegionId } from "../utils/metadata";
-import { isEmpty } from "lodash";
 
 export default function useRegionData(regionIds: string[]) {
-  const [data, setData] = useState<Record<string, TimeseriesRow[]> | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const cache = useRef<Record<string, TimeseriesRow[]>>({});
   const { data: metadata } = useMetadata();
 
-  const triggerUpdate = useMemo(() => {
-    return sortBy([...regionIds]).join("|");
-  }, [regionIds]);
+  const sortedRegionIds = useMemo(() => sortBy(regionIds), [regionIds]);
 
-  useEffect(() => {
-    let cancelled = false;
+  const queryFn = useCallback(
+    async (_: string, keys: string[]) => {
+      if (!metadata) return {};
 
-    if (isEmpty(metadata)) return;
-
-    setLoading(true);
-    setError(null);
-    setData(null);
-
-    const regionFileMapped: Record<string, string[]> = {};
-    regionIds.forEach((id) => {
-      const regionFile = getFileByRegionId(metadata, id);
-      regionFileMapped[regionFile] = [...(regionFileMapped[regionFile] || []), id];
-    });
-
-    const regionFiles = Object.keys(regionFileMapped);
-
-    Promise.all(regionFiles.map((file) => getRegionData(file)))
-      .then((results) => {
-        if (cancelled) return;
-
-        const data: Record<string, TimeseriesRow[]> = {};
-        results.forEach((res, index) => {
-          const ids = regionFileMapped[regionFiles[index]];
-          ids.forEach((regionId) => {
-            data[regionId] = normalizeTimeseries(regionId, res, getByRegionId(metadata, regionId));
-          });
-        });
-        setData(data);
-      })
-      .catch((err) => {
-        if (cancelled) return;
-
-        console.error("Failed to fetch region data:", err);
-        setError(err);
-      })
-      .finally(() => {
-        if (cancelled) return;
-
-        setLoading(false);
+      const cachedKeys: string[] = [];
+      const uncachedKeys: string[] = [];
+      keys.forEach((key) => {
+        if (!!cache.current[key]) {
+          cachedKeys.push(key);
+        } else {
+          uncachedKeys.push(key);
+        }
       });
 
-    return () => {
-      cancelled = true;
-    };
-  }, [triggerUpdate, metadata]); // eslint-disable-line
+      const keysByFile = groupBy(uncachedKeys, (k: string) => getFileByRegionId(metadata, k));
+      const files = Object.keys(keysByFile);
 
-  return useMemo(() => ({ data, loading, error }), [data, loading, error]);
+      const dataByKey: Record<string, TimeseriesRow[]> = {};
+
+      const data = await Promise.all(files.map((file) => csv(`https://raw.githubusercontent.com/inf-covid19/covid19-data/master/${file}?v=2`)));
+      data.forEach((raw, index) => {
+        keysByFile[files[index]].forEach((key) => {
+          dataByKey[key] = normalizeTimeseries(key, raw, getByRegionId(metadata, key));
+        });
+      });
+
+      cachedKeys.forEach((key) => {
+        dataByKey[key] = cache.current[key];
+      });
+
+      cache.current = dataByKey;
+
+      return dataByKey;
+    },
+    [metadata]
+  );
+
+  const { data, status, error } = useQuery(metadata && ["region-data", sortedRegionIds], queryFn);
+
+  return useMemo(() => ({ data, loading: status === "loading", error }), [data, status, error]);
 }

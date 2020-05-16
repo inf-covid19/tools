@@ -30,7 +30,7 @@ function TrendChart(props: TrendChartProps, ref: React.Ref<any>) {
   const { data: metadata } = useMetadata();
 
   const series = useMemo(() => {
-    if (!data) return [];
+    if (!data || !metadata) return [];
 
     const series = Object.entries(data).map(([regionId, regionData]) => {
       return {

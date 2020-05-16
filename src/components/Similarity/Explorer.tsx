@@ -22,9 +22,9 @@ const Explorer = () => {
     setSecondary("");
   }, []);
 
-  const { data: metadata, loading: loadingMetadata } = useMetadata();
+  const { data: metadata } = useMetadata();
 
-  const { data, status } = useQuery("region-clustering", () => csv("https://raw.githubusercontent.com/inf-covid19/similarity/master/output/region_clusters.csv"));
+  const { data } = useQuery("region-clustering", () => csv("https://raw.githubusercontent.com/inf-covid19/similarity/master/output/region_clusters.csv"));
 
   const [dataByKey, dataByCluster] = useMemo(() => {
     if (!data || !metadata) return [{}, {}];
@@ -93,7 +93,7 @@ const Explorer = () => {
     return { [currentRegion.key]: true, [secondaryRegion.key]: true };
   }, [currentRegion, secondaryRegion]);
 
-  if (status === "loading" || loadingMetadata) {
+  if (!data || !metadata) {
     return (
       <div style={{ height: "350px", display: "flex", justifyContent: "center", alignItems: "center" }}>
         <Loader active inline />
