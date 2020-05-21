@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useMemo } from "react";
 import RegionSelector from "../RegionSelector";
-import { Header, Segment, Icon, Flag } from "semantic-ui-react";
-import { csv } from "d3";
+import { Header, Segment, Icon, Flag, Grid, Statistic } from "semantic-ui-react";
+import { format, csv } from "d3";
 import { useQuery } from "react-query";
 import { Loader } from "semantic-ui-react";
 import { keyBy, groupBy, orderBy, get } from "lodash";
@@ -12,6 +12,8 @@ import first from "lodash/first";
 import CustomizableChart from "../CustomizableChart";
 import { DEFAULT_OPTIONS } from "../../constants";
 import TrendChart from "../TrendChart";
+
+const displayNumberFormatter = format(",.2~f");
 
 const Explorer = () => {
   const [region, setRegion] = useState({});
@@ -24,7 +26,7 @@ const Explorer = () => {
 
   const { data: metadata } = useMetadata();
 
-  const { data } = useQuery("region-clustering", () => csv("https://raw.githubusercontent.com/inf-covid19/similarity/master/output/region_clusters.csv"));
+  const { data } = useQuery("region-clustering", () => csv("https://raw.githubusercontent.com/inf-covid19/similarity/v2/output/region_clusters.csv"));
 
   const [dataByKey, dataByCluster] = useMemo(() => {
     if (!data || !metadata) return [{}, {}];
@@ -63,8 +65,16 @@ const Explorer = () => {
   }, [region, dataByKey]);
 
   const { data: topSimilarData, status: topSimilarDataStatus } = useQuery(["region-similar", currentRegion?.key], () =>
-    currentRegion ? csv(`https://raw.githubusercontent.com/inf-covid19/similarity/master/output/per_region/${currentRegion.key}.csv`) : Promise.resolve(null)
+    currentRegion ? csv(`https://raw.githubusercontent.com/inf-covid19/similarity/v2/output/per_region/${currentRegion.key}.csv`) : Promise.resolve(null)
   );
+
+  const aspect = "cases_distance";
+
+  const sortedTopSimilar = useMemo(() => {
+    if (!topSimilarData) return [];
+
+    return orderBy(topSimilarData, aspect);
+  }, [aspect, topSimilarData]);
 
   const keyedTopSimilar = useMemo(() => {
     if (!topSimilarData) return {};
@@ -75,15 +85,15 @@ const Explorer = () => {
   const clusterBuddies = useMemo(() => {
     if (!currentRegion || !topSimilarData) return [];
 
-    return orderBy(dataByCluster[currentRegion.cluster], (item) => keyedTopSimilar[item.key]?.distance);
+    return orderBy(dataByCluster[currentRegion.cluster], (item) => keyedTopSimilar[item.key]?.[aspect]);
   }, [currentRegion, dataByCluster, keyedTopSimilar, topSimilarData]);
 
   const secondaryRegion = useMemo(() => {
-    if (topSimilarData && !secondary) {
-      return dataByKey[first(topSimilarData)?.region!];
+    if (sortedTopSimilar && !secondary) {
+      return dataByKey[first(sortedTopSimilar)?.region!];
     }
     return secondary && dataByKey[secondary];
-  }, [dataByKey, secondary, topSimilarData]);
+  }, [dataByKey, secondary, sortedTopSimilar]);
 
   const chartRegions = useMemo(() => {
     if (!currentRegion || !secondaryRegion) {
@@ -127,6 +137,55 @@ const Explorer = () => {
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 450px" }}>
         <div style={{ padding: 10 }}>
+          <Segment>
+            <Grid columns={2}>
+              <Grid.Column>
+                <Header as="h3">
+                  <Flag name={currentRegion?.flag} /> {currentRegion?.displayName}
+                </Header>
+                <Statistic.Group horizontal>
+                  <Statistic>
+                    <Statistic.Value>{displayNumberFormatter(currentRegion?.population)}</Statistic.Value>
+                    <Statistic.Label>Population</Statistic.Label>
+                  </Statistic>
+                  <Statistic>
+                    <Statistic.Value>{displayNumberFormatter(currentRegion?.area_km)}</Statistic.Value>
+                    <Statistic.Label>km²</Statistic.Label>
+                  </Statistic>
+                  <Statistic>
+                    <Statistic.Value>{currentRegion?.days}</Statistic.Value>
+                    <Statistic.Label>Days since first case</Statistic.Label>
+                  </Statistic>
+                </Statistic.Group>
+              </Grid.Column>
+              <Grid.Column>
+                <Header as="h3">
+                  <Flag name={secondaryRegion?.flag} />
+                  {secondaryRegion?.displayName}
+                </Header>
+                <Statistic.Group horizontal>
+                  <Statistic>
+                    <Statistic.Value>
+                      <DiffIndicator primaryValue={currentRegion?.population} secondaryValue={secondaryRegion?.population} /> {displayNumberFormatter(secondaryRegion?.population)}
+                    </Statistic.Value>
+                    <Statistic.Label>Population</Statistic.Label>
+                  </Statistic>
+                  <Statistic>
+                    <Statistic.Value>
+                      <DiffIndicator primaryValue={currentRegion?.area_km} secondaryValue={secondaryRegion?.area_km} /> {displayNumberFormatter(secondaryRegion?.area_km)}
+                    </Statistic.Value>
+                    <Statistic.Label>km²</Statistic.Label>
+                  </Statistic>
+                  <Statistic>
+                    <Statistic.Value>
+                      <DiffIndicator primaryValue={currentRegion?.days} secondaryValue={secondaryRegion?.days} /> {secondaryRegion?.days}
+                    </Statistic.Value>
+                    <Statistic.Label>Days since first case</Statistic.Label>
+                  </Statistic>
+                </Statistic.Group>
+              </Grid.Column>
+            </Grid>
+          </Segment>
           <Segment>
             <CustomizableChart
               {...DEFAULT_OPTIONS}
@@ -176,7 +235,7 @@ const Explorer = () => {
             ) : (
               <div style={{ maxHeight: "250px", overflow: "auto" }}>
                 <List relaxed>
-                  {topSimilarData?.slice(0, 99).map((r, idx) => (
+                  {sortedTopSimilar?.slice(0, 99).map((r, idx) => (
                     <List.Item
                       href="#"
                       onClick={(evt) => {
@@ -207,19 +266,26 @@ const Explorer = () => {
             </Header>
             <div style={{ maxHeight: "250px", overflow: "auto" }}>
               <List relaxed>
-                {clusterBuddies.map((r) => (
-                  <List.Item
-                    href="#"
-                    onClick={(evt) => {
-                      evt.preventDefault();
-                      setSecondary(r.key);
-                    }}
-                    key={r.key}
-                  >
-                    <Flag name={r.flag} />
-                    {r.displayName}
-                  </List.Item>
-                ))}
+                {clusterBuddies.map((r) =>
+                  r.key === currentRegion?.key ? (
+                    <List.Item key={r.key}>
+                      <Flag name={r.flag} />
+                      {r.displayName}
+                    </List.Item>
+                  ) : (
+                    <List.Item
+                      href="#"
+                      onClick={(evt) => {
+                        evt.preventDefault();
+                        setSecondary(r.key);
+                      }}
+                      key={r.key}
+                    >
+                      <Flag name={r.flag} />
+                      {r.displayName}
+                    </List.Item>
+                  )
+                )}
               </List>
             </div>
           </Segment>
@@ -230,3 +296,14 @@ const Explorer = () => {
 };
 
 export default Explorer;
+
+function DiffIndicator({ primaryValue, secondaryValue }: { primaryValue: number; secondaryValue: number }) {
+  if (primaryValue === secondaryValue) {
+    return <Icon name="minus" color="grey" />;
+  }
+
+  const diff = primaryValue - secondaryValue;
+  const isHugeDiff = Math.abs(diff) > secondaryValue || Math.abs(diff) > primaryValue;
+
+  return <Icon name={`angle ${isHugeDiff ? "double" : ""} ${diff > 0 ? "down" : "up"}` as any} color={diff > 0 ? "red" : "green"} />;
+}
