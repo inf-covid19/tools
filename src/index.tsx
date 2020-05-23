@@ -5,10 +5,11 @@ import App from "./App";
 import * as serviceWorker from "./serviceWorker";
 import ReactGA from "react-ga";
 import { ReactQueryConfigProvider } from "react-query";
+import { BrowserRouter as Router, Route } from "react-router-dom";
+import { QueryParamProvider } from "use-query-params";
 
-if (process.env.REACT_APP_GA_TRACKING_CODE) {
-  ReactGA.initialize(process.env.REACT_APP_GA_TRACKING_CODE);
-  ReactGA.pageview(window.location.pathname + window.location.search);
+if (process.env.NODE_ENV === "production") {
+  ReactGA.initialize(process.env.REACT_APP_GA_TRACKING_CODE!);
 }
 
 const queryConfig = { refetchAllOnWindowFocus: false };
@@ -16,7 +17,11 @@ const queryConfig = { refetchAllOnWindowFocus: false };
 ReactDOM.render(
   <React.StrictMode>
     <ReactQueryConfigProvider config={queryConfig}>
-      <App />
+      <Router basename={process.env.REACT_APP_BASENAME}>
+        <QueryParamProvider ReactRouterRoute={Route}>
+          <App />
+        </QueryParamProvider>
+      </Router>
     </ReactQueryConfigProvider>
   </React.StrictMode>,
   document.getElementById("root")

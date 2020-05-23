@@ -1,5 +1,5 @@
 import * as fns from "date-fns";
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useMemo } from "react";
 import { Container, Header, Menu, Label } from "semantic-ui-react";
 import "./App.css";
 import LogoINF from "./assets/ufrgs-inf.png";
@@ -13,37 +13,54 @@ import useLastUpdated from "./hooks/useLastUpdated";
 import useMetadata from "./hooks/useMetadata";
 import PredictionsEditor from "./components/PredictionsEditor";
 import ProjectionsEditor from "./components/ProjectionsEditor";
-import SimilarityExplorer from './components/Similarity/Explorer';
+import SimilarityExplorer from "./components/Similarity/Explorer";
+import { Switch, Route, Link, generatePath, useLocation, Redirect } from "react-router-dom";
+import ReactGA from "react-ga";
 
 const LAST_TAB_KEY = "covid19-tools.api.lastTab";
 
-const MENU_ITEMS = [{
-  name: 'Chart Editor',
-  value: 'editor'
-},{
-  name: 'Trend Visualizer',
-  value: 'trends'
-},{
-  name: 'Prediction Visualizer',
-  value: 'predictions'
-},{
-  name: 'Projection Visualizer',
-  value: 'projections',
-  isBeta: true,
-},{
-  name: 'Similarity Explorer',
-  value: 'similarityExplorer',
-  isBeta: true,
-}]
+const MENU_ITEMS = [
+  {
+    name: "Chart Editor",
+    path: "/editor",
+    component: ChartEditor,
+  },
+  {
+    name: "Trend Visualizer",
+    path: "/trends",
+    component: TrendEditor,
+  },
+  {
+    name: "Prediction Visualizer",
+    path: "/predictions",
+    component: PredictionsEditor,
+  },
+  {
+    name: "Projection Visualizer",
+    path: "/projections",
+    component: ProjectionsEditor,
+    isBeta: true,
+  },
+  {
+    name: "Similarity Explorer",
+    path: "/similarity/:region?",
+    component: SimilarityExplorer,
+    isBeta: true,
+  },
+];
 
 function App() {
   const lastUpdated = useLastUpdated();
+  const lastLocation = useMemo(() => localStorage.getItem(LAST_TAB_KEY) || MENU_ITEMS[0].path, []);
+
   const { loading } = useMetadata();
-  const [tab, setTab] = useState(localStorage.getItem(LAST_TAB_KEY) || "editor");
+
+  const location = useLocation();
 
   useEffect(() => {
-    localStorage.setItem(LAST_TAB_KEY, tab);
-  }, [tab]);
+    localStorage.setItem(LAST_TAB_KEY, location.pathname);
+    ReactGA.pageview(location.pathname);
+  }, [location]);
 
   if (loading) {
     return <Loader />;
@@ -64,19 +81,26 @@ function App() {
 
       <Container fluid>
         <Menu className="App--menu" pointing secondary>
-          {MENU_ITEMS.map(item => (
-            <Menu.Item key={item.value} name={item.name} active={tab === item.value} onClick={() => setTab(item.value)}>
-              {item.name}
-              {item.isBeta && <Label color="teal">Beta</Label>}
-            </Menu.Item>
+          {MENU_ITEMS.map((item) => (
+            <Route key={item.name} path={item.path}>
+              {({ match }) => (
+                <Menu.Item as={Link} to={generatePath(item.path)} name={item.name} active={!!match}>
+                  {item.name}
+                  {item.isBeta && <Label color="teal">Beta</Label>}
+                </Menu.Item>
+              )}
+            </Route>
           ))}
         </Menu>
 
-        {tab === "editor" && <ChartEditor />}
-        {tab === "trends" && <TrendEditor />}
-        {tab === "predictions" && <PredictionsEditor />}
-        {tab === "projections" && <ProjectionsEditor />}
-        {tab === 'similarityExplorer' && <SimilarityExplorer />}
+        <Switch>
+          {MENU_ITEMS.map((item) => (
+            <Route key={item.name} path={item.path} component={item.component} />
+          ))}
+          <Route path="*">
+            <Redirect to={lastLocation} />
+          </Route>
+        </Switch>
       </Container>
 
       <footer className="App--footer">
