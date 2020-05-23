@@ -277,7 +277,7 @@ function ProjectionsChart(props: ProjectionsChartProps, ref: React.Ref<any>) {
       </div>
     );
   }
-  return <ReactApexChart ref={ref} options={chartOptions} series={projectionSeries} type="scatter" {...rest} />;
+  return <ReactApexChart ref={ref} options={chartOptions} series={projectionSeries} type="scatter" height={rest.height} width={rest.width} />;
 }
 
 export default React.forwardRef(ProjectionsChart);

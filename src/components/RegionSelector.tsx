@@ -1,5 +1,5 @@
 import Fuse from "fuse.js";
-import { castArray, groupBy, isEmpty, keyBy, sortBy, uniq } from "lodash";
+import { castArray, groupBy, isEmpty, keyBy, sortBy, uniq, defaultTo } from "lodash";
 import debounce from "lodash/debounce";
 import first from "lodash/first";
 import get from "lodash/get";
@@ -216,13 +216,12 @@ export default function RegionSelector({ value, onChange, multiple = true, filte
         placeholder={fromValue === "all" ? "Search for countries, states, provinces..." : `Choose regions from ${fromValue}...`}
         clearable
         fluid
-        category
         search
         multiple={multiple}
         selection
         loading={loading}
         options={options}
-        value={multiple ? selected : first(selected)}
+        value={multiple ? selected : defaultTo(first(selected), null) as any}
         minCharacters={1}
         noResultsMessage={search.length < 1 ? "Start typing..." : "No results found."}
         onChange={onChangeHandler}

@@ -218,7 +218,7 @@ function TrendChart(props: TrendChartProps, ref: React.Ref<any>) {
     );
   }
 
-  return <ReactApexChart ref={ref} options={chartOptions} series={sortedSeries} type="line" {...rest} />;
+  return <ReactApexChart ref={ref} options={chartOptions} series={sortedSeries} type="line" height={rest.height} width={rest.width} />;
 }
 
 export default React.forwardRef(TrendChart);

@@ -226,7 +226,7 @@ function PredictionsChart(props: PredictionsChartProps, ref: React.Ref<any>) {
     );
   }
 
-  return <ReactApexChart key={chartType} ref={ref} options={chartOptions} series={sortedSeries} type={chartType} {...rest} />;
+  return <ReactApexChart key={chartType} ref={ref} options={chartOptions} series={sortedSeries} type={chartType} height={rest.height} width={rest.width} />;
 }
 
 export default React.forwardRef(PredictionsChart);
