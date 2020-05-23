@@ -75,6 +75,8 @@ export const PLACE_TYPE_LABEL_MAPPING: Record<string, string> = {
   region: "Regions",
   departamento: "Departments",
   provincia: "Provinces",
-  province:  "Provinces",
-  lower_tier_local_authority: 'LTLAs'
+  province: "Provinces",
+  lower_tier_local_authority: "LTLAs",
 };
+
+export const SIMILARITY_API = `${process.env.REACT_APP_SIMILARITY_API}`;

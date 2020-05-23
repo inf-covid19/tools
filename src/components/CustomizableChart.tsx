@@ -10,18 +10,36 @@ import useMetadata from "../hooks/useMetadata";
 import useRegionData from "../hooks/useRegionData";
 import useSeriesColors from "../hooks/useSeriesColors";
 import { getNameByRegionId } from "../utils/metadata";
-import { alignTimeseries } from "../utils/normalizeTimeseries";
+import { alignTimeseries, TimeseriesRow } from "../utils/normalizeTimeseries";
 import { ChartOptions } from "./Editor";
 import useColorScale from "../hooks/useColorScale";
 
-const displayNumberFormatter = d3.format(",");
+const displayNumberFormatter = d3.format(",.2~f");
 const ordinalFormattter = (n: number) => numeral(n).format("Oo");
 const numberFormatter = d3.format(".2s");
+const smallNumberFormatter = d3.format(".2~f");
 
-type CustomizableChartProps = Omit<Props, "options" | "series" | "type"> & ChartOptions;
+type CustomizableChartProps = Omit<Props, "options" | "series" | "type"> &
+  ChartOptions & {
+    isIncidence?: boolean;
+    getPopulation?: (key: string) => number;
+  };
 
 function CustomizableChart(props: CustomizableChartProps, ref: React.Ref<any>) {
-  const { chartType = "heatmap", title, metric, showDataLabels, isCumulative, dayInterval, selectedRegions, alignAt = 0, timeserieSlice, ...rest } = props;
+  const {
+    chartType = "heatmap",
+    title,
+    metric,
+    showDataLabels,
+    isCumulative,
+    dayInterval,
+    selectedRegions,
+    alignAt = 0,
+    timeserieSlice,
+    isIncidence,
+    getPopulation,
+    ...rest
+  } = props;
 
   const regionsIds = useMemo(() => Object.keys(selectedRegions), [selectedRegions]);
 
@@ -37,6 +55,18 @@ function CustomizableChart(props: CustomizableChartProps, ref: React.Ref<any>) {
     return Object.entries(data).flatMap(([region, regionData]) => {
       const name = getNameByRegionId(metadata, region);
 
+      const getValue = (row: TimeseriesRow) => {
+        const value = isCumulative ? (metric === "cases" ? row.cases : row.deaths) : metric === "cases" ? row.cases_daily : row.deaths_daily;
+
+        if (isIncidence && getPopulation) {
+          const population = getPopulation(region);
+
+          return (value / population) * 100000;
+        }
+
+        return value;
+      };
+
       if (alignAt > 0) {
         const alignedData = regionData.filter((v) => v[metric] >= alignAt);
 
@@ -48,9 +78,9 @@ function CustomizableChart(props: CustomizableChartProps, ref: React.Ref<any>) {
           {
             name,
             key: region,
-            data: alignedData.map((v, index) => ({
+            data: alignedData.map((row, index) => ({
               x: index + 1,
-              y: isCumulative ? v[metric] : v[`${metric}_daily` as "cases_daily" | "deaths_daily"],
+              y: getValue(row),
             })),
           },
         ];
@@ -62,12 +92,12 @@ function CustomizableChart(props: CustomizableChartProps, ref: React.Ref<any>) {
           key: region,
           data: alignTimeseries(regionData, earliestDate).map((row) => ({
             x: row.date.getTime(),
-            y: row[`${metric}${isCumulative ? "" : "_daily"}` as "cases" | "deaths" | "cases_daily" | "deaths_daily"],
+            y: getValue(row),
           })),
         },
       ];
     });
-  }, [loading, data, dayInterval, alignAt, metric, isCumulative, metadata]);
+  }, [loading, data, metadata, dayInterval, alignAt, isCumulative, metric, isIncidence, getPopulation]);
 
   const sortedSeries = useMemo(() => {
     return sortBy(
@@ -81,7 +111,7 @@ function CustomizableChart(props: CustomizableChartProps, ref: React.Ref<any>) {
 
   const seriesColors = useSeriesColors(sortedSeries);
   const colorScale = useColorScale(sortedSeries);
-  
+
   const chartOptions = useMemo(() => {
     return {
       chart: {
@@ -103,7 +133,7 @@ function CustomizableChart(props: CustomizableChartProps, ref: React.Ref<any>) {
       colors: seriesColors,
       tooltip: {
         y: {
-          formatter: (value: number) => `${displayNumberFormatter(value)} ${metric}`,
+          formatter: (value: number) => `${displayNumberFormatter(value)} ${metric}${isIncidence ? " per 100k" : ""}`,
         },
         x: {
           formatter: alignAt > 0 ? (value: number) => `${ordinalFormattter(value)} day after ${alignAt >= 1000 ? numberFormatter(alignAt) : alignAt} ${metric}` : undefined,
@@ -115,9 +145,14 @@ function CustomizableChart(props: CustomizableChartProps, ref: React.Ref<any>) {
           formatter: alignAt > 0 ? ordinalFormattter : undefined,
         },
       },
+      yaxis: {
+        labels: {
+          formatter: smallNumberFormatter,
+        },
+      },
       dataLabels: {
         enabled: showDataLabels,
-        formatter: (n: number) => (n >= 1000 ? numberFormatter(n) : n),
+        formatter: (n: number) => (n >= 1000 ? numberFormatter(n) : smallNumberFormatter(n)),
       },
       title: {
         text: title,
@@ -127,7 +162,7 @@ function CustomizableChart(props: CustomizableChartProps, ref: React.Ref<any>) {
         },
       },
       subtitle: {
-        text: `${isCumulative ? "Total" : "Daily"} number of ${metric}`,
+        text: `${isCumulative ? "Total" : "Daily"} number of ${metric}${isIncidence ? " per 100k" : ""}`,
         floating: true,
         style: {
           fontSize: "14px",
@@ -140,7 +175,7 @@ function CustomizableChart(props: CustomizableChartProps, ref: React.Ref<any>) {
         },
       },
     };
-  }, [seriesColors, alignAt, showDataLabels, title, isCumulative, metric, colorScale]);
+  }, [seriesColors, alignAt, showDataLabels, title, isCumulative, metric, isIncidence, colorScale]);
 
   if (loading) {
     return (
