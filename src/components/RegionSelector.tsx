@@ -172,11 +172,8 @@ export default function RegionSelector({ value, onChange, multiple = true, filte
                 <Dropdown.Menu>
                   <Fragment key={"world"}>
                     <Dropdown.Header icon="globe" content="World" />
-                    <Dropdown.Item key={`default`} className="RegionSelector--group--item" onClick={() => setSelected(uniq(selected.concat(DEFAULT_COUNTRIES)))}>
+                    <Dropdown.Item className="RegionSelector--group--item" onClick={() => setSelected(uniq(selected.concat(DEFAULT_COUNTRIES)))}>
                       Default countries
-                      <span className="RegionSelector--group--item--only" onClick={() => setSelected(DEFAULT_COUNTRIES)}>
-                        only
-                      </span>
                     </Dropdown.Item>
                   </Fragment>
                   {Object.entries(groups).flatMap(([country, regions]) => {
