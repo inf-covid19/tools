@@ -292,14 +292,17 @@ const Explorer = () => {
               />
             </Segment>
             <Segment>
-              <TrendChart
-                {...DEFAULT_OPTIONS}
-                selectedRegions={chartRegions}
-                alignAt={1}
-                height={250}
-                metric={"cases"}
-                title={`Trend comparative between ${currentRegion?.displayName} and ${secondaryRegion?.displayName}`}
-              />
+              <Header as="h3">
+                Trend comparative between {currentRegion?.displayName} and {secondaryRegion?.displayName}
+              </Header>
+              <Grid columns={2}>
+                <Grid.Column>
+                  <TrendChart {...DEFAULT_OPTIONS} selectedRegions={chartRegions} alignAt={1} height={250} metric={"cases"} title={``} />
+                </Grid.Column>
+                <Grid.Column>
+                  <TrendChart {...DEFAULT_OPTIONS} selectedRegions={chartRegions} alignAt={1} height={250} metric={"deaths"} title={``} />
+                </Grid.Column>
+              </Grid>
             </Segment>
           </div>
 

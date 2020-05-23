@@ -13,11 +13,11 @@ import { getNameByRegionId } from "../utils/metadata";
 import { alignTimeseries, TimeseriesRow } from "../utils/normalizeTimeseries";
 import { ChartOptions } from "./Editor";
 import useColorScale from "../hooks/useColorScale";
+import { isNumber } from "lodash";
 
 const displayNumberFormatter = d3.format(",.2~f");
 const ordinalFormattter = (n: number) => numeral(n).format("Oo");
-const numberFormatter = d3.format(".2s");
-const smallNumberFormatter = d3.format(".2~f");
+const numberFormatter = d3.format(".2~s");
 
 type CustomizableChartProps = Omit<Props, "options" | "series" | "type"> &
   ChartOptions & {
@@ -136,7 +136,7 @@ function CustomizableChart(props: CustomizableChartProps, ref: React.Ref<any>) {
           formatter: (value: number) => `${displayNumberFormatter(value)} ${metric}${isIncidence ? " per 100k" : ""}`,
         },
         x: {
-          formatter: alignAt > 0 ? (value: number) => `${ordinalFormattter(value)} day after ${alignAt >= 1000 ? numberFormatter(alignAt) : alignAt} ${metric}` : undefined,
+          formatter: alignAt > 0 ? (value: number) => `${ordinalFormattter(value)} day after ${numberFormatter(alignAt)} ${metric}` : undefined,
         },
       },
       xaxis: {
@@ -147,12 +147,12 @@ function CustomizableChart(props: CustomizableChartProps, ref: React.Ref<any>) {
       },
       yaxis: {
         labels: {
-          formatter: smallNumberFormatter,
+          formatter: (value: any) => isNumber(value) ? numberFormatter(value) : value,
         },
       },
       dataLabels: {
         enabled: showDataLabels,
-        formatter: (n: number) => (n >= 1000 ? numberFormatter(n) : smallNumberFormatter(n)),
+        formatter: numberFormatter,
       },
       title: {
         text: title,
