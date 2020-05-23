@@ -1,17 +1,17 @@
-import React, { useState, useCallback, useMemo, useEffect } from "react";
-import RegionSelector from "../RegionSelector";
-import { Header, Segment, Icon, Flag, Grid, Statistic, Dropdown } from "semantic-ui-react";
-import { format, csv } from "d3";
-import { useQuery, queryCache } from "react-query";
-import { Loader } from "semantic-ui-react";
-import { keyBy, groupBy, orderBy, get } from "lodash";
+import { csv, format } from "d3";
+import { get, groupBy, keyBy, orderBy, castArray, defaultTo } from "lodash";
+import first from "lodash/first";
+import React, { useCallback, useEffect, useMemo } from "react";
+import { queryCache, useQuery } from "react-query";
+import { generatePath, useHistory, useParams } from "react-router-dom";
+import { Dropdown, Flag, Grid, Header, Icon, List, Loader, Popup, Segment, Statistic } from "semantic-ui-react";
+import { DEFAULT_OPTIONS, SIMILARITY_API } from "../../constants";
 import useMetadata from "../../hooks/useMetadata";
 import { getByRegionId, getNameByRegionId } from "../../utils/metadata";
-import { List, Popup } from "semantic-ui-react";
-import first from "lodash/first";
 import CustomizableChart from "../CustomizableChart";
-import { DEFAULT_OPTIONS, SIMILARITY_API } from "../../constants";
+import RegionSelector from "../RegionSelector";
 import TrendChart from "../TrendChart";
+import useQueryString from "../../hooks/useQueryString";
 
 const displayNumberFormatter = format(",.2~f");
 
@@ -43,13 +43,38 @@ const similarityOptions = [
 ];
 
 const Explorer = () => {
-  const [region, setRegion] = useState({});
-  const [secondary, setSecondary] = useState("");
+  const history = useHistory();
+  const { region: regionKey } = useParams<{ region?: string }>();
+  const [query, setQuery] = useQueryString();
 
-  const setSelectedRegions = useCallback((regions) => {
-    setRegion(regions);
-    setSecondary("");
-  }, []);
+  const region = useMemo(() => (regionKey ? { [regionKey]: true } : {}), [regionKey]);
+
+  const aspect = useMemo(() => similarityOptions.find((opt) => opt.value === query.aspect)?.value ?? first(similarityOptions)!.value, [query.aspect]);
+
+  const secondary = useMemo(() => `${first(castArray(defaultTo(query.secondary, "")))}`, [query.secondary]);
+
+  const setSecondary = (value: string) => {
+    setQuery({
+      secondary: value,
+    });
+  };
+
+  const setAspect = (value: string) => {
+    setQuery({
+      aspect: value,
+    });
+  };
+
+  const setSelectedRegions = useCallback(
+    (regions) => {
+      history.push({
+        pathname: generatePath("/similarity/:region?", {
+          region: first(Object.keys(regions)) || undefined,
+        }),
+      });
+    },
+    [history]
+  );
 
   const { data: metadata } = useMetadata();
 
@@ -104,7 +129,6 @@ const Explorer = () => {
     }
   }, [currentRegion, data, topSimilarData, topSimilarDataStatus]);
 
-  const [aspect, setAspect] = useState(similarityOptions[0].value);
   const isIncidence = ["cases_per_100k_distance", "deaths_per_100k_distance"].includes(aspect);
 
   const sortedTopSimilar = useMemo(() => {
@@ -138,7 +162,7 @@ const Explorer = () => {
   }, [currentRegion, dataByCluster, dataByKey, topSimilarData]);
 
   const secondaryRegion = useMemo(() => {
-    if (sortedTopSimilar && !secondary) {
+    if (sortedTopSimilar && !(secondary in dataByKey)) {
       return dataByKey[first(sortedTopSimilar)?.region!];
     }
     return secondary && dataByKey[secondary];
@@ -282,7 +306,7 @@ const Explorer = () => {
           <div style={{ padding: 10 }}>
             <Segment>
               <Header as="h3">
-                Top-similar by <Dropdown inline onChange={(_: any, { value }: any) => setAspect(value)} options={similarityOptions} defaultValue={aspect} />
+                Top-similar by <Dropdown inline onChange={(_: any, { value }: any) => setAspect(value)} options={similarityOptions} value={aspect} />
                 <Header.Subheader>Regions with similar epidemiological timeline</Header.Subheader>
               </Header>
               <div style={{ maxHeight: "250px", overflow: "auto" }}>

@@ -1,14 +1,13 @@
-import React, { useMemo, useState, useEffect, useCallback, Fragment } from "react";
-import useMetadata from "../hooks/useMetadata";
-import { Dropdown, Header, Flag, FlagNameValues } from "semantic-ui-react";
-import debounce from "lodash/debounce";
 import Fuse from "fuse.js";
-import { keyBy, sortBy, isEmpty, groupBy, uniq, castArray } from "lodash";
-import get from "lodash/get";
-import { PLACE_TYPE_LABEL_MAPPING, DEFAULT_COUNTRIES } from "../constants";
-
-import "./RegionSelector.css";
+import { castArray, groupBy, isEmpty, keyBy, sortBy, uniq } from "lodash";
+import debounce from "lodash/debounce";
 import first from "lodash/first";
+import get from "lodash/get";
+import React, { Fragment, useCallback, useMemo, useState } from "react";
+import { Dropdown, Flag, FlagNameValues, Header } from "semantic-ui-react";
+import { DEFAULT_COUNTRIES, PLACE_TYPE_LABEL_MAPPING } from "../constants";
+import useMetadata from "../hooks/useMetadata";
+import "./RegionSelector.css";
 
 type Props = {
   value: Record<string, boolean>;
@@ -20,7 +19,7 @@ type Props = {
 export default function RegionSelector({ value, onChange, multiple = true, filter = () => true }: Props) {
   const [search, setSearch] = useState("");
   const [fromValue, setFromValue] = useState("all");
-  const [selected, setSelected] = useState<string[]>(Object.keys(value).filter((k) => value[k]));
+  const selected = useMemo(() => Object.keys(value).filter((k) => value[k]), [value]);
   const { data: metadata, loading } = useMetadata();
 
   const [regions, groups] = useMemo(() => {
@@ -118,8 +117,8 @@ export default function RegionSelector({ value, onChange, multiple = true, filte
   }, [fromValue, search, selectedOptions, fuse, regions]);
 
   const options = useMemo(() => {
-    return allOptions.filter(o => filter(o.value));
-  }, [allOptions, filter])
+    return allOptions.filter((o) => filter(o.value));
+  }, [allOptions, filter]);
 
   const onSearchChangeHandler = useCallback(
     debounce((_: any, { searchQuery }: any) => {
@@ -128,14 +127,20 @@ export default function RegionSelector({ value, onChange, multiple = true, filte
     []
   );
 
-  const onChangeHandler = useCallback((_: any, { value }: any) => {
-    setSelected(castArray(value));
-    setSearch("");
-  }, []);
+  const setSelected = useCallback(
+    (values: string[]) => {
+      onChange(Object.fromEntries(values.map((k) => [k, true])));
+    },
+    [onChange]
+  );
 
-  useEffect(() => {
-    onChange(Object.fromEntries(selected.map((k) => [k, true])));
-  }, [onChange, selected]);
+  const onChangeHandler = useCallback(
+    (_: any, { value }: any) => {
+      setSelected(castArray(value));
+      setSearch("");
+    },
+    [setSelected]
+  );
 
   return (
     <div>
@@ -149,19 +154,27 @@ export default function RegionSelector({ value, onChange, multiple = true, filte
           <div style={{ marginRight: "2rem" }}>
             <Header as="h4">
               Select regions from{" "}
-              <Dropdown style={{ zIndex: 13 }} header="Adjust scope" inline options={fromOptions} value={fromValue} onChange={(_: any, { value }: any) => setFromValue(value)} />
+              <Dropdown
+                selectOnNavigation={false}
+                style={{ zIndex: 13 }}
+                header="Adjust scope"
+                inline
+                options={fromOptions}
+                value={fromValue}
+                onChange={(_: any, { value }: any) => setFromValue(value)}
+              />
             </Header>
           </div>
 
           <div>
             <Header as="h4" color="grey">
-              <Dropdown style={{ zIndex: 13 }} text="Select region group" inline direction="left" scrolling>
+              <Dropdown selectOnNavigation={false} style={{ zIndex: 13 }} text="Select region group" inline direction="left" scrolling>
                 <Dropdown.Menu>
                   <Fragment key={"world"}>
                     <Dropdown.Header icon="globe" content="World" />
-                    <Dropdown.Item key={`default`} className="RegionSelector--group--item" onClick={() => setSelected((prev) => uniq(prev.concat(DEFAULT_COUNTRIES)))}>
+                    <Dropdown.Item key={`default`} className="RegionSelector--group--item" onClick={() => setSelected(uniq(selected.concat(DEFAULT_COUNTRIES)))}>
                       Default countries
-                      <span className="RegionSelector--group--item--only" onClick={() => setSelected(() => DEFAULT_COUNTRIES)}>
+                      <span className="RegionSelector--group--item--only" onClick={() => setSelected(DEFAULT_COUNTRIES)}>
                         only
                       </span>
                     </Dropdown.Item>
@@ -185,12 +198,9 @@ export default function RegionSelector({ value, onChange, multiple = true, filte
                             <Dropdown.Item
                               key={`${country}-${group}`}
                               className="RegionSelector--group--item"
-                              onClick={() => setSelected((prev) => uniq(prev.concat(items.map((i) => i.value))))}
+                              onClick={() => setSelected(uniq(selected.concat(items.map((i) => i.value))))}
                             >
                               {`${PLACE_TYPE_LABEL_MAPPING[type]} from ${groupName.replace(/_/g, " ")}`}
-                              <span className="RegionSelector--group--item--only" onClick={() => setSelected(items.map((i) => i.value))}>
-                                only
-                              </span>
                             </Dropdown.Item>
                           );
                         })}
@@ -204,6 +214,7 @@ export default function RegionSelector({ value, onChange, multiple = true, filte
         </div>
       )}
       <Dropdown
+        selectOnNavigation={false}
         style={{ zIndex: 12 }}
         placeholder={fromValue === "all" ? "Search for countries, states, provinces..." : `Choose regions from ${fromValue}...`}
         clearable
