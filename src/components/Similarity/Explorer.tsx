@@ -1,8 +1,8 @@
-import React, { useState, useCallback, useMemo } from "react";
+import React, { useState, useCallback, useMemo, useEffect } from "react";
 import RegionSelector from "../RegionSelector";
-import { Header, Segment, Icon, Flag, Grid, Statistic } from "semantic-ui-react";
+import { Header, Segment, Icon, Flag, Grid, Statistic, Dropdown } from "semantic-ui-react";
 import { format, csv } from "d3";
-import { useQuery } from "react-query";
+import { useQuery, queryCache } from "react-query";
 import { Loader } from "semantic-ui-react";
 import { keyBy, groupBy, orderBy, get } from "lodash";
 import useMetadata from "../../hooks/useMetadata";
@@ -10,10 +10,37 @@ import { getByRegionId, getNameByRegionId } from "../../utils/metadata";
 import { List, Popup } from "semantic-ui-react";
 import first from "lodash/first";
 import CustomizableChart from "../CustomizableChart";
-import { DEFAULT_OPTIONS } from "../../constants";
+import { DEFAULT_OPTIONS, SIMILARITY_API } from "../../constants";
 import TrendChart from "../TrendChart";
 
 const displayNumberFormatter = format(",.2~f");
+
+const similarityOptions = [
+  {
+    key: "cases_distance",
+    text: "cases",
+    value: "cases_distance",
+    content: "Cases",
+  },
+  {
+    key: "deaths_distance",
+    text: "deaths",
+    value: "deaths_distance",
+    content: "Deaths",
+  },
+  {
+    key: "cases_per_100k_distance",
+    text: "cases per 100k",
+    value: "cases_per_100k_distance",
+    content: "Cases per 100k",
+  },
+  {
+    key: "deaths_per_100k_distance",
+    text: "deaths per 100k",
+    value: "deaths_per_100k_distance",
+    content: "Deaths per 100k",
+  },
+];
 
 const Explorer = () => {
   const [region, setRegion] = useState({});
@@ -26,7 +53,7 @@ const Explorer = () => {
 
   const { data: metadata } = useMetadata();
 
-  const { data } = useQuery("region-clustering", () => csv("https://raw.githubusercontent.com/inf-covid19/similarity/v2/output/region_clusters.csv"));
+  const { data } = useQuery("region-clustering", () => csv(`${SIMILARITY_API}/api/v1/regions`));
 
   const [dataByKey, dataByCluster] = useMemo(() => {
     if (!data || !metadata) return [{}, {}];
@@ -65,28 +92,50 @@ const Explorer = () => {
   }, [region, dataByKey]);
 
   const { data: topSimilarData, status: topSimilarDataStatus } = useQuery(["region-similar", currentRegion?.key], () =>
-    currentRegion ? csv(`https://raw.githubusercontent.com/inf-covid19/similarity/v2/output/per_region/${currentRegion.key}.csv`) : Promise.resolve(null)
+    currentRegion ? csv(`${SIMILARITY_API}/api/v1/regions/${currentRegion.key}`) : Promise.resolve(null)
   );
 
-  const aspect = "cases_distance";
+  useEffect(() => {
+    if (topSimilarDataStatus === "success" && topSimilarData?.length === 0) {
+      const timer = setInterval(() => queryCache.refetchQueries(["region-similar", currentRegion?.key], { force: true }), 5000);
+      return () => {
+        clearInterval(timer);
+      };
+    }
+  }, [currentRegion, data, topSimilarData, topSimilarDataStatus]);
+
+  const [aspect, setAspect] = useState(similarityOptions[0].value);
+  const isIncidence = ["cases_per_100k_distance", "deaths_per_100k_distance"].includes(aspect);
 
   const sortedTopSimilar = useMemo(() => {
     if (!topSimilarData) return [];
 
-    return orderBy(topSimilarData, aspect);
-  }, [aspect, topSimilarData]);
+    const { days } = currentRegion;
+    const maxValue = Math.max(...topSimilarData.map((i) => Number(i[aspect] ?? 0)));
 
-  const keyedTopSimilar = useMemo(() => {
-    if (!topSimilarData) return {};
+    return orderBy(
+      topSimilarData,
+      (item) => {
+        const region = dataByKey[item.region!];
 
-    return keyBy(topSimilarData, "region");
-  }, [topSimilarData]);
+        if (!region) {
+          console.warn("Region not found.", { key: item.region });
+          return 0;
+        }
+
+        const similarity = 1 - Number(item[aspect] ?? 0) / maxValue;
+        const daysFactor = Math.min(1, region.days / days);
+        return similarity * daysFactor;
+      },
+      "desc"
+    );
+  }, [aspect, currentRegion, dataByKey, topSimilarData]);
 
   const clusterBuddies = useMemo(() => {
     if (!currentRegion || !topSimilarData) return [];
 
-    return orderBy(dataByCluster[currentRegion.cluster], (item) => keyedTopSimilar[item.key]?.[aspect]);
-  }, [currentRegion, dataByCluster, keyedTopSimilar, topSimilarData]);
+    return orderBy(dataByCluster[currentRegion.cluster], (item) => dataByKey[item.key]?.displayName);
+  }, [currentRegion, dataByCluster, dataByKey, topSimilarData]);
 
   const secondaryRegion = useMemo(() => {
     if (sortedTopSimilar && !secondary) {
@@ -135,104 +184,107 @@ const Explorer = () => {
     <div style={{ padding: "0 20px" }}>
       {regionSelector}
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 450px" }}>
-        <div style={{ padding: 10 }}>
-          <Segment>
-            <Grid columns={2}>
-              <Grid.Column>
-                <Header as="h3">
-                  <Flag name={currentRegion?.flag} /> {currentRegion?.displayName}
-                </Header>
-                <Statistic.Group horizontal>
-                  <Statistic>
-                    <Statistic.Value>{displayNumberFormatter(currentRegion?.population)}</Statistic.Value>
-                    <Statistic.Label>Population</Statistic.Label>
-                  </Statistic>
-                  <Statistic>
-                    <Statistic.Value>{displayNumberFormatter(currentRegion?.area_km)}</Statistic.Value>
-                    <Statistic.Label>km²</Statistic.Label>
-                  </Statistic>
-                  <Statistic>
-                    <Statistic.Value>{currentRegion?.days}</Statistic.Value>
-                    <Statistic.Label>Days since first case</Statistic.Label>
-                  </Statistic>
-                </Statistic.Group>
-              </Grid.Column>
-              <Grid.Column>
-                <Header as="h3">
-                  <Flag name={secondaryRegion?.flag} />
-                  {secondaryRegion?.displayName}
-                </Header>
-                <Statistic.Group horizontal>
-                  <Statistic>
-                    <Statistic.Value>
-                      <DiffIndicator primaryValue={currentRegion?.population} secondaryValue={secondaryRegion?.population} /> {displayNumberFormatter(secondaryRegion?.population)}
-                    </Statistic.Value>
-                    <Statistic.Label>Population</Statistic.Label>
-                  </Statistic>
-                  <Statistic>
-                    <Statistic.Value>
-                      <DiffIndicator primaryValue={currentRegion?.area_km} secondaryValue={secondaryRegion?.area_km} /> {displayNumberFormatter(secondaryRegion?.area_km)}
-                    </Statistic.Value>
-                    <Statistic.Label>km²</Statistic.Label>
-                  </Statistic>
-                  <Statistic>
-                    <Statistic.Value>
-                      <DiffIndicator primaryValue={currentRegion?.days} secondaryValue={secondaryRegion?.days} /> {secondaryRegion?.days}
-                    </Statistic.Value>
-                    <Statistic.Label>Days since first case</Statistic.Label>
-                  </Statistic>
-                </Statistic.Group>
-              </Grid.Column>
-            </Grid>
-          </Segment>
-          <Segment>
-            <CustomizableChart
-              {...DEFAULT_OPTIONS}
-              selectedRegions={chartRegions}
-              alignAt={1}
-              chartType="bar"
-              isCumulative={true}
-              height={250}
-              metric={"cases"}
-              title={`Comparative between ${currentRegion?.displayName} and ${secondaryRegion?.displayName}`}
-              timeserieSlice={-1}
-            />
-          </Segment>
-          <Segment>
-            <CustomizableChart
-              {...DEFAULT_OPTIONS}
-              selectedRegions={chartRegions}
-              alignAt={1}
-              chartType="bar"
-              isCumulative={true}
-              height={250}
-              metric={"deaths"}
-              title={`Comparative between ${currentRegion?.displayName} and ${secondaryRegion?.displayName}`}
-              timeserieSlice={-1}
-            />
-          </Segment>
-          <Segment>
-            <TrendChart
-              {...DEFAULT_OPTIONS}
-              selectedRegions={chartRegions}
-              alignAt={1}
-              height={250}
-              metric={"cases"}
-              title={`Trend comparative between ${currentRegion?.displayName} and ${secondaryRegion?.displayName}`}
-            />
-          </Segment>
-        </div>
+      {topSimilarData && topSimilarData.length > 0 ? (
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 450px" }}>
+          <div style={{ padding: 10 }}>
+            <Segment>
+              <Grid columns={2}>
+                <Grid.Column>
+                  <Header as="h3">
+                    <Flag name={currentRegion?.flag} /> {currentRegion?.displayName}
+                  </Header>
+                  <Statistic.Group horizontal>
+                    <Statistic>
+                      <Statistic.Value>{displayNumberFormatter(currentRegion?.population)}</Statistic.Value>
+                      <Statistic.Label>Population</Statistic.Label>
+                    </Statistic>
+                    <Statistic>
+                      <Statistic.Value>{displayNumberFormatter(currentRegion?.area_km)}</Statistic.Value>
+                      <Statistic.Label>km²</Statistic.Label>
+                    </Statistic>
+                    <Statistic>
+                      <Statistic.Value>{currentRegion?.days}</Statistic.Value>
+                      <Statistic.Label>Days since first case</Statistic.Label>
+                    </Statistic>
+                  </Statistic.Group>
+                </Grid.Column>
+                <Grid.Column>
+                  <Header as="h3">
+                    <Flag name={secondaryRegion?.flag} />
+                    {secondaryRegion?.displayName}
+                  </Header>
+                  <Statistic.Group horizontal>
+                    <Statistic>
+                      <Statistic.Value>
+                        <DiffIndicator primaryValue={currentRegion?.population} secondaryValue={secondaryRegion?.population} />{" "}
+                        {displayNumberFormatter(secondaryRegion?.population)}
+                      </Statistic.Value>
+                      <Statistic.Label>Population</Statistic.Label>
+                    </Statistic>
+                    <Statistic>
+                      <Statistic.Value>
+                        <DiffIndicator primaryValue={currentRegion?.area_km} secondaryValue={secondaryRegion?.area_km} /> {displayNumberFormatter(secondaryRegion?.area_km)}
+                      </Statistic.Value>
+                      <Statistic.Label>km²</Statistic.Label>
+                    </Statistic>
+                    <Statistic>
+                      <Statistic.Value>
+                        <DiffIndicator primaryValue={currentRegion?.days} secondaryValue={secondaryRegion?.days} /> {secondaryRegion?.days}
+                      </Statistic.Value>
+                      <Statistic.Label>Days since first case</Statistic.Label>
+                    </Statistic>
+                  </Statistic.Group>
+                </Grid.Column>
+              </Grid>
+            </Segment>
+            <Segment>
+              <CustomizableChart
+                {...DEFAULT_OPTIONS}
+                selectedRegions={chartRegions}
+                alignAt={1}
+                chartType="bar"
+                isCumulative={true}
+                height={250}
+                metric={"cases"}
+                title={`Comparative between ${currentRegion?.displayName} and ${secondaryRegion?.displayName}`}
+                timeserieSlice={-1}
+                isIncidence={isIncidence}
+                getPopulation={(key) => dataByKey[key].population}
+              />
+            </Segment>
+            <Segment>
+              <CustomizableChart
+                {...DEFAULT_OPTIONS}
+                selectedRegions={chartRegions}
+                alignAt={1}
+                chartType="bar"
+                isCumulative={true}
+                height={250}
+                metric={"deaths"}
+                title={`Comparative between ${currentRegion?.displayName} and ${secondaryRegion?.displayName}`}
+                timeserieSlice={-1}
+                isIncidence={isIncidence}
+                getPopulation={(key) => dataByKey[key].population}
+              />
+            </Segment>
+            <Segment>
+              <TrendChart
+                {...DEFAULT_OPTIONS}
+                selectedRegions={chartRegions}
+                alignAt={1}
+                height={250}
+                metric={"cases"}
+                title={`Trend comparative between ${currentRegion?.displayName} and ${secondaryRegion?.displayName}`}
+              />
+            </Segment>
+          </div>
 
-        <div style={{ padding: 10 }}>
-          <Segment>
-            <Header as="h3">
-              Top-similar
-              <Header.Subheader>Regions with similar epidemiological timeline</Header.Subheader>
-            </Header>
-            {topSimilarDataStatus === "loading" ? (
-              <p>Loading...</p>
-            ) : (
+          <div style={{ padding: 10 }}>
+            <Segment>
+              <Header as="h3">
+                Top-similar by <Dropdown inline onChange={(_: any, { value }: any) => setAspect(value)} options={similarityOptions} defaultValue={aspect} />
+                <Header.Subheader>Regions with similar epidemiological timeline</Header.Subheader>
+              </Header>
               <div style={{ maxHeight: "250px", overflow: "auto" }}>
                 <List relaxed>
                   {sortedTopSimilar?.slice(0, 99).map((r, idx) => (
@@ -246,11 +298,17 @@ const Explorer = () => {
                     >
                       <div>
                         <span style={{ display: "inline-block", opacity: 0.8, color: "rgba(0,0,0,.87)", width: "20px", marginRight: 5 }}>{idx + 1}</span>
+                        <Flag name={dataByKey[r.region!].flag} />
                         {getNameByRegionId(metadata, r.region!)}
                         {r.is_same_cluster === "True" && (
                           <>
                             {" "}
-                            <Popup basic inverted trigger={<Icon name="star" color="yellow" />} content={`Share cluster with ${currentRegion.displayName}`} />
+                            <Popup
+                              basic
+                              inverted
+                              trigger={<Icon name="star" color="yellow" />}
+                              content={`${getNameByRegionId(metadata, r.region!)} has similar attributes when compared with ${currentRegion.displayName}`}
+                            />
                           </>
                         )}
                       </div>
@@ -258,39 +316,45 @@ const Explorer = () => {
                   ))}
                 </List>
               </div>
-            )}
 
-            <Header as="h3">
-              Cluster
-              <Header.Subheader>Regions with similar population and area</Header.Subheader>
-            </Header>
-            <div style={{ maxHeight: "250px", overflow: "auto" }}>
-              <List relaxed>
-                {clusterBuddies.map((r) =>
-                  r.key === currentRegion?.key ? (
-                    <List.Item key={r.key}>
-                      <Flag name={r.flag} />
-                      {r.displayName}
-                    </List.Item>
-                  ) : (
-                    <List.Item
-                      href="#"
-                      onClick={(evt) => {
-                        evt.preventDefault();
-                        setSecondary(r.key);
-                      }}
-                      key={r.key}
-                    >
-                      <Flag name={r.flag} />
-                      {r.displayName}
-                    </List.Item>
-                  )
-                )}
-              </List>
-            </div>
-          </Segment>
+              <Header as="h3">
+                Cluster
+                <Header.Subheader>Regions with similar population and area</Header.Subheader>
+              </Header>
+              <div style={{ maxHeight: "250px", overflow: "auto" }}>
+                <List relaxed>
+                  {clusterBuddies.map((r) =>
+                    r.key === currentRegion?.key ? (
+                      <List.Item key={r.key}>
+                        <Flag name={r.flag} />
+                        {r.displayName}
+                      </List.Item>
+                    ) : (
+                      <List.Item
+                        href="#"
+                        onClick={(evt) => {
+                          evt.preventDefault();
+                          setSecondary(r.key);
+                        }}
+                        key={r.key}
+                      >
+                        <Flag name={r.flag} />
+                        {r.displayName}
+                      </List.Item>
+                    )
+                  )}
+                </List>
+              </div>
+            </Segment>
+          </div>
         </div>
-      </div>
+      ) : (
+        <div style={{ height: "350px", display: "flex", justifyContent: "center", alignItems: "center" }}>
+          <Loader active inline>
+            Processing latest data...
+          </Loader>
+        </div>
+      )}
     </div>
   );
 };
