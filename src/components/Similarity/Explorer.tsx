@@ -30,15 +30,15 @@ const similarityOptions = [
   },
   {
     key: "cases_per_100k_distance",
-    text: "cases per 100k",
+    text: "cases per 100k people",
     value: "cases_per_100k_distance",
-    content: "Cases per 100k",
+    content: "Cases per 100k people",
   },
   {
     key: "deaths_per_100k_distance",
-    text: "deaths per 100k",
+    text: "deaths per 100k people",
     value: "deaths_per_100k_distance",
-    content: "Deaths per 100k",
+    content: "Deaths per 100k people",
   },
 ];
 

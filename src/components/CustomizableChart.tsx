@@ -133,7 +133,7 @@ function CustomizableChart(props: CustomizableChartProps, ref: React.Ref<any>) {
       colors: seriesColors,
       tooltip: {
         y: {
-          formatter: (value: number) => `${displayNumberFormatter(value)} ${metric}${isIncidence ? " per 100k" : ""}`,
+          formatter: (value: number) => `${displayNumberFormatter(value)} ${metric}${isIncidence ? " per 100k people" : ""}`,
         },
         x: {
           formatter: alignAt > 0 ? (value: number) => `${ordinalFormattter(value)} day after ${numberFormatter(alignAt)} ${metric}` : undefined,
@@ -162,7 +162,7 @@ function CustomizableChart(props: CustomizableChartProps, ref: React.Ref<any>) {
         },
       },
       subtitle: {
-        text: `${isCumulative ? "Total" : "Daily"} number of ${metric}${isIncidence ? " per 100k" : ""}`,
+        text: `${isCumulative ? "Total" : "Daily"} number of ${metric}${isIncidence ? " per 100k people" : ""}`,
         floating: true,
         style: {
           fontSize: "14px",
