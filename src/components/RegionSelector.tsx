@@ -221,7 +221,7 @@ export default function RegionSelector({ value, onChange, multiple = true, filte
         selection
         loading={loading}
         options={options}
-        value={multiple ? selected : defaultTo(first(selected), null) as any}
+        value={multiple ? selected : defaultTo(first(selected), undefined)}
         minCharacters={1}
         noResultsMessage={search.length < 1 ? "Start typing..." : "No results found."}
         onChange={onChangeHandler}

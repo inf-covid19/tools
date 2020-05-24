@@ -1,13 +1,13 @@
 import { csv, format } from "d3";
-import { get, groupBy, keyBy, orderBy, castArray, defaultTo } from "lodash";
+import { groupBy, keyBy, orderBy, castArray, defaultTo } from "lodash";
 import first from "lodash/first";
 import React, { useCallback, useEffect, useMemo } from "react";
 import { queryCache, useQuery } from "react-query";
 import { generatePath, useHistory, useParams } from "react-router-dom";
-import { Dropdown, Flag, Grid, Header, Icon, List, Loader, Popup, Segment, Statistic } from "semantic-ui-react";
+import { Dropdown, Flag, Grid, Header, Icon, List, Loader, Popup, Segment, Statistic, SemanticICONS } from "semantic-ui-react";
 import { DEFAULT_OPTIONS, SIMILARITY_API } from "../../constants";
 import useMetadata from "../../hooks/useMetadata";
-import { getByRegionId, getNameByRegionId } from "../../utils/metadata";
+import { getByRegionId } from "../../utils/metadata";
 import CustomizableChart from "../CustomizableChart";
 import RegionSelector from "../RegionSelector";
 import TrendChart from "../TrendChart";
@@ -84,9 +84,6 @@ const Explorer = () => {
     if (!data || !metadata) return [{}, {}];
 
     const parsedData = data.flatMap((item) => {
-      const [country] = item.key!.split(".regions.");
-      const flag = get(metadata, [country, "geoId"], "").toLowerCase();
-
       const parsedItem = {
         key: item.key!,
         area_km: parseFloat(item.area_km || "0"),
@@ -95,8 +92,6 @@ const Explorer = () => {
         population: parseFloat(item.population || "0"),
         population_density: parseFloat(item.population_density || "0"),
         ...getByRegionId(metadata, item.key!),
-        displayName: getNameByRegionId(metadata, item.key!),
-        flag,
       };
 
       if (parsedItem.days <= 0) {
@@ -113,7 +108,7 @@ const Explorer = () => {
 
   const currentRegion = useMemo(() => {
     const selectedKey = first(Object.keys(region));
-    return selectedKey && dataByKey[selectedKey];
+    return selectedKey ? dataByKey[selectedKey] : null;
   }, [region, dataByKey]);
 
   const { data: topSimilarData, status: topSimilarDataStatus } = useQuery(["region-similar", currentRegion?.key], () =>
@@ -132,7 +127,7 @@ const Explorer = () => {
   const isIncidence = ["cases_per_100k_distance", "deaths_per_100k_distance"].includes(aspect);
 
   const sortedTopSimilar = useMemo(() => {
-    if (!topSimilarData) return [];
+    if (!topSimilarData || !currentRegion) return [];
 
     const { days } = currentRegion;
     const maxValue = Math.max(...topSimilarData.map((i) => Number(i[aspect] ?? 0)));
@@ -165,7 +160,7 @@ const Explorer = () => {
     if (sortedTopSimilar && !(secondary in dataByKey)) {
       return dataByKey[first(sortedTopSimilar)?.region!];
     }
-    return secondary && dataByKey[secondary];
+    return secondary ? dataByKey[secondary] : null;
   }, [dataByKey, secondary, sortedTopSimilar]);
 
   const chartRegions = useMemo(() => {
@@ -208,52 +203,51 @@ const Explorer = () => {
     <div style={{ padding: "0 20px" }}>
       {regionSelector}
 
-      {topSimilarData && topSimilarData.length > 0 ? (
+      {topSimilarData && topSimilarData.length > 0 && secondaryRegion ? (
         <div style={{ display: "grid", gridTemplateColumns: "1fr 450px" }}>
           <div style={{ padding: 10 }}>
             <Segment>
               <Grid columns={2}>
                 <Grid.Column>
                   <Header as="h3">
-                    <Flag name={currentRegion?.flag} /> {currentRegion?.displayName}
+                    <Flag name={currentRegion.flag} /> {currentRegion.displayName}
                   </Header>
                   <Statistic.Group horizontal>
                     <Statistic>
-                      <Statistic.Value>{displayNumberFormatter(currentRegion?.population)}</Statistic.Value>
+                      <Statistic.Value>{displayNumberFormatter(currentRegion.population)}</Statistic.Value>
                       <Statistic.Label>Population</Statistic.Label>
                     </Statistic>
                     <Statistic>
-                      <Statistic.Value>{displayNumberFormatter(currentRegion?.area_km)}</Statistic.Value>
+                      <Statistic.Value>{displayNumberFormatter(currentRegion.area_km)}</Statistic.Value>
                       <Statistic.Label>km²</Statistic.Label>
                     </Statistic>
                     <Statistic>
-                      <Statistic.Value>{currentRegion?.days}</Statistic.Value>
+                      <Statistic.Value>{currentRegion.days}</Statistic.Value>
                       <Statistic.Label>Days since first case</Statistic.Label>
                     </Statistic>
                   </Statistic.Group>
                 </Grid.Column>
                 <Grid.Column>
                   <Header as="h3">
-                    <Flag name={secondaryRegion?.flag} />
+                    <Flag name={secondaryRegion.flag} />
                     {secondaryRegion?.displayName}
                   </Header>
                   <Statistic.Group horizontal>
                     <Statistic>
                       <Statistic.Value>
-                        <DiffIndicator primaryValue={currentRegion?.population} secondaryValue={secondaryRegion?.population} />{" "}
-                        {displayNumberFormatter(secondaryRegion?.population)}
+                        <DiffIndicator primaryValue={currentRegion.population} secondaryValue={secondaryRegion.population} /> {displayNumberFormatter(secondaryRegion.population)}
                       </Statistic.Value>
                       <Statistic.Label>Population</Statistic.Label>
                     </Statistic>
                     <Statistic>
                       <Statistic.Value>
-                        <DiffIndicator primaryValue={currentRegion?.area_km} secondaryValue={secondaryRegion?.area_km} /> {displayNumberFormatter(secondaryRegion?.area_km)}
+                        <DiffIndicator primaryValue={currentRegion.area_km} secondaryValue={secondaryRegion.area_km} /> {displayNumberFormatter(secondaryRegion.area_km)}
                       </Statistic.Value>
                       <Statistic.Label>km²</Statistic.Label>
                     </Statistic>
                     <Statistic>
                       <Statistic.Value>
-                        <DiffIndicator primaryValue={currentRegion?.days} secondaryValue={secondaryRegion?.days} /> {secondaryRegion?.days}
+                        <DiffIndicator primaryValue={currentRegion.days} secondaryValue={secondaryRegion.days} /> {secondaryRegion.days}
                       </Statistic.Value>
                       <Statistic.Label>Days since first case</Statistic.Label>
                     </Statistic>
@@ -326,7 +320,7 @@ const Explorer = () => {
                       <div>
                         <span style={{ display: "inline-block", opacity: 0.8, color: "rgba(0,0,0,.87)", width: "20px", marginRight: 5 }}>{idx + 1}</span>
                         <Flag name={dataByKey[r.region!].flag} />
-                        {getNameByRegionId(metadata, r.region!)}
+                        {dataByKey[r.region!].displayName}
                         {r.is_same_cluster === "True" && (
                           <>
                             {" "}
@@ -334,7 +328,7 @@ const Explorer = () => {
                               basic
                               inverted
                               trigger={<Icon name="star" color="yellow" />}
-                              content={`${getNameByRegionId(metadata, r.region!)} has similar attributes when compared with ${currentRegion.displayName}`}
+                              content={`${dataByKey[r.region!].displayName} has similar attributes when compared with ${currentRegion.displayName}`}
                             />
                           </>
                         )}
@@ -396,5 +390,5 @@ function DiffIndicator({ primaryValue, secondaryValue }: { primaryValue: number;
   const diff = primaryValue - secondaryValue;
   const isHugeDiff = Math.abs(diff) > secondaryValue || Math.abs(diff) > primaryValue;
 
-  return <Icon name={`angle ${isHugeDiff ? "double" : ""} ${diff > 0 ? "down" : "up"}` as any} color={diff > 0 ? "red" : "green"} />;
+  return <Icon name={`angle ${isHugeDiff ? "double " : ""}${diff > 0 ? "down" : "up"}` as SemanticICONS} color={diff > 0 ? "red" : "green"} />;
 }

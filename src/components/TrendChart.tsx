@@ -8,7 +8,7 @@ import { Loader } from "semantic-ui-react";
 import useRegionData from "../hooks/useRegionData";
 import useSeriesColors from "../hooks/useSeriesColors";
 import { ChartOptions } from "./Editor";
-import { getNameByRegionId } from "../utils/metadata";
+import { getByRegionId } from "../utils/metadata";
 import useMetadata from "../hooks/useMetadata";
 
 const numberFormatter = d3.format(".2s");
@@ -35,7 +35,7 @@ function TrendChart(props: TrendChartProps, ref: React.Ref<any>) {
     const series = Object.entries(data).map(([regionId, regionData]) => {
       return {
         key: regionId,
-        name: getNameByRegionId(metadata, regionId),
+        name: getByRegionId(metadata, regionId).displayName,
         data: regionData.flatMap((row, index) => {
           const valueColumn = metric;
           const valueDailyColumn = `${metric}_daily`;
@@ -46,7 +46,10 @@ function TrendChart(props: TrendChartProps, ref: React.Ref<any>) {
             {
               date: row.date,
               x: row[valueColumn],
-              y: defaultTo(regionData.slice(Math.max(0, index - 6), index + 1).reduce((sum, r) => sum + get(r, valueDailyColumn, 0), 0), 0),
+              y: defaultTo(
+                regionData.slice(Math.max(0, index - 6), index + 1).reduce((sum, r) => sum + get(r, valueDailyColumn, 0), 0),
+                0
+              ),
             },
           ];
         }),

@@ -9,7 +9,7 @@ import { Loader } from "semantic-ui-react";
 import useMetadata from "../hooks/useMetadata";
 import useRegionData from "../hooks/useRegionData";
 import useSeriesColors from "../hooks/useSeriesColors";
-import { getNameByRegionId } from "../utils/metadata";
+import { getByRegionId } from "../utils/metadata";
 import { alignTimeseries, TimeseriesRow } from "../utils/normalizeTimeseries";
 import { ChartOptions } from "./Editor";
 import useColorScale from "../hooks/useColorScale";
@@ -53,7 +53,7 @@ function CustomizableChart(props: CustomizableChartProps, ref: React.Ref<any>) {
 
     const earliestDate = subDays(startOfDay(new Date()), dayInterval);
     return Object.entries(data).flatMap(([region, regionData]) => {
-      const name = getNameByRegionId(metadata, region);
+      const { displayName } = getByRegionId(metadata, region);
 
       const getValue = (row: TimeseriesRow) => {
         const value = isCumulative ? (metric === "cases" ? row.cases : row.deaths) : metric === "cases" ? row.cases_daily : row.deaths_daily;
@@ -76,7 +76,7 @@ function CustomizableChart(props: CustomizableChartProps, ref: React.Ref<any>) {
 
         return [
           {
-            name,
+            name: displayName,
             key: region,
             data: alignedData.map((row, index) => ({
               x: index + 1,
@@ -88,7 +88,7 @@ function CustomizableChart(props: CustomizableChartProps, ref: React.Ref<any>) {
 
       return [
         {
-          name,
+          name: displayName,
           key: region,
           data: alignTimeseries(regionData, earliestDate).map((row) => ({
             x: row.date.getTime(),
@@ -147,7 +147,7 @@ function CustomizableChart(props: CustomizableChartProps, ref: React.Ref<any>) {
       },
       yaxis: {
         labels: {
-          formatter: (value: any) => isNumber(value) ? numberFormatter(value) : value,
+          formatter: (value: number | string) => (isNumber(value) ? numberFormatter(value) : value),
         },
       },
       dataLabels: {

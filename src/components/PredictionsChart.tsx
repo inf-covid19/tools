@@ -11,7 +11,7 @@ import { Loader } from "semantic-ui-react";
 import useMetadata from "../hooks/useMetadata";
 import useRegionData from "../hooks/useRegionData";
 import useSeriesColors from "../hooks/useSeriesColors";
-import { getNameByRegionId } from "../utils/metadata";
+import { getByRegionId } from "../utils/metadata";
 import { alignTimeseries } from "../utils/normalizeTimeseries";
 import { ChartOptions } from "./Editor";
 import useColorScale from "../hooks/useColorScale";
@@ -37,7 +37,7 @@ function PredictionsChart(props: PredictionsChartProps, ref: React.Ref<any>) {
 
     return Object.entries(data).map(([key, data]) => {
       return {
-        name: getNameByRegionId(metadata, key),
+        name: getByRegionId(metadata, key).displayName,
         key,
         data,
       };
@@ -52,11 +52,11 @@ function PredictionsChart(props: PredictionsChartProps, ref: React.Ref<any>) {
     return filteredSeries.flatMap((serie) => {
       const dataSinceFirstCase = serie.data.filter((d) => d.cases > 0);
       const getNextSeriesPrediction = () => {
-        const { X, Y } = dataSinceFirstCase.slice(-Math.max(dayInterval, 2)).reduce(
-          (acc: any, row: any, index: number) => {
+        const { X, Y } = dataSinceFirstCase.slice(-Math.max(dayInterval, 2)).reduce<{ X: number[]; Y: number[] }>(
+          (acc, row, index) => {
             return {
               X: [...acc.X, index],
-              Y: [...acc.Y, row[`${metric}_daily`]],
+              Y: [...acc.Y, metric === "cases" ? row.cases_daily : row.deaths_daily],
             };
           },
           { X: [], Y: [] }
@@ -64,12 +64,12 @@ function PredictionsChart(props: PredictionsChartProps, ref: React.Ref<any>) {
         const degree = X.length > 2 ? 3 : 1;
         const regression = new PolynomialRegression(X, Y, degree);
         const pred = (n: number) => Math.round(regression.predict(n));
-        const lastDate = (last(dataSinceFirstCase) as any).date;
+        const lastDate = last(dataSinceFirstCase)!.date;
         const predictionSerie = eachDayOfInterval({
           start: lastDate,
           end: addDays(lastDate, predictionDays),
         });
-        const fActual = last(Y);
+        const fActual = last(Y)!;
         const fPrediction = pred(X.length - 1);
         const F = Math.max(fPrediction, 0) === 0 ? 1 : fActual / fPrediction;
 

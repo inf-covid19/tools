@@ -12,7 +12,7 @@ import useMetadata from "../hooks/useMetadata";
 import useRegionData from "../hooks/useRegionData";
 import useSeriesColors from "../hooks/useSeriesColors";
 import { median } from "../utils/math";
-import { getNameByRegionId } from "../utils/metadata";
+import { getByRegionId } from "../utils/metadata";
 import { ChartOptions } from "./Editor";
 import { getSammonStress } from "../utils/sammonStress";
 
@@ -46,12 +46,12 @@ function ProjectionsChart(props: ProjectionsChartProps, ref: React.Ref<any>) {
   const { data: metadata } = useMetadata();
 
   const series = useMemo(() => {
-    if (loading || !data ||!metadata) {
+    if (loading || !data || !metadata) {
       return [];
     }
 
     return Object.entries(data).flatMap(([region, regionData]) => {
-      const name = getNameByRegionId(metadata, region);
+      const { displayName } = getByRegionId(metadata, region);
       const regionDataWithValues = regionData.filter((v) => v[metric] > 0);
 
       if (regionDataWithValues.length === 0) {
@@ -64,7 +64,7 @@ function ProjectionsChart(props: ProjectionsChartProps, ref: React.Ref<any>) {
 
       return [
         {
-          name,
+          name: displayName,
           key: region,
           startDate,
           endDate,
