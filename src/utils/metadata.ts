@@ -61,6 +61,10 @@ function getNameFromCountry(data: Pick<MetadataCountry, "name">) {
   return data.name.replace(/_/g, " ");
 }
 
-function getFlag(data: Pick<MetadataCountry, "geoId">) {
+function getFlag(data: Pick<MetadataCountry, "name" | "geoId">) {
+  if (data.name === "Greece") {
+    return 'greece';
+  }
+
   return data.geoId.toLowerCase() as FlagNameValues;
 }
