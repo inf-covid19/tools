@@ -147,7 +147,7 @@ function CustomizableChart(props: CustomizableChartProps, ref: React.Ref<any>) {
       },
       yaxis: {
         labels: {
-          formatter: (value: number | string) => (isNumber(value) ? numberFormatter(value) : value),
+          formatter: (value: number | string) => (isNumber(value) ? value < 1 ? displayNumberFormatter(value) : numberFormatter(value) : value),
         },
       },
       dataLabels: {
