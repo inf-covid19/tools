@@ -1,12 +1,12 @@
 import Fuse from "fuse.js";
-import { castArray, groupBy, isEmpty, keyBy, sortBy, uniq, defaultTo } from "lodash";
+import { castArray, defaultTo, groupBy, isEmpty, keyBy, sortBy, uniq } from "lodash";
 import debounce from "lodash/debounce";
 import first from "lodash/first";
-import get from "lodash/get";
 import React, { Fragment, useCallback, useMemo, useState } from "react";
-import { Dropdown, Flag, FlagNameValues, Header } from "semantic-ui-react";
+import { Dropdown, Flag, Header } from "semantic-ui-react";
 import { DEFAULT_COUNTRIES, PLACE_TYPE_LABEL_MAPPING } from "../constants";
 import useMetadata from "../hooks/useMetadata";
+import { getByRegionId } from "../utils/metadata";
 import "./RegionSelector.css";
 
 type Props = {
@@ -28,14 +28,14 @@ export default function RegionSelector({ value, onChange, multiple = true, filte
     const groups: Record<string, Record<string, Array<{ value: string; name: string; parent: string; flag: string; text: string; country: string }>>> = {};
 
     const arr = Object.entries(metadata).flatMap(([country, countryData]) => {
-      const countryName = countryData.name.replace(/_/g, " ") as string;
+      const { flag, displayName } = getByRegionId(metadata, country);
 
       const regions = Object.entries(countryData.regions as Record<string, any>).map(([region, regionData]) => ({
         value: `${country}.regions.${region}`,
         name: regionData.name as string,
         parent: `${regionData.parent || country}`,
-        flag: (countryData.geoId as string).toLowerCase(),
-        text: `${regionData.name}${regionData.parent ? `, ${regionData.parent}` : ""}, ${countryName}`,
+        flag,
+        text: `${regionData.name}${regionData.parent ? `, ${regionData.parent}` : ""}, ${displayName}`,
         type: `${regionData.place_type}`,
         country,
       }));
@@ -45,9 +45,9 @@ export default function RegionSelector({ value, onChange, multiple = true, filte
       return [
         {
           value: country,
-          name: countryName,
-          text: countryName,
-          flag: countryData.geoId.toLowerCase(),
+          name: displayName,
+          text: displayName,
+          flag,
         },
         ...regions,
       ];
@@ -70,13 +70,13 @@ export default function RegionSelector({ value, onChange, multiple = true, filte
 
     const fromOptions = Object.entries(metadata).flatMap(([country, countryData]) => {
       if (Object.keys(countryData.regions).length === 0) return [];
-      const countryName = countryData.name.replace(/_/g, " ") as string;
+      const { displayName, flag } = getByRegionId(metadata, country);
 
       return [
         {
-          text: countryName,
+          text: displayName,
           value: country,
-          flag: countryData.geoId.toLowerCase(),
+          flag: flag,
         },
       ];
     });
@@ -176,34 +176,35 @@ export default function RegionSelector({ value, onChange, multiple = true, filte
                       Default countries
                     </Dropdown.Item>
                   </Fragment>
-                  {Object.entries(groups).flatMap(([country, regions]) => {
-                    if (isEmpty(regions)) {
-                      return null;
-                    }
+                  {metadata &&
+                    Object.entries(groups).flatMap(([country, regions]) => {
+                      if (isEmpty(regions)) {
+                        return null;
+                      }
 
-                    const countryName = country.replace(/_/g, " ");
+                      const { displayName, flag } = getByRegionId(metadata, country);
 
-                    return (
-                      <Fragment key={country}>
-                        <Dropdown.Header>
-                          <Flag name={get(metadata, [country, "geoId"], "").toLowerCase() as FlagNameValues} /> {countryName}
-                        </Dropdown.Header>
-                        {Object.entries(regions).map(([group, items]) => {
-                          const [groupName, type] = group.split(":", 2);
+                      return (
+                        <Fragment key={country}>
+                          <Dropdown.Header>
+                            <Flag name={flag} /> {displayName}
+                          </Dropdown.Header>
+                          {Object.entries(regions).map(([group, items]) => {
+                            const [groupName, type] = group.split(":", 2);
 
-                          return (
-                            <Dropdown.Item
-                              key={`${country}-${group}`}
-                              className="RegionSelector--group--item"
-                              onClick={() => setSelected(uniq(selected.concat(items.map((i) => i.value))))}
-                            >
-                              {`${PLACE_TYPE_LABEL_MAPPING[type]} from ${groupName.replace(/_/g, " ")}`}
-                            </Dropdown.Item>
-                          );
-                        })}
-                      </Fragment>
-                    );
-                  })}
+                            return (
+                              <Dropdown.Item
+                                key={`${country}-${group}`}
+                                className="RegionSelector--group--item"
+                                onClick={() => setSelected(uniq(selected.concat(items.map((i) => i.value))))}
+                              >
+                                {`${PLACE_TYPE_LABEL_MAPPING[type]} from ${groupName.replace(/_/g, " ")}`}
+                              </Dropdown.Item>
+                            );
+                          })}
+                        </Fragment>
+                      );
+                    })}
                 </Dropdown.Menu>
               </Dropdown>
             </Header>
