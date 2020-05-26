@@ -74,8 +74,8 @@ function PredictionsChart(props: PredictionsChartProps, ref: React.Ref<any>) {
         const fPrediction = pred(X.length - 1);
         const F = Math.max(fPrediction, 0) === 0 ? 1 : fActual / fPrediction;
 
-        const Ka = dataSinceFirstCase.filter((x) => x.cases > 100).length;
-        const K = Math.max(0, 90 - Ka);
+        const Ka = dataSinceFirstCase.filter((x) => x.cases > 300).length;
+        const K = Math.max(0, 150 - Ka);
 
         return predictionSerie.slice(1).reduce<any[]>((arr, date, index) => {
           const Ki = K === 0 ? 0 : Math.max(0, (K - index) / K);
