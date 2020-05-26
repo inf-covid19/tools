@@ -115,6 +115,7 @@ function CustomizableChart(props: CustomizableChartProps, ref: React.Ref<any>) {
   const chartOptions = useMemo(() => {
     return {
       chart: {
+        fontFamily: "Lato, 'Helvetica Neue', Arial, Helvetica, sans-serif",
         animations: {
           animateGradually: { enabled: false },
         },
@@ -133,7 +134,7 @@ function CustomizableChart(props: CustomizableChartProps, ref: React.Ref<any>) {
       colors: seriesColors,
       tooltip: {
         y: {
-          formatter: (value: number) => `${displayNumberFormatter(value)} ${metric}${isIncidence ? " per 100k people" : ""}`,
+          formatter: (value: number) => `${displayNumberFormatter(value)} ${metric}${isIncidence ? " per 100k inhab." : ""}`,
         },
         x: {
           formatter: alignAt > 0 ? (value: number) => `${ordinalFormattter(value)} day after ${numberFormatter(alignAt)} ${metric}` : undefined,
@@ -146,8 +147,22 @@ function CustomizableChart(props: CustomizableChartProps, ref: React.Ref<any>) {
         },
       },
       yaxis: {
+        axisTicks: {
+          offsetX: 5,
+        },
+        axisBorder: {
+          offsetX: 5,
+        },
         labels: {
-          formatter: (value: number | string) => (isNumber(value) ? value < 1 ? displayNumberFormatter(value) : numberFormatter(value) : value),
+          offsetX: 5,
+          formatter: (value: number | string) => (isNumber(value) ? (value < 1 ? displayNumberFormatter(value) : numberFormatter(value)) : value),
+        },
+        title: {
+          offsetX: 5,
+          text:
+            chartType === "heatmap"
+              ? undefined
+              : `${isCumulative ? "Total" : "Daily"} Confirmed ${metric === "cases" ? "Cases" : "Deaths"}${isIncidence ? " (per 100k inhab.)" : ""}`,
         },
       },
       dataLabels: {
@@ -157,16 +172,7 @@ function CustomizableChart(props: CustomizableChartProps, ref: React.Ref<any>) {
       title: {
         text: title,
         style: {
-          fontSize: "20px",
-          fontFamily: "Lato, 'Helvetica Neue', Arial, Helvetica, sans-serif",
-        },
-      },
-      subtitle: {
-        text: `${isCumulative ? "Total" : "Daily"} number of ${metric}${isIncidence ? " per 100k people" : ""}`,
-        floating: true,
-        style: {
-          fontSize: "14px",
-          fontFamily: "Lato, 'Helvetica Neue', Arial, Helvetica, sans-serif",
+          fontSize: "18px",
         },
       },
       plotOptions: {
@@ -175,7 +181,7 @@ function CustomizableChart(props: CustomizableChartProps, ref: React.Ref<any>) {
         },
       },
     };
-  }, [seriesColors, alignAt, showDataLabels, title, isCumulative, metric, isIncidence, colorScale]);
+  }, [seriesColors, alignAt, chartType, isCumulative, metric, isIncidence, showDataLabels, title, colorScale]);
 
   if (loading) {
     return (
