@@ -212,6 +212,7 @@ export default function RegionSelector({ value, onChange, multiple = true, filte
         </div>
       )}
       <Dropdown
+      className={multiple ? undefined : 'large'}
         selectOnNavigation={false}
         style={{ zIndex: 12 }}
         placeholder={fromValue === "all" ? "Search for countries, states, provinces..." : `Choose regions from ${fromValue}...`}

@@ -15,10 +15,11 @@ import { getByRegionId } from "../utils/metadata";
 import { alignTimeseries } from "../utils/normalizeTimeseries";
 import { ChartOptions } from "./Editor";
 import useColorScale from "../hooks/useColorScale";
+import { isNumber } from "lodash";
 
-const displayNumberFormatter = d3.format(",");
+const displayNumberFormatter = d3.format(",.2~f");
 const ordinalFormattter = (n: number) => numeral(n).format("Oo");
-const numberFormatter = d3.format(".2s");
+const numberFormatter = d3.format(".2~s");
 
 type PredictionsChartProps = Omit<Props, "options" | "series" | "type"> & ChartOptions;
 
@@ -132,6 +133,7 @@ function PredictionsChart(props: PredictionsChartProps, ref: React.Ref<any>) {
   const chartOptions = useMemo(() => {
     return {
       chart: {
+        fontFamily: "Lato, 'Helvetica Neue', Arial, Helvetica, sans-serif",
         animations: {
           animateGradually: { enabled: false },
         },
@@ -162,6 +164,22 @@ function PredictionsChart(props: PredictionsChartProps, ref: React.Ref<any>) {
               : (date: number) => `${format(new Date(date), "PPP")}`,
         },
       },
+      yaxis: {
+        axisTicks: {
+          offsetX: 5,
+        },
+        axisBorder: {
+          offsetX: 5,
+        },
+        labels: {
+          offsetX: 5,
+          formatter: (value: number | string) => (isNumber(value) ? (value < 1 ? displayNumberFormatter(value) : numberFormatter(value)) : value),
+        },
+        title: {
+          offsetX: 5,
+          text: chartType ==='heatmap' ? undefined : `${isCumulative ? "Total" : "Daily"} Confirmed ${metric === 'cases' ? 'Cases' : 'Deaths'}`
+        },
+      },
       xaxis: {
         type: alignAt === 0 ? "datetime" : "numeric",
         labels: {
@@ -189,14 +207,6 @@ function PredictionsChart(props: PredictionsChartProps, ref: React.Ref<any>) {
         text: title,
         style: {
           fontSize: "20px",
-          fontFamily: "Lato, 'Helvetica Neue', Arial, Helvetica, sans-serif",
-        },
-      },
-      subtitle: {
-        text: `${isCumulative ? "Total" : "Daily"} number of ${metric}`,
-        floating: true,
-        style: {
-          fontSize: "14px",
           fontFamily: "Lato, 'Helvetica Neue', Arial, Helvetica, sans-serif",
         },
       },

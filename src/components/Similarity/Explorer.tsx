@@ -13,6 +13,10 @@ import RegionSelector from "../RegionSelector";
 import TrendChart from "../TrendChart";
 import useQueryString from "../../hooks/useQueryString";
 
+import "./Explorer.css";
+import useRegionData from "../../hooks/useRegionData";
+import { differenceInDays } from "date-fns";
+
 const displayNumberFormatter = format(",.2~f");
 
 const similarityOptions = [
@@ -30,15 +34,15 @@ const similarityOptions = [
   },
   {
     key: "cases_per_100k_distance",
-    text: "cases per 100k people",
+    text: "cases per 100k inhab.",
     value: "cases_per_100k_distance",
-    content: "Cases per 100k people",
+    content: "Cases per 100k inhab.",
   },
   {
     key: "deaths_per_100k_distance",
-    text: "deaths per 100k people",
+    text: "deaths per 100k inhab.",
     value: "deaths_per_100k_distance",
-    content: "Deaths per 100k people",
+    content: "Deaths per 100k inhab.",
   },
 ];
 
@@ -62,6 +66,7 @@ const Explorer = () => {
   const setAspect = (value: string) => {
     setQuery({
       aspect: value,
+      secondary: "",
     });
   };
 
@@ -171,6 +176,35 @@ const Explorer = () => {
     return { [currentRegion.key]: true, [secondaryRegion.key]: true };
   }, [currentRegion, secondaryRegion]);
 
+  const regionIds = useMemo(() => {
+    if (!currentRegion || !secondaryRegion) {
+      return [];
+    }
+    return [currentRegion.key, secondaryRegion.key];
+  }, [currentRegion, secondaryRegion]);
+
+  const { data: regionData } = useRegionData(regionIds);
+
+  const timelineStats = useMemo(() => {
+    const stats: Record<string, { sinceFirstCase: number; sinceFirstDeath: number }> = {};
+
+    if (!regionData || Object.keys(regionData).length < 2) {
+      return undefined;
+    }
+
+    Object.entries(regionData).forEach(([key, timeline]) => {
+      const firstCase = timeline.find((row) => row.cases > 0);
+      const firstDeath = timeline.find((row) => row.deaths > 0);
+
+      stats[key] = {
+        sinceFirstCase: firstCase ? differenceInDays(new Date(), firstCase.date) : 0,
+        sinceFirstDeath: firstDeath ? differenceInDays(new Date(), firstDeath.date) : 0,
+      };
+    });
+
+    return stats;
+  }, [regionData]);
+
   if (!data || !metadata) {
     return (
       <div style={{ height: "350px", display: "flex", justifyContent: "center", alignItems: "center" }}>
@@ -203,107 +237,24 @@ const Explorer = () => {
     <div style={{ padding: "0 20px" }}>
       {regionSelector}
 
-      {topSimilarData && topSimilarData.length > 0 && secondaryRegion ? (
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 450px" }}>
-          <div style={{ padding: 10 }}>
-            <Segment>
-              <Grid columns={2}>
-                <Grid.Column>
-                  <Header as="h3">
-                    <Flag name={currentRegion.flag} /> {currentRegion.displayName}
-                  </Header>
-                  <Statistic.Group horizontal>
-                    <Statistic>
-                      <Statistic.Value>{displayNumberFormatter(currentRegion.population)}</Statistic.Value>
-                      <Statistic.Label>Population</Statistic.Label>
-                    </Statistic>
-                    <Statistic>
-                      <Statistic.Value>{displayNumberFormatter(currentRegion.area_km)}</Statistic.Value>
-                      <Statistic.Label>km²</Statistic.Label>
-                    </Statistic>
-                    <Statistic>
-                      <Statistic.Value>{currentRegion.days}</Statistic.Value>
-                      <Statistic.Label>Days since first case</Statistic.Label>
-                    </Statistic>
-                  </Statistic.Group>
-                </Grid.Column>
-                <Grid.Column>
-                  <Header as="h3">
-                    <Flag name={secondaryRegion.flag} />
-                    {secondaryRegion?.displayName}
-                  </Header>
-                  <Statistic.Group horizontal>
-                    <Statistic>
-                      <Statistic.Value>
-                        <DiffIndicator primaryValue={currentRegion.population} secondaryValue={secondaryRegion.population} /> {displayNumberFormatter(secondaryRegion.population)}
-                      </Statistic.Value>
-                      <Statistic.Label>Population</Statistic.Label>
-                    </Statistic>
-                    <Statistic>
-                      <Statistic.Value>
-                        <DiffIndicator primaryValue={currentRegion.area_km} secondaryValue={secondaryRegion.area_km} /> {displayNumberFormatter(secondaryRegion.area_km)}
-                      </Statistic.Value>
-                      <Statistic.Label>km²</Statistic.Label>
-                    </Statistic>
-                    <Statistic>
-                      <Statistic.Value>
-                        <DiffIndicator primaryValue={currentRegion.days} secondaryValue={secondaryRegion.days} /> {secondaryRegion.days}
-                      </Statistic.Value>
-                      <Statistic.Label>Days since first case</Statistic.Label>
-                    </Statistic>
-                  </Statistic.Group>
-                </Grid.Column>
-              </Grid>
-            </Segment>
-            <Segment>
-              <CustomizableChart
-                {...DEFAULT_OPTIONS}
-                selectedRegions={chartRegions}
-                alignAt={1}
-                chartType="bar"
-                isCumulative={true}
-                height={250}
-                metric={"cases"}
-                title={`Comparative between ${currentRegion?.displayName} and ${secondaryRegion?.displayName}`}
-                timeserieSlice={-1}
-                isIncidence={isIncidence}
-                getPopulation={(key) => dataByKey[key].population}
-              />
-            </Segment>
-            <Segment>
-              <CustomizableChart
-                {...DEFAULT_OPTIONS}
-                selectedRegions={chartRegions}
-                alignAt={1}
-                chartType="bar"
-                isCumulative={true}
-                height={250}
-                metric={"deaths"}
-                title={`Comparative between ${currentRegion?.displayName} and ${secondaryRegion?.displayName}`}
-                timeserieSlice={-1}
-                isIncidence={isIncidence}
-                getPopulation={(key) => dataByKey[key].population}
-              />
-            </Segment>
-            <Segment>
-              <Header as="h3">
-                Trend comparative between {currentRegion?.displayName} and {secondaryRegion?.displayName}
-              </Header>
-              <Grid columns={2}>
-                <Grid.Column>
-                  <TrendChart {...DEFAULT_OPTIONS} selectedRegions={chartRegions} alignAt={1} height={250} metric={"cases"} title={``} />
-                </Grid.Column>
-                <Grid.Column>
-                  <TrendChart {...DEFAULT_OPTIONS} selectedRegions={chartRegions} alignAt={1} height={250} metric={"deaths"} title={``} />
-                </Grid.Column>
-              </Grid>
-            </Segment>
-          </div>
-
+      {timelineStats && topSimilarData && topSimilarData.length > 0 && secondaryRegion ? (
+        <div style={{ display: "grid", gridTemplateColumns: "450px 1fr" }}>
           <div style={{ padding: 10 }}>
             <Segment>
               <Header as="h3">
-                Top-similar by <Dropdown inline onChange={(_: any, { value }: any) => setAspect(value)} options={similarityOptions} value={aspect} />
+                <div className="header--dropdown">
+                  Top-similar by{" "}
+                  <Dropdown
+                    style={{ fontWeight: 700 }}
+                    className="large"
+                    button
+                    basic
+                    compact
+                    onChange={(_: any, { value }: any) => setAspect(value)}
+                    options={similarityOptions}
+                    value={aspect}
+                  />
+                </div>
                 <Header.Subheader>Regions with similar epidemiological timeline</Header.Subheader>
               </Header>
               <div style={{ maxHeight: "250px", overflow: "auto" }}>
@@ -366,6 +317,124 @@ const Explorer = () => {
                   )}
                 </List>
               </div>
+            </Segment>
+          </div>
+
+          <div style={{ padding: 10 }}>
+            <Segment>
+              <Grid columns={2}>
+                <Grid.Column>
+                  <Header as="h3">
+                    <Flag name={currentRegion.flag} /> {currentRegion.displayName}
+                  </Header>
+                  <Statistic.Group horizontal>
+                    <Statistic>
+                      <Statistic.Value>{displayNumberFormatter(currentRegion.population)}</Statistic.Value>
+                      <Statistic.Label>Population</Statistic.Label>
+                    </Statistic>
+                    <Statistic>
+                      <Statistic.Value>{displayNumberFormatter(currentRegion.area_km)}</Statistic.Value>
+                      <Statistic.Label>km²</Statistic.Label>
+                    </Statistic>
+                    <Statistic>
+                      <Statistic.Value>{displayNumberFormatter(currentRegion.population_density)}</Statistic.Value>
+                      <Statistic.Label>inhab/km²</Statistic.Label>
+                    </Statistic>
+                    <Statistic>
+                      <Statistic.Value>{timelineStats[currentRegion.key]?.sinceFirstCase}</Statistic.Value>
+                      <Statistic.Label>Days since first case</Statistic.Label>
+                    </Statistic>
+                    <Statistic>
+                      <Statistic.Value>{timelineStats[currentRegion.key]?.sinceFirstDeath}</Statistic.Value>
+                      <Statistic.Label>Days since first death</Statistic.Label>
+                    </Statistic>
+                  </Statistic.Group>
+                </Grid.Column>
+                <Grid.Column>
+                  <Header as="h3">
+                    <Flag name={secondaryRegion.flag} />
+                    {secondaryRegion?.displayName}
+                  </Header>
+                  <Statistic.Group horizontal>
+                    <Statistic>
+                      <Statistic.Value>
+                        <DiffIndicator primaryValue={currentRegion.population} secondaryValue={secondaryRegion.population} /> {displayNumberFormatter(secondaryRegion.population)}
+                      </Statistic.Value>
+                      <Statistic.Label>Population</Statistic.Label>
+                    </Statistic>
+                    <Statistic>
+                      <Statistic.Value>
+                        <DiffIndicator primaryValue={currentRegion.area_km} secondaryValue={secondaryRegion.area_km} /> {displayNumberFormatter(secondaryRegion.area_km)}
+                      </Statistic.Value>
+                      <Statistic.Label>km²</Statistic.Label>
+                    </Statistic>
+                    <Statistic>
+                      <Statistic.Value>
+                        <DiffIndicator primaryValue={currentRegion.population_density} secondaryValue={secondaryRegion.population_density} />{" "}
+                        {displayNumberFormatter(secondaryRegion.population_density)}
+                      </Statistic.Value>
+                      <Statistic.Label>inhab/km²</Statistic.Label>
+                    </Statistic>
+                    <Statistic>
+                      <Statistic.Value>
+                        <DiffIndicator primaryValue={timelineStats[currentRegion.key]?.sinceFirstCase} secondaryValue={timelineStats[secondaryRegion.key]?.sinceFirstCase} />{" "}
+                        {timelineStats[secondaryRegion.key]?.sinceFirstCase}
+                      </Statistic.Value>
+                      <Statistic.Label>Days since first case</Statistic.Label>
+                    </Statistic>
+                    <Statistic>
+                      <Statistic.Value>
+                        <DiffIndicator primaryValue={timelineStats[currentRegion.key]?.sinceFirstDeath} secondaryValue={timelineStats[secondaryRegion.key]?.sinceFirstDeath} />{" "}
+                        {timelineStats[secondaryRegion.key]?.sinceFirstDeath}
+                      </Statistic.Value>
+                      <Statistic.Label>Days since first death</Statistic.Label>
+                    </Statistic>
+                  </Statistic.Group>
+                </Grid.Column>
+              </Grid>
+            </Segment>
+            <Segment>
+              <CustomizableChart
+                {...DEFAULT_OPTIONS}
+                selectedRegions={chartRegions}
+                alignAt={1}
+                chartType="bar"
+                isCumulative={true}
+                height={250}
+                metric={"cases"}
+                title={`Total Cases - Comparison between ${currentRegion?.displayName} and ${secondaryRegion?.displayName}`}
+                timeserieSlice={-1}
+                isIncidence={isIncidence}
+                getPopulation={(key) => dataByKey[key].population}
+              />
+            </Segment>
+            <Segment>
+              <CustomizableChart
+                {...DEFAULT_OPTIONS}
+                selectedRegions={chartRegions}
+                alignAt={1}
+                chartType="bar"
+                isCumulative={true}
+                height={250}
+                metric={"deaths"}
+                title={`Total Deaths - Comparison between ${currentRegion?.displayName} and ${secondaryRegion?.displayName}`}
+                timeserieSlice={-1}
+                isIncidence={isIncidence}
+                getPopulation={(key) => dataByKey[key].population}
+              />
+            </Segment>
+            <Segment>
+              <Header as="h3">
+                Trend comparison between {currentRegion?.displayName} and {secondaryRegion?.displayName}
+              </Header>
+              <Grid columns={2}>
+                <Grid.Column>
+                  <TrendChart {...DEFAULT_OPTIONS} selectedRegions={chartRegions} alignAt={1} height={250} metric={"cases"} title={``} />
+                </Grid.Column>
+                <Grid.Column>
+                  <TrendChart {...DEFAULT_OPTIONS} selectedRegions={chartRegions} alignAt={1} height={250} metric={"deaths"} title={``} />
+                </Grid.Column>
+              </Grid>
             </Segment>
           </div>
         </div>

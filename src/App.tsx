@@ -39,13 +39,13 @@ const MENU_ITEMS = [
     name: "Projection Visualizer",
     path: "/projections",
     component: ProjectionsEditor,
-    isBeta: true,
+    isBeta: false,
   },
   {
     name: "Similarity Explorer",
     path: "/similarity/:region?",
     component: SimilarityExplorer,
-    isBeta: true,
+    isBeta: false,
   },
 ];
 

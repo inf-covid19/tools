@@ -1,0 +1,8 @@
+.header--dropdown {
+  display: flex;
+  align-items: center;
+}
+
+.header--dropdown > .dropdown {
+  margin-left: 5px;
+}

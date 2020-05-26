@@ -155,6 +155,7 @@ function ProjectionsChart(props: ProjectionsChartProps, ref: React.Ref<any>) {
   const chartOptions = useMemo(() => {
     return {
       chart: {
+        fontFamily: "Lato, 'Helvetica Neue', Arial, Helvetica, sans-serif",
         zoom: {
           enabled: true,
           type: "xy",

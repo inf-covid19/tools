@@ -113,6 +113,7 @@ function TrendChart(props: TrendChartProps, ref: React.Ref<any>) {
 
     return {
       chart: {
+        fontFamily: "Lato, 'Helvetica Neue', Arial, Helvetica, sans-serif",
         animations: {
           animateGradually: { enabled: false },
         },
@@ -169,6 +170,7 @@ function TrendChart(props: TrendChartProps, ref: React.Ref<any>) {
         },
         title: {
           text: `Total Confirmed ${titleCase(metric)}`,
+          offsetY: 10,
         },
         tooltip: {
           enabled: false,
@@ -178,10 +180,18 @@ function TrendChart(props: TrendChartProps, ref: React.Ref<any>) {
         max: 1,
         min: 0,
         tickAmount: scale === "log" ? yTickAmount : undefined,
+        axisTicks: {
+          offsetX: 5,
+        },
+        axisBorder: {
+          offsetX: 5,
+        },
         labels: {
+          offsetX: 5,
           formatter: withYScaler((n: number) => (n < 1000 ? Math.round(n) : numberFormatter(n))),
         },
         title: {
+          offsetX: 5,
           text: `New Confirmed ${titleCase(metric)} (in the Past Week)`,
         },
       },
