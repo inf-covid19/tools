@@ -16,6 +16,7 @@ import { alignTimeseries } from "../utils/normalizeTimeseries";
 import { ChartOptions } from "./Editor";
 import useColorScale from "../hooks/useColorScale";
 import { isNumber } from "lodash";
+import { titleCase } from "../utils/string";
 
 const displayNumberFormatter = d3.format(",.2~f");
 const ordinalFormattter = (n: number) => numeral(n).format("Oo");
@@ -177,7 +178,7 @@ function PredictionsChart(props: PredictionsChartProps, ref: React.Ref<any>) {
         },
         title: {
           offsetX: 5,
-          text: chartType ==='heatmap' ? undefined : `${isCumulative ? "Total" : "Daily"} Confirmed ${metric === 'cases' ? 'Cases' : 'Deaths'}`
+          text: chartType === "heatmap" ? undefined : `${isCumulative ? "Total" : "Daily"} Confirmed ${titleCase(metric)}`,
         },
       },
       xaxis: {
@@ -236,7 +237,17 @@ function PredictionsChart(props: PredictionsChartProps, ref: React.Ref<any>) {
     );
   }
 
-  return <ReactApexChart key={chartType} ref={ref} options={chartOptions} series={sortedSeries} type={chartType} height={rest.height} width={rest.width} />;
+  return (
+    <ReactApexChart
+      key={chartType}
+      ref={ref}
+      options={chartOptions}
+      series={sortedSeries}
+      type={chartType}
+      height={Math.max(Number(rest.height), (chartType === "heatmap" ? 30 : 0) * sortedSeries.length)}
+      width={rest.width}
+    />
+  );
 }
 
 export default React.forwardRef(PredictionsChart);

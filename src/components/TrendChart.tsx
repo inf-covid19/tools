@@ -10,12 +10,11 @@ import useSeriesColors from "../hooks/useSeriesColors";
 import { ChartOptions } from "./Editor";
 import { getByRegionId } from "../utils/metadata";
 import useMetadata from "../hooks/useMetadata";
+import { titleCase } from "../utils/string";
 
 const numberFormatter = d3.format(".2s");
 
 const displayNumberFormatter = d3.format(",");
-
-const titleCase = (word: string) => word.slice(0, 1).toUpperCase() + word.slice(1);
 
 type TrendChartProps = Omit<Props, "options" | "series" | "type"> & Pick<ChartOptions, "selectedRegions" | "title" | "alignAt" | "metric" | "scale">;
 
