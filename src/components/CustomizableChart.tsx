@@ -201,7 +201,17 @@ function CustomizableChart(props: CustomizableChartProps, ref: React.Ref<any>) {
     );
   }
 
-  return <ReactApexChart key={chartType} ref={ref} options={chartOptions} series={sortedSeries} type={chartType} height={rest.height} width={rest.width} />;
+  return (
+    <ReactApexChart
+      key={chartType}
+      ref={ref}
+      options={chartOptions}
+      series={sortedSeries}
+      type={chartType}
+      height={Math.max(Number(rest.height), (chartType === "heatmap" ? 30 : 0) * sortedSeries.length)}
+      width={rest.width}
+    />
+  );
 }
 
 export default React.forwardRef(CustomizableChart);
