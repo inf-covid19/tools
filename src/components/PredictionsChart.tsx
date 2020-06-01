@@ -64,7 +64,7 @@ function PredictionsChart(props: PredictionsChartProps, ref: React.Ref<any>) {
           { X: [], Y: [] }
         );
 
-        const degree = X.length > 2 ? 3 : 1;
+        const degree = X.length > 2 ? 2 : 1;
         const regression = new PolynomialRegression(X, Y, degree);
         const pred = (n: number) => Math.round(regression.predict(n));
         const lastDate = last(dataSinceFirstCase)!.date;
