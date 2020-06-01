@@ -100,10 +100,11 @@ export default function normalizeTimeseries(regionId: string, timeseriesRaw: DSV
       });
     }
 
-    const cases = isCountry ? totalCases + Number(get(row, casesColumn, 0)) : Number(get(row, casesColumn, totalCases));
+
+    const cases = Math.max(totalCases, isCountry ? totalCases + Math.abs(Number(get(row, casesColumn, 0))) : Number(get(row, casesColumn, totalCases)));
     const cases_daily = Math.max(0, cases - totalCases);
 
-    const deaths = isCountry ? totalDeaths + Number(get(row, deathsColumn, 0)) : Number(get(row, deathsColumn, totalDeaths));
+    const deaths = Math.max(totalDeaths, isCountry ? totalDeaths + Math.abs(Number(get(row, deathsColumn, 0))) : Number(get(row, deathsColumn, totalDeaths)));
     const deaths_daily = Math.max(0, deaths - totalDeaths);
 
     data.push({ date, cases, cases_daily, deaths, deaths_daily });

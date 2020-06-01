@@ -58,7 +58,7 @@ function PredictionsChart(props: PredictionsChartProps, ref: React.Ref<any>) {
           (acc, row, index) => {
             return {
               X: [...acc.X, index],
-              Y: [...acc.Y, metric === "cases" ? row.cases_daily : row.deaths_daily],
+              Y: [...acc.Y, metric === "cases" ? row.cases : row.deaths],
             };
           },
           { X: [], Y: [] }
@@ -85,7 +85,7 @@ function PredictionsChart(props: PredictionsChartProps, ref: React.Ref<any>) {
 
           arr.push({
             date: date,
-            [metric]: Math.round(Math.max(lastMetric + predValue, lastMetric)),
+            [metric]: Math.round(Math.max(predValue, lastMetric)),
             isPrediction: true,
           });
           return arr;
