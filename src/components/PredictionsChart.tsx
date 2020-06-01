@@ -53,45 +53,6 @@ function PredictionsChart(props: PredictionsChartProps, ref: React.Ref<any>) {
   const seriesWithPredictions = useMemo(() => {
     return filteredSeries.flatMap((serie) => {
       const dataSinceFirstCase = serie.data.filter((d) => d.cases > 0);
-      const getNextSeriesPrediction = () => {
-        const { X, Y } = dataSinceFirstCase.slice(-Math.max(dayInterval, 2)).reduce<{ X: number[]; Y: number[] }>(
-          (acc, row, index) => {
-            return {
-              X: [...acc.X, index],
-              Y: [...acc.Y, metric === "cases" ? row.cases : row.deaths],
-            };
-          },
-          { X: [], Y: [] }
-        );
-
-        const degree = X.length > 2 ? 3 : 1;
-        const regression = new PolynomialRegression(X, Y, degree);
-        const pred = (n: number) => Math.round(regression.predict(n));
-        const lastDate = last(dataSinceFirstCase)!.date;
-        const predictionSerie = eachDayOfInterval({
-          start: lastDate,
-          end: addDays(lastDate, predictionDays),
-        });
-        const fActual = last(Y)!;
-        const fPrediction = pred(X.length - 1);
-        const F = Math.max(fPrediction, 0) === 0 ? 1 : fActual / fPrediction;
-
-        const Ka = dataSinceFirstCase.filter((x) => x.cases > 300).length;
-        const K = Math.max(0, 360 - Ka);
-
-        return predictionSerie.slice(1).reduce<any[]>((arr, date, index) => {
-          const Ki = K === 0 ? 0 : Math.max(0, (K - index) / K);
-          const predValue = pred(X.length + index) * F * Ki;
-          const lastMetric = (arr[index - 1] || last(dataSinceFirstCase))[metric] as number;
-
-          arr.push({
-            date: date,
-            [metric]: Math.round(Math.max(predValue, lastMetric)),
-            isPrediction: true,
-          });
-          return arr;
-        }, []);
-      };
 
       const serieData = alignTimeseries(dataSinceFirstCase, subDays(startOfDay(new Date()), dayInterval));
       if (dataSinceFirstCase.length <= 2) {
@@ -107,7 +68,45 @@ function PredictionsChart(props: PredictionsChartProps, ref: React.Ref<any>) {
         ];
       }
 
-      const nextSeriePredictions = getNextSeriesPrediction();
+      const { X, Y } = dataSinceFirstCase.slice(-Math.max(dayInterval, 2)).reduce<{ X: number[]; Y: number[] }>(
+        (acc, row, index) => {
+          return {
+            X: [...acc.X, index],
+            Y: [...acc.Y, metric === "cases" ? row.cases : row.deaths],
+          };
+        },
+        { X: [], Y: [] }
+      );
+
+      console.log("--- X, Y ---", {X, Y})
+
+      const degree = X.length > 2 ? 3 : 1;
+      const regression = new PolynomialRegression(X, Y, degree);
+      const pred = (n: number) => Math.round(regression.predict(n));
+      const lastDate = last(dataSinceFirstCase)!.date;
+      const predictionSerie = eachDayOfInterval({
+        start: lastDate,
+        end: addDays(lastDate, predictionDays),
+      });
+      const fActual = last(Y)!;
+      const fPrediction = pred(X.length - 1);
+      const F = Math.max(fPrediction, 0) === 0 ? 1 : fActual / fPrediction;
+
+      const Ka = dataSinceFirstCase.filter((x) => x.cases > 300).length;
+      const K = Math.max(0, 360 - Ka);
+
+      const nextSeriePredictions = predictionSerie.slice(1).reduce<any[]>((arr, date, index) => {
+        const Ki = K === 0 ? 0 : Math.max(0, (K - index) / K);
+        const predValue = pred(X.length + index) * F * Ki;
+        const lastMetric = (arr[index - 1] || last(dataSinceFirstCase))[metric] as number;
+
+        arr.push({
+          date: date,
+          [metric]: Math.round(Math.max(predValue, lastMetric)),
+          isPrediction: true,
+        });
+        return arr;
+      }, []);
 
       return [
         {
@@ -117,6 +116,18 @@ function PredictionsChart(props: PredictionsChartProps, ref: React.Ref<any>) {
             y: row[metric],
             isPrediction: row.isPrediction || false,
           })),
+        },
+        {
+          name: serie.name + " (Prediction)",
+          key: serie.key + "__Prediction",
+          data: serieData.concat(nextSeriePredictions).map((row: any, index) => {
+            const Ki = K === 0 ? 0 : Math.max(0, (360 - index) / 360);
+            return {
+              x: row.date.getTime(),
+              y: pred(X.length + index) * F * Ki,
+              isPrediction: row.isPrediction || false,
+            };
+          }),
         },
       ];
     });
