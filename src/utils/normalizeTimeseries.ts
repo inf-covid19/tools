@@ -80,8 +80,8 @@ export default function normalizeTimeseries(regionId: string, timeseriesRaw: DSV
   let totalDeaths = 0;
 
   // normalize timeseries (include cases, cases_daily, deaths, deaths_daily)
-  return timeseries.flatMap((row) => {
-    const data: TimeseriesRow[] = [];
+  const data: TimeseriesRow[] = [];
+  timeseries.forEach((row) => {
     const date = parseDate(row, country, isCountry);
 
     if (prevDate && differenceInDays(date, prevDate) > 1) {
@@ -106,12 +106,26 @@ export default function normalizeTimeseries(regionId: string, timeseriesRaw: DSV
     const deaths = isCountry ? totalDeaths + Number(get(row, deathsColumn, 0)) : Number(get(row, deathsColumn, totalDeaths));
     const deaths_daily = Math.max(0, deaths - totalDeaths);
 
+    if (cases < totalCases || deaths < totalDeaths) {
+      data.forEach((entry, index) => {
+        if (entry.cases > cases) {
+          data[index].cases = cases;
+          data[index].cases_daily = Math.max(0, cases - get(data, [index - 1, "cases"], 0));
+        }
+
+        if (entry.deaths > deaths) {
+          data[index].deaths = deaths;
+          data[index].deaths_daily = Math.max(0, deaths - get(data, [index - 1, "deaths"], 0));
+        }
+      });
+    }
+
     data.push({ date, cases, cases_daily, deaths, deaths_daily });
 
     totalCases = cases;
     totalDeaths = deaths;
     prevDate = date;
-
-    return data;
   });
+
+  return data;
 }

@@ -58,12 +58,13 @@ function PredictionsChart(props: PredictionsChartProps, ref: React.Ref<any>) {
           (acc, row, index) => {
             return {
               X: [...acc.X, index],
-              Y: [...acc.Y, metric === "cases" ? row.cases_daily : row.deaths_daily],
+              Y: [...acc.Y, metric === "cases" ? row.cases : row.deaths],
             };
           },
           { X: [], Y: [] }
         );
-        const degree = X.length > 2 ? 3 : 1;
+
+        const degree = X.length > 2 ? 2 : 1;
         const regression = new PolynomialRegression(X, Y, degree);
         const pred = (n: number) => Math.round(regression.predict(n));
         const lastDate = last(dataSinceFirstCase)!.date;
@@ -76,7 +77,7 @@ function PredictionsChart(props: PredictionsChartProps, ref: React.Ref<any>) {
         const F = Math.max(fPrediction, 0) === 0 ? 1 : fActual / fPrediction;
 
         const Ka = dataSinceFirstCase.filter((x) => x.cases > 300).length;
-        const K = Math.max(0, 150 - Ka);
+        const K = Math.max(0, 360 - Ka);
 
         return predictionSerie.slice(1).reduce<any[]>((arr, date, index) => {
           const Ki = K === 0 ? 0 : Math.max(0, (K - index) / K);
@@ -85,16 +86,28 @@ function PredictionsChart(props: PredictionsChartProps, ref: React.Ref<any>) {
 
           arr.push({
             date: date,
-            [metric]: Math.round(Math.max(lastMetric + predValue, lastMetric)),
+            [metric]: Math.round(Math.max(predValue, lastMetric)),
             isPrediction: true,
           });
           return arr;
         }, []);
       };
 
-      const nextSeriePredictions = dataSinceFirstCase.length > 2 ? getNextSeriesPrediction() : [];
-
       const serieData = alignTimeseries(dataSinceFirstCase, subDays(startOfDay(new Date()), dayInterval));
+      if (dataSinceFirstCase.length <= 2) {
+        return [
+          {
+            ...serie,
+            data: serieData.map((row) => ({
+              x: row.date.getTime(),
+              y: row[metric],
+              isPrediction: false,
+            })),
+          },
+        ];
+      }
+
+      const nextSeriePredictions = getNextSeriesPrediction();
 
       return [
         {
