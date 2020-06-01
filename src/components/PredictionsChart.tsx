@@ -63,6 +63,7 @@ function PredictionsChart(props: PredictionsChartProps, ref: React.Ref<any>) {
           },
           { X: [], Y: [] }
         );
+
         const degree = X.length > 2 ? 3 : 1;
         const regression = new PolynomialRegression(X, Y, degree);
         const pred = (n: number) => Math.round(regression.predict(n));
@@ -76,7 +77,7 @@ function PredictionsChart(props: PredictionsChartProps, ref: React.Ref<any>) {
         const F = Math.max(fPrediction, 0) === 0 ? 1 : fActual / fPrediction;
 
         const Ka = dataSinceFirstCase.filter((x) => x.cases > 300).length;
-        const K = Math.max(0, 150 - Ka);
+        const K = Math.max(0, 360 - Ka);
 
         return predictionSerie.slice(1).reduce<any[]>((arr, date, index) => {
           const Ki = K === 0 ? 0 : Math.max(0, (K - index) / K);
@@ -92,9 +93,21 @@ function PredictionsChart(props: PredictionsChartProps, ref: React.Ref<any>) {
         }, []);
       };
 
-      const nextSeriePredictions = dataSinceFirstCase.length > 2 ? getNextSeriesPrediction() : [];
-
       const serieData = alignTimeseries(dataSinceFirstCase, subDays(startOfDay(new Date()), dayInterval));
+      if (dataSinceFirstCase.length <= 2) {
+        return [
+          {
+            ...serie,
+            data: serieData.map((row) => ({
+              x: row.date.getTime(),
+              y: row[metric],
+              isPrediction: false,
+            })),
+          },
+        ];
+      }
+
+      const nextSeriePredictions = getNextSeriesPrediction();
 
       return [
         {
