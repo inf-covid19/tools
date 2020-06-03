@@ -75,7 +75,7 @@ function PredictionsChart(props: PredictionsChartProps, ref: React.Ref<any>) {
         const { X, Y } = reduceFunction(dataSinceFirstCase.slice(-(2 * TEST_SIZE + index)).slice(0, TEST_SIZE + index));
 
         // regressor degrees
-        return [2, 3].map((v) => {
+        return [2].map((v) => {
           const degree = X.length > 2 ? v : 1;
           const regressor = new PolynomialRegression(X, Y, degree);
           const pred = (n: number) => Math.round(regressor.predict(n));
@@ -141,6 +141,20 @@ function PredictionsChart(props: PredictionsChartProps, ref: React.Ref<any>) {
             isPrediction: row.isPrediction || false,
           })),
         },
+        // ...[regressors[minErrorIndex]].map((r, index) => {
+        //   const pred = (n: number) => Math.round(r.regressor.predict(n));
+        //   return {
+        //     name: serie.name + " (Prediction) " + (TEST_SIZE + X.length) + " " + regressor.degree,
+        //     key: serie.key + "__Prediction" + (TEST_SIZE + X.length) + " " + regressor.degree,
+        //     data: serieData.concat(nextSeriePredictions).map((row: any, index) => {
+        //       return {
+        //         x: row.date.getTime(),
+        //         y: pred(index + minErrorIndex),
+        //         isPrediction: row.isPrediction || false,
+        //       };
+        //     }),
+        //   };
+        // }),
       ];
     });
   }, [dayInterval, filteredSeries, metric, predictionDays]);
