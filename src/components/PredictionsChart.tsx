@@ -71,53 +71,42 @@ function PredictionsChart(props: PredictionsChartProps, ref: React.Ref<any>) {
 
       const mean = (list: any) => list.reduce((prev: any, curr: any) => prev + curr) / list.length;
 
-      const regressors = [...Array(Math.min(TRAIN_SIZE))].map((_, index: number) => {
+      const regressors = [...Array(Math.min(TRAIN_SIZE))].flatMap((_, index: number) => {
         // console.log("mse", index);
 
         const { X, Y } = reduceFunction(dataSinceFirstCase.slice(-(2 * TEST_SIZE + index)).slice(0, TEST_SIZE + index));
 
         // console.log("X", X, "Y", Y);
 
-        const degree = X.length > 2 ? 2 : 1;
-        const regressor = new PolynomialRegression(X, Y, degree);
-        const pred = (n: number) => Math.round(regressor.predict(n));
+        // regressor degrees
+        return [2, 3].map((v) => {
+          const degree = X.length > 2 ? v : 1;
+          const regressor = new PolynomialRegression(X, Y, degree);
+          const pred = (n: number) => Math.round(regressor.predict(n));
 
-        const seErrors = testSlice.Y.map((realValue: number, index: number) => {
-          const predValue = pred(Y.length + index);
-          // console.log("pred", predValue, realValue);
-          return Math.pow(realValue - predValue, 2);
+          const seErrors = testSlice.Y.map((realValue: number, index: number) => {
+            const predValue = pred(Y.length + index);
+            // console.log("pred", predValue, realValue);
+            return Math.pow(realValue - predValue, 2);
+          });
+
+          // console.log("seErrors", seErrors);
+          return {
+            regressor,
+            mse: mean(seErrors),
+            X,
+            Y,
+          };
         });
-
-        // console.log("seErrors", seErrors);
-        return {
-          regressor,
-          mse: mean(seErrors),
-          X,
-          Y,
-        };
       });
-      console.log("regressors leng", regressors.length);
+      console.log("regressors", regressors);
       const mseErrors = regressors.map((r) => r.mse);
       // console.log("mseErrors", mseErrors);
       const minErrorIndex = mseErrors.indexOf(Math.min(...mseErrors));
       console.log("min mseerror", mseErrors[minErrorIndex], minErrorIndex);
-      console.log("best predictor with ", minErrorIndex + TEST_SIZE, "days");
-      console.log("");
-
-      // const { X, Y } = dataSinceFirstCase.slice(-Math.max(dayInterval, 2)).reduce<{ X: number[]; Y: number[] }>(
-      //   (acc, row, index) => {
-      //     return {
-      //       X: [...acc.X, index],
-      //       Y: [...acc.Y, metric === "cases" ? row.cases : row.deaths],
-      //     };
-      //   },
-      //   { X: [], Y: [] }
-      // );
-
-      // const degree = X.length > 2 ? 2 : 1;
-      // const regression = new PolynomialRegression(X, Y, degree);
-      // const regressor = .regressor;
       const { X, regressor } = regressors[minErrorIndex];
+      console.log("best predictor with ", X.length, "days");
+      console.log("best regressor", regressor);
       const pred = (n: number) => Math.round(regressor.predict(n));
       const lastDate = last(dataSinceFirstCase)!.date;
       const predictionSerie = eachDayOfInterval({
