@@ -54,7 +54,7 @@ function PredictionsChart(props: PredictionsChartProps, ref: React.Ref<any>) {
     return filteredSeries.flatMap((serie) => {
       const dataSinceFirstCase = serie.data.filter((d) => d.cases > 0);
       const getNextSeriesPrediction = () => {
-        const { X, Y } = dataSinceFirstCase.slice(-Math.max(30, 2)).reduce<{ X: number[]; Y: number[] }>(
+        const { X, Y } = dataSinceFirstCase.slice(-Math.max(dayInterval, 2)).reduce<{ X: number[]; Y: number[] }>(
           (acc, row, index) => {
             return {
               X: [...acc.X, index],
