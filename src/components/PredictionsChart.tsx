@@ -72,11 +72,7 @@ function PredictionsChart(props: PredictionsChartProps, ref: React.Ref<any>) {
       const mean = (list: any) => list.reduce((prev: any, curr: any) => prev + curr) / list.length;
 
       const regressors = [...Array(Math.min(TRAIN_SIZE))].flatMap((_, index: number) => {
-        // console.log("mse", index);
-
         const { X, Y } = reduceFunction(dataSinceFirstCase.slice(-(2 * TEST_SIZE + index)).slice(0, TEST_SIZE + index));
-
-        // console.log("X", X, "Y", Y);
 
         // regressor degrees
         return [2, 3].map((v) => {
@@ -86,11 +82,9 @@ function PredictionsChart(props: PredictionsChartProps, ref: React.Ref<any>) {
 
           const seErrors = testSlice.Y.map((realValue: number, index: number) => {
             const predValue = pred(Y.length + index);
-            // console.log("pred", predValue, realValue);
             return Math.pow(realValue - predValue, 2);
           });
 
-          // console.log("seErrors", seErrors);
           return {
             regressor,
             mse: mean(seErrors),
@@ -99,14 +93,9 @@ function PredictionsChart(props: PredictionsChartProps, ref: React.Ref<any>) {
           };
         });
       });
-      console.log("regressors", regressors);
       const mseErrors = regressors.map((r) => r.mse);
-      // console.log("mseErrors", mseErrors);
       const minErrorIndex = mseErrors.indexOf(Math.min(...mseErrors));
-      console.log("min mseerror", mseErrors[minErrorIndex], minErrorIndex);
       const { X, regressor } = regressors[minErrorIndex];
-      console.log("best predictor with ", X.length, "days");
-      console.log("best regressor", regressor);
       const pred = (n: number) => Math.round(regressor.predict(n));
       const lastDate = last(dataSinceFirstCase)!.date;
       const predictionSerie = eachDayOfInterval({
@@ -116,17 +105,9 @@ function PredictionsChart(props: PredictionsChartProps, ref: React.Ref<any>) {
       const fActual = last(testSlice.Y)! as number;
       const fPrediction = pred(X.length + TEST_SIZE - 1);
       const predDiff = fActual - fPrediction;
-      // console.log("fa fp", fActual, fPrediction);
-      // const F = Math.max(fPrediction, 0) === 0 ? 1 : (fActual as number) / fPrediction;
-
-      // const Ka = dataSinceFirstCase.filter((x) => x.cases > 300).length;
-      // const K = Math.max(0, 360 - Ka);
 
       const nextSeriePredictions = predictionSerie.slice(1).reduce<any[]>((arr, date, index) => {
-        // const Ki = K === 0 ? 0 : Math.max(0, (K - index) / K);
-        // const predValue = pred(X.length + index) * F * Ki;
         const predValue = pred(X.length + TEST_SIZE + index) + predDiff;
-        // console.log("nextSerie", X.length, TEST_SIZE, index, "value", predValue);
         const lastMetric = (arr[index - 1] || last(dataSinceFirstCase))[metric] as number;
 
         arr.push({
@@ -136,10 +117,6 @@ function PredictionsChart(props: PredictionsChartProps, ref: React.Ref<any>) {
         });
         return arr;
       }, []);
-
-      // console.log("pred function", pred);
-      // console.log("regressor", regressor);
-      // console.log("X", X, "Y", Y);
 
       const serieData = alignTimeseries(dataSinceFirstCase, subDays(startOfDay(new Date()), dayInterval));
       if (dataSinceFirstCase.length <= 2) {
@@ -164,22 +141,6 @@ function PredictionsChart(props: PredictionsChartProps, ref: React.Ref<any>) {
             isPrediction: row.isPrediction || false,
           })),
         },
-        // ...[regressors[minErrorIndex]].map((r, index) => {
-        //   const pred = (n: number) => Math.round(r.regressor.predict(n));
-        //   return {
-        //     name: serie.name + " (Prediction) " + (TEST_SIZE + index),
-        //     key: serie.key + "__Prediction" + (TEST_SIZE + index),
-        //     data: serieData.concat(nextSeriePredictions).map((row: any, index) => {
-        //       const v = index + minErrorIndex;
-        //       // console.log("preding", v, "=", pred(v));
-        //       return {
-        //         x: row.date.getTime(),
-        //         y: pred(index + minErrorIndex),
-        //         isPrediction: row.isPrediction || false,
-        //       };
-        //     }),
-        //   };
-        // }),
       ];
     });
   }, [dayInterval, filteredSeries, metric, predictionDays]);
