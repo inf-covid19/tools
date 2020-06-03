@@ -6,7 +6,6 @@ import RegionSelector from "./RegionSelector";
 import { omit } from "lodash";
 import ExportChart from "./ExportChart";
 
-
 type SelectedCountriesMap = Record<string, boolean>;
 export type ChartOptions = {
   chartType: ChartType;
@@ -87,12 +86,13 @@ const getDefaultsValues = (id?: string): ChartOptions => {
 
 type EditorProps = {
   id?: string;
+  isPredictionChart?: boolean;
   availableOptions: Array<keyof ChartOptions>;
   render: (ref: React.MutableRefObject<any>, options: ChartOptions) => React.ReactNode;
 };
 
 function Editor(props: EditorProps) {
-  const { id, availableOptions } = props;
+  const { id, availableOptions, isPredictionChart } = props;
 
   const defaultsValues = useMemo(() => getDefaultsValues(props.id), [props.id]);
 
@@ -271,7 +271,7 @@ function Editor(props: EditorProps) {
 
                 {availableOptions.includes("dayInterval") && (
                   <Form.Field disabled={alignAt > 0}>
-                    <label>How many past days would you like to see?</label>
+                    <label>{isPredictionChart ? "Number of past days used in the prediction" : "How many past days would you like to see?"}</label>
                     <input
                       type="number"
                       placeholder="Enter a number"
