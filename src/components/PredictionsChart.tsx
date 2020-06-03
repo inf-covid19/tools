@@ -53,45 +53,104 @@ function PredictionsChart(props: PredictionsChartProps, ref: React.Ref<any>) {
   const seriesWithPredictions = useMemo(() => {
     return filteredSeries.flatMap((serie) => {
       const dataSinceFirstCase = serie.data.filter((d) => d.cases > 0);
-      const getNextSeriesPrediction = () => {
-        const { X, Y } = dataSinceFirstCase.slice(-Math.max(dayInterval, 2)).reduce<{ X: number[]; Y: number[] }>(
-          (acc, row, index) => {
-            return {
-              X: [...acc.X, index],
-              Y: [...acc.Y, metric === "cases" ? row.cases : row.deaths],
-            };
-          },
+
+      const TEST_SIZE = 7;
+      const TRAIN_SIZE = dataSinceFirstCase.length;
+
+      const reduceFunction = (slice: any) => {
+        return slice.reduce(
+          (acc: { X: any; Y: any }, row: { cases: any; deaths: any }, index: any) => ({
+            X: [...acc.X, index],
+            Y: [...acc.Y, metric === "cases" ? row.cases : row.deaths],
+          }),
           { X: [], Y: [] }
         );
+      };
+
+      const testSlice = reduceFunction(dataSinceFirstCase.slice(-TEST_SIZE));
+
+      const mean = (list: any) => list.reduce((prev: any, curr: any) => prev + curr) / list.length;
+
+      const regressors = [...Array(Math.min(TRAIN_SIZE))].map((_, index: number) => {
+        // console.log("mse", index);
+
+        const { X, Y } = reduceFunction(dataSinceFirstCase.slice(-(2 * TEST_SIZE + index)).slice(0, TEST_SIZE + index));
+
+        // console.log("X", X, "Y", Y);
 
         const degree = X.length > 2 ? 2 : 1;
-        const regression = new PolynomialRegression(X, Y, degree);
-        const pred = (n: number) => Math.round(regression.predict(n));
-        const lastDate = last(dataSinceFirstCase)!.date;
-        const predictionSerie = eachDayOfInterval({
-          start: lastDate,
-          end: addDays(lastDate, predictionDays),
+        const regressor = new PolynomialRegression(X, Y, degree);
+        const pred = (n: number) => Math.round(regressor.predict(n));
+
+        const seErrors = testSlice.Y.map((realValue: number, index: number) => {
+          const predValue = pred(Y.length + index);
+          // console.log("pred", predValue, realValue);
+          return Math.pow(realValue - predValue, 2);
         });
-        const fActual = last(Y)!;
-        const fPrediction = pred(X.length - 1);
-        const F = Math.max(fPrediction, 0) === 0 ? 1 : fActual / fPrediction;
 
-        const Ka = dataSinceFirstCase.filter((x) => x.cases > 300).length;
-        const K = Math.max(0, 360 - Ka);
+        // console.log("seErrors", seErrors);
+        return {
+          regressor,
+          mse: mean(seErrors),
+          X,
+          Y,
+        };
+      });
+      console.log("regressors leng", regressors.length);
+      const mseErrors = regressors.map((r) => r.mse);
+      // console.log("mseErrors", mseErrors);
+      const minErrorIndex = mseErrors.indexOf(Math.min(...mseErrors));
+      console.log("min mseerror", mseErrors[minErrorIndex], minErrorIndex);
+      console.log("best predictor with ", minErrorIndex + TEST_SIZE, "days");
+      console.log("");
 
-        return predictionSerie.slice(1).reduce<any[]>((arr, date, index) => {
-          const Ki = K === 0 ? 0 : Math.max(0, (K - index) / K);
-          const predValue = pred(X.length + index) * F * Ki;
-          const lastMetric = (arr[index - 1] || last(dataSinceFirstCase))[metric] as number;
+      // const { X, Y } = dataSinceFirstCase.slice(-Math.max(dayInterval, 2)).reduce<{ X: number[]; Y: number[] }>(
+      //   (acc, row, index) => {
+      //     return {
+      //       X: [...acc.X, index],
+      //       Y: [...acc.Y, metric === "cases" ? row.cases : row.deaths],
+      //     };
+      //   },
+      //   { X: [], Y: [] }
+      // );
 
-          arr.push({
-            date: date,
-            [metric]: Math.round(Math.max(predValue, lastMetric)),
-            isPrediction: true,
-          });
-          return arr;
-        }, []);
-      };
+      // const degree = X.length > 2 ? 2 : 1;
+      // const regression = new PolynomialRegression(X, Y, degree);
+      // const regressor = .regressor;
+      const { X, regressor } = regressors[minErrorIndex];
+      const pred = (n: number) => Math.round(regressor.predict(n));
+      const lastDate = last(dataSinceFirstCase)!.date;
+      const predictionSerie = eachDayOfInterval({
+        start: lastDate,
+        end: addDays(lastDate, predictionDays),
+      });
+      const fActual = last(testSlice.Y)! as number;
+      const fPrediction = pred(X.length + TEST_SIZE - 1);
+      const predDiff = fActual - fPrediction;
+      // console.log("fa fp", fActual, fPrediction);
+      // const F = Math.max(fPrediction, 0) === 0 ? 1 : (fActual as number) / fPrediction;
+
+      // const Ka = dataSinceFirstCase.filter((x) => x.cases > 300).length;
+      // const K = Math.max(0, 360 - Ka);
+
+      const nextSeriePredictions = predictionSerie.slice(1).reduce<any[]>((arr, date, index) => {
+        // const Ki = K === 0 ? 0 : Math.max(0, (K - index) / K);
+        // const predValue = pred(X.length + index) * F * Ki;
+        const predValue = pred(X.length + TEST_SIZE + index) + predDiff;
+        // console.log("nextSerie", X.length, TEST_SIZE, index, "value", predValue);
+        const lastMetric = (arr[index - 1] || last(dataSinceFirstCase))[metric] as number;
+
+        arr.push({
+          date: date,
+          [metric]: Math.round(Math.max(predValue, lastMetric)),
+          isPrediction: true,
+        });
+        return arr;
+      }, []);
+
+      // console.log("pred function", pred);
+      // console.log("regressor", regressor);
+      // console.log("X", X, "Y", Y);
 
       const serieData = alignTimeseries(dataSinceFirstCase, subDays(startOfDay(new Date()), dayInterval));
       if (dataSinceFirstCase.length <= 2) {
@@ -107,8 +166,6 @@ function PredictionsChart(props: PredictionsChartProps, ref: React.Ref<any>) {
         ];
       }
 
-      const nextSeriePredictions = getNextSeriesPrediction();
-
       return [
         {
           ...serie,
@@ -118,6 +175,22 @@ function PredictionsChart(props: PredictionsChartProps, ref: React.Ref<any>) {
             isPrediction: row.isPrediction || false,
           })),
         },
+        // ...[regressors[minErrorIndex]].map((r, index) => {
+        //   const pred = (n: number) => Math.round(r.regressor.predict(n));
+        //   return {
+        //     name: serie.name + " (Prediction) " + (TEST_SIZE + index),
+        //     key: serie.key + "__Prediction" + (TEST_SIZE + index),
+        //     data: serieData.concat(nextSeriePredictions).map((row: any, index) => {
+        //       const v = index + minErrorIndex;
+        //       // console.log("preding", v, "=", pred(v));
+        //       return {
+        //         x: row.date.getTime(),
+        //         y: pred(index + minErrorIndex),
+        //         isPrediction: row.isPrediction || false,
+        //       };
+        //     }),
+        //   };
+        // }),
       ];
     });
   }, [dayInterval, filteredSeries, metric, predictionDays]);
