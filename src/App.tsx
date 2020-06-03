@@ -1,21 +1,22 @@
 import * as fns from "date-fns";
 import React, { useEffect, useMemo } from "react";
-import { Container, Header, Menu, Label } from "semantic-ui-react";
+import ReactGA from "react-ga";
+import { generatePath, Link, Redirect, Route, Switch, useLocation } from "react-router-dom";
+import { Container, Header, Label, Menu } from "semantic-ui-react";
 import "./App.css";
 import LogoINF from "./assets/ufrgs-inf.png";
 import LogoUFRGS from "./assets/ufrgs.png";
 import ChartEditor from "./components/ChartEditor";
 import ListDescriptor from "./components/ListDescriptor";
 import Loader from "./components/Loader";
+import PredictionsEditor from "./components/PredictionsEditor";
+import ProjectionsEditor from "./components/ProjectionsEditor";
+import Metrics from "./components/Metrics/Metrics";
+import SimilarityExplorer from "./components/Similarity/Explorer";
 import TrendEditor from "./components/TrendEditor";
 import { DATA_SOURCES } from "./constants";
 import useLastUpdated from "./hooks/useLastUpdated";
 import useMetadata from "./hooks/useMetadata";
-import PredictionsEditor from "./components/PredictionsEditor";
-import ProjectionsEditor from "./components/ProjectionsEditor";
-import SimilarityExplorer from "./components/Similarity/Explorer";
-import { Switch, Route, Link, generatePath, useLocation, Redirect } from "react-router-dom";
-import ReactGA from "react-ga";
 
 const LAST_TAB_KEY = "covid19-tools.api.lastTab";
 
@@ -46,6 +47,12 @@ const MENU_ITEMS = [
     path: "/similarity/:region?",
     component: SimilarityExplorer,
     isBeta: false,
+  },
+  {
+    name: "Metrics",
+    path: "/metrics/:region?",
+    component: Metrics,
+    isBeta: true,
   },
 ];
 
