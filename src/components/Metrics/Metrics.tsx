@@ -7,6 +7,9 @@ import useMetadata from "../../hooks/useMetadata";
 import { getByRegionId } from "../../utils/metadata";
 import RegionSelector from "../RegionSelector";
 import ReproductionChart from "./charts/ReproductionChart";
+import CasesChart from "./charts/CasesChart";
+import DeathsChart from "./charts/DeathsChart";
+import CaseFatalityChart from "./charts/CaseFatalityChart";
 
 function Metrics() {
   const history = useHistory();
@@ -60,14 +63,15 @@ function Metrics() {
     );
   }
 
-
-
   return (
     <Container>
       {regionSelector}
 
       <ChartContainer>
+        <CasesChart regionId={currentRegion.key} />
+        <DeathsChart regionId={currentRegion.key} />
         <ReproductionChart regionId={currentRegion.key} />
+        <CaseFatalityChart regionId={currentRegion.key} />
       </ChartContainer>
     </Container>
   );
@@ -95,4 +99,6 @@ const Container = styled.div`
 const ChartContainer = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(450px, 1fr));
+  grid-gap: 30px;
+  margin-top: 20px;
 `;
