@@ -5,6 +5,7 @@ import "./Editor.css";
 import RegionSelector from "./RegionSelector";
 import { omit } from "lodash";
 import ExportChart from "./ExportChart";
+import debounce from "lodash/debounce";
 
 type SelectedCountriesMap = Record<string, boolean>;
 export type ChartOptions = {
@@ -148,6 +149,11 @@ function Editor(props: EditorProps) {
 
   const setSelectedRegions = useCallback((regions) => setOptions((opt) => ({ ...opt, selectedRegions: regions })), []);
 
+  const setPredictionsDays = useDebouncedOptionSetter("predictionDays", setOptions, transformPredictionDays);
+  const setAlignAt = useDebouncedOptionSetter("alignAt", setOptions, transformAlignAt);
+  const setDayInterval = useDebouncedOptionSetter("dayInterval", setOptions, transformDayInterval);
+  const setTitle = useDebouncedOptionSetter("title", setOptions);
+
   return (
     <div>
       {availableOptions.includes("selectedRegions") && (
@@ -189,7 +195,7 @@ function Editor(props: EditorProps) {
                 {availableOptions.includes("title") && (
                   <Form.Field>
                     <label>Title</label>
-                    <input placeholder="Enter a title" type="text" defaultValue={title} onBlur={({ target }: any) => setOptions({ ...options, title: target.value })} />
+                    <input placeholder="Enter a title" type="text" defaultValue={title} onChange={setTitle} onBlur={setTitle} />
                   </Form.Field>
                 )}
 
@@ -210,13 +216,7 @@ function Editor(props: EditorProps) {
                 {availableOptions.includes("predictionDays") && (
                   <Form.Field>
                     <label>How many days would you like to predict?</label>
-                    <input
-                      type="number"
-                      placeholder="Enter a number"
-                      min="0"
-                      defaultValue={predictionDays}
-                      onBlur={({ target }: any) => setOptions({ ...options, predictionDays: parseInt(target.value) || 0 })}
-                    />
+                    <input type="number" placeholder="Enter a number" min="1" max="30" defaultValue={predictionDays} onChange={setPredictionsDays} onBlur={setPredictionsDays} />
                   </Form.Field>
                 )}
 
@@ -258,26 +258,14 @@ function Editor(props: EditorProps) {
                 {availableOptions.includes("alignAt") && (
                   <Form.Field>
                     <label>Minimum number of {metric} to align timeline</label>
-                    <input
-                      type="number"
-                      placeholder="Enter a number"
-                      min="0"
-                      defaultValue={alignAt}
-                      onBlur={({ target }: any) => setOptions({ ...options, alignAt: parseInt(target.value) || 0 })}
-                    />
+                    <input type="number" placeholder="Enter a number" min="0" defaultValue={alignAt} onBlur={setAlignAt} onChange={setAlignAt} />
                   </Form.Field>
                 )}
 
                 {availableOptions.includes("dayInterval") && (
                   <Form.Field disabled={alignAt > 0}>
                     <label>How many past days would you like to see?</label>
-                    <input
-                      type="number"
-                      placeholder="Enter a number"
-                      min="0"
-                      defaultValue={dayInterval}
-                      onBlur={({ target }: any) => setOptions({ ...options, dayInterval: parseInt(target.value) || dayInterval })}
-                    />
+                    <input type="number" placeholder="Enter a number" min="0" defaultValue={dayInterval} onBlur={setDayInterval} onChange={setDayInterval} />
                   </Form.Field>
                 )}
                 {availableOptions.includes("timeserieSlice") && (
@@ -483,3 +471,39 @@ function Editor(props: EditorProps) {
   );
 }
 export default Editor;
+
+function useDebouncedOptionSetter(option: string, setOptions: React.Dispatch<React.SetStateAction<ChartOptions>>, transform = (v: string, opt: ChartOptions) => v as any) {
+  const setter = useCallback(
+    (evaluate: (opt: ChartOptions) => any) => {
+      setOptions((opt) => ({ ...opt, [option]: evaluate(opt) }));
+    },
+    [option, setOptions]
+  );
+
+  return useMemo(() => {
+    const debounced = debounce((type, target) => {
+      const { value } = target;
+      setter((opt) => {
+        const nextValue = transform(value, opt);
+        if (type === "blur") {
+          target.value = nextValue;
+        }
+        return nextValue;
+      });
+    }, 300);
+
+    return ({ type, target }: React.SyntheticEvent<HTMLInputElement>) => debounced(type, target);
+  }, [setter, transform]);
+}
+
+function transformPredictionDays(value: string) {
+  return Math.max(1, Math.min(30, parseInt(value || "0")));
+}
+
+function transformAlignAt(value: string) {
+  return Math.max(0, parseInt(value || "0"));
+}
+
+function transformDayInterval(value: string, opt: ChartOptions) {
+  return parseInt(value || "0") || opt.dayInterval;
+}

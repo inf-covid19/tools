@@ -53,7 +53,7 @@ const Explorer = () => {
 
   const region = useMemo(() => (regionKey ? { [regionKey]: true } : {}), [regionKey]);
 
-  const aspect = useMemo(() => similarityOptions.find((opt) => opt.value === query.aspect)?.value ?? 'cases_per_100k_distance', [query.aspect]);
+  const aspect = useMemo(() => similarityOptions.find((opt) => opt.value === query.aspect)?.value ?? "deaths_distance", [query.aspect]);
 
   const secondary = useMemo(() => `${first(castArray(defaultTo(query.secondary, "")))}`, [query.secondary]);
 
