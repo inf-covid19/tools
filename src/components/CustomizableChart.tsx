@@ -68,7 +68,8 @@ function CustomizableChart(props: CustomizableChartProps, ref: React.Ref<any>) {
       };
 
       if (alignAt > 0) {
-        const alignedData = regionData.filter((v) => v[metric] >= alignAt);
+        const alignedIndex = regionData.findIndex((v) => v[metric] >= alignAt);
+        const alignedData = regionData.slice(alignedIndex);
 
         if (alignedData.length === 0) {
           return [];
@@ -103,7 +104,7 @@ function CustomizableChart(props: CustomizableChartProps, ref: React.Ref<any>) {
     return sortBy(
       series.map((s) => ({
         ...s,
-        data: s.data.slice(0, timeserieSlice),
+        data: timeserieSlice > 0 ? s.data.slice(0, timeserieSlice) : s.data,
       })),
       chartType === "heatmap" ? (s) => get(s.data, [s.data.length - 1, "y"], 0) : "name"
     );

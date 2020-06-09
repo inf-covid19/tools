@@ -62,6 +62,8 @@ function ProjectionsChart(props: ProjectionsChartProps, ref: React.Ref<any>) {
       const { date: endDate, cases, deaths } = last(regionDataWithValues)!;
       const avg = median(regionDataWithValues.map((v) => v[`${metric}_daily` as "cases_daily" | "deaths_daily"]));
 
+      const alignedIndex = regionData.findIndex((v) => v[metric] >= alignAt)
+
       return [
         {
           name: displayName,
@@ -72,7 +74,7 @@ function ProjectionsChart(props: ProjectionsChartProps, ref: React.Ref<any>) {
           deaths,
           avg,
           data: regionData
-            .filter((v) => v[metric] >= alignAt)
+            .slice(alignedIndex)
             .map((v, index) => ({
               x: index + 1,
               y: isCumulative ? v[metric] : v[`${metric}_daily` as "cases_daily" | "deaths_daily"],
