@@ -14,8 +14,10 @@ import { alignTimeseries, TimeseriesRow } from "../utils/normalizeTimeseries";
 import { ChartOptions } from "./Editor";
 import useColorScale from "../hooks/useColorScale";
 import { isNumber } from "lodash";
+import { titleCase } from "../utils/string";
 
 const displayNumberFormatter = d3.format(",.2~f");
+const increaseNumberFormatter = d3.format("+.1~f");
 const ordinalFormattter = (n: number) => numeral(n).format("Oo");
 const numberFormatter = d3.format(".2~s");
 
@@ -135,7 +137,10 @@ function CustomizableChart(props: CustomizableChartProps, ref: React.Ref<any>) {
       colors: seriesColors,
       tooltip: {
         y: {
-          formatter: (value: number) => `${displayNumberFormatter(value)} ${metric}${isIncidence ? " per 100k inhab." : ""}`,
+          formatter: (value: number, point: any) => {
+            const prevValue = point?.w?.config?.series[point.seriesIndex]?.data[point.dataPointIndex - 1]?.y ?? 0;
+            return `${displayNumberFormatter(value)} ${metric}${isIncidence ? " per 100k inhab." : ""} (${increaseNumberFormatter((value -prevValue)/prevValue * 100)}%)`
+          },
         },
         x: {
           formatter: alignAt > 0 ? (value: number) => `${ordinalFormattter(value)} day after ${numberFormatter(alignAt)} ${metric}` : undefined,
@@ -163,7 +168,7 @@ function CustomizableChart(props: CustomizableChartProps, ref: React.Ref<any>) {
           text:
             chartType === "heatmap"
               ? undefined
-              : `${isCumulative ? "Total" : "Daily"} Confirmed ${metric === "cases" ? "Cases" : "Deaths"}${isIncidence ? " (per 100k inhab.)" : ""}`,
+              : `${isCumulative ? "Total" : "Daily"} Confirmed ${titleCase(metric)}${isIncidence ? " (per 100k inhab.)" : ""}`,
         },
       },
       dataLabels: {
