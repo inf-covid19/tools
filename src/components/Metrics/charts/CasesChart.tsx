@@ -16,7 +16,7 @@ function CasesChart({ regionId }: { regionId: string }) {
   const series = useMemo(() => {
     if (!data || !metadata) return null;
 
-    const timeseries = data[regionId];
+    const timeseries = data[regionId].filter(row => row.cases > 0);
 
     return [
       {
@@ -105,10 +105,7 @@ function CasesChart({ regionId }: { regionId: string }) {
   }, []);
 
   return (
-    <ChartWrapper
-      title="Confirmed Cases"
-      subtitle="Lorem ipsum dolor sit amet, consectetur adipiscing elit. Maecenas suscipit aliquam lectus eu auctor. Fusce pharetra leo et interdum bibendum."
-    >
+    <ChartWrapper title="Confirmed Cases" subtitle="The number of confirmed cases is lower than the number of total cases. The main reason for this is limited testing.">
       {series ? (
         <ReactApexChart series={series} type="line" height="300" options={options} />
       ) : (

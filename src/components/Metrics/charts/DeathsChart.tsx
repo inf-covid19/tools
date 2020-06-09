@@ -16,7 +16,7 @@ function DeathsChart({ regionId }: { regionId: string }) {
   const series = useMemo(() => {
     if (!data || !metadata) return null;
 
-    const timeseries = data[regionId];
+    const timeseries = data[regionId].filter(row => row.deaths > 0);
 
     return [
       {
@@ -107,7 +107,7 @@ function DeathsChart({ regionId }: { regionId: string }) {
   return (
     <ChartWrapper
       title="Confirmed Deaths"
-      subtitle="Lorem ipsum dolor sit amet, consectetur adipiscing elit. Maecenas suscipit aliquam lectus eu auctor. Fusce pharetra leo et interdum bibendum."
+      subtitle="Limited testing and challenges in the attribution of the cause of death means that the number of confirmed deaths may not be an accurate count of the true number of deaths from COVID-19."
     >
       {series ? (
         <ReactApexChart series={series} type="line" height="300" options={options} />

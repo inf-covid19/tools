@@ -2,16 +2,15 @@ import * as fns from "date-fns";
 import React, { useEffect, useMemo } from "react";
 import ReactGA from "react-ga";
 import { generatePath, Link, Redirect, Route, Switch, useLocation } from "react-router-dom";
-import { Container, Header, Label, Menu } from "semantic-ui-react";
+import { Container, Header, Icon, Menu, SemanticICONS } from "semantic-ui-react";
 import "./App.css";
 import LogoINF from "./assets/ufrgs-inf.png";
 import LogoUFRGS from "./assets/ufrgs.png";
 import ChartEditor from "./components/ChartEditor";
 import ListDescriptor from "./components/ListDescriptor";
 import Loader from "./components/Loader";
-import PredictionsEditor from "./components/PredictionsEditor";
-import ProjectionsEditor from "./components/ProjectionsEditor";
 import Metrics from "./components/Metrics/Metrics";
+import PredictionsEditor from "./components/PredictionsEditor";
 import SimilarityExplorer from "./components/Similarity/Explorer";
 import TrendEditor from "./components/TrendEditor";
 import { DATA_SOURCES } from "./constants";
@@ -25,34 +24,40 @@ const MENU_ITEMS = [
     name: "Chart Editor",
     path: "/editor",
     component: ChartEditor,
+    icon: "pie chart",
   },
   {
     name: "Trend Visualizer",
     path: "/trends",
     component: TrendEditor,
+    icon: "chart line",
   },
   {
     name: "Prediction Visualizer",
     path: "/predictions",
     component: PredictionsEditor,
+    icon: "chart bar",
   },
-  {
-    name: "Projection Visualizer",
-    path: "/projections",
-    component: ProjectionsEditor,
-    isBeta: false,
-  },
+  // {
+  //   name: "Projection Visualizer",
+  //   path: "/projections",
+  //   component: ProjectionsEditor,
+  //   isBeta: false,
+  //   icon: "object ungroup outline",
+  // },
   {
     name: "Similarity Explorer",
     path: "/similarity/:region?",
     component: SimilarityExplorer,
     isBeta: false,
+    icon: "searchengin",
   },
   {
-    name: "Metrics",
+    name: "Region Metrics",
     path: "/metrics/:region?",
     component: Metrics,
     isBeta: true,
+    icon: "dashboard",
   },
 ];
 
@@ -87,13 +92,13 @@ function App() {
       </header>
 
       <Container fluid>
-        <Menu className="App--menu" pointing secondary>
+        <Menu className="App--menu" pointing secondary icon="labeled">
           {MENU_ITEMS.map((item) => (
             <Route key={item.name} path={item.path}>
               {({ match }) => (
                 <Menu.Item as={Link} to={generatePath(item.path)} name={item.name} active={!!match}>
+                  <Icon name={item.icon as SemanticICONS}/>
                   {item.name}
-                  {item.isBeta && <Label color="teal">Beta</Label>}
                 </Menu.Item>
               )}
             </Route>

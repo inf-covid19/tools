@@ -55,7 +55,7 @@ function Metrics() {
         <Segment placeholder>
           <Header icon>
             <Icon name="search" />
-            Find Region
+            Search Region
           </Header>
           {regionSelector}
         </Segment>
