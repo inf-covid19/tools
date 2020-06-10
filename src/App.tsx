@@ -16,6 +16,8 @@ import TrendEditor from "./components/TrendEditor";
 import { DATA_SOURCES } from "./constants";
 import useLastUpdated from "./hooks/useLastUpdated";
 import useMetadata from "./hooks/useMetadata";
+import Literature from "./components/Literature/Literature";
+import BrazilDashboard from "./components/BrazilDashboard/BrazilDashboard";
 
 const LAST_TAB_KEY = "covid19-tools.api.lastTab";
 
@@ -49,15 +51,25 @@ const MENU_ITEMS = [
     name: "Similarity Explorer",
     path: "/similarity/:region?",
     component: SimilarityExplorer,
-    isBeta: false,
     icon: "searchengin",
   },
   {
     name: "Region Metrics",
     path: "/metrics/:region?",
     component: Metrics,
-    isBeta: true,
     icon: "dashboard",
+  },
+  {
+    name: "COVID-19 Literature",
+    path: "/literature",
+    external: "http://coronavis-text-analytics-tool.herokuapp.com",
+    icon: "quote left",
+  },
+  {
+    name: "Brazil Dashboard",
+    path: "/brazil",
+    external: "https://covid19.ufrgs.dev/dashboard/",
+    icon: "window restore outline",
   },
 ];
 
@@ -93,20 +105,27 @@ function App() {
 
       <Container fluid>
         <Menu className="App--menu" pointing secondary icon="labeled">
-          {MENU_ITEMS.map((item) => (
-            <Route key={item.name} path={item.path}>
-              {({ match }) => (
-                <Menu.Item as={Link} to={generatePath(item.path)} name={item.name} active={!!match}>
-                  <Icon name={item.icon as SemanticICONS}/>
-                  {item.name}
-                </Menu.Item>
-              )}
-            </Route>
-          ))}
+          {MENU_ITEMS.map((item) =>
+            item.external ? (
+              <Menu.Item href={item.external} target="_blank" name={item.name}>
+                <Icon name={item.icon as SemanticICONS} />
+                {item.name}
+              </Menu.Item>
+            ) : (
+              <Route key={item.name} path={item.path}>
+                {({ match }) => (
+                  <Menu.Item as={Link} to={generatePath(item.path)} name={item.name} active={!!match}>
+                    <Icon name={item.icon as SemanticICONS} />
+                    {item.name}
+                  </Menu.Item>
+                )}
+              </Route>
+            )
+          )}
         </Menu>
 
         <Switch>
-          {MENU_ITEMS.map((item) => (
+          {MENU_ITEMS.filter((item) => item.component).map((item) => (
             <Route key={item.name} path={item.path} component={item.component} />
           ))}
           <Route path="*">
