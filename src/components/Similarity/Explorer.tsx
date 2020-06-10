@@ -1,5 +1,5 @@
 import { csv, format } from "d3";
-import { groupBy, keyBy, orderBy, castArray, defaultTo } from "lodash";
+import { groupBy, keyBy, orderBy, castArray, defaultTo, last } from "lodash";
 import first from "lodash/first";
 import React, { useCallback, useEffect, useMemo } from "react";
 import { queryCache, useQuery } from "react-query";
@@ -53,7 +53,7 @@ const Explorer = () => {
 
   const region = useMemo(() => (regionKey ? { [regionKey]: true } : {}), [regionKey]);
 
-  const aspect = useMemo(() => similarityOptions.find((opt) => opt.value === query.aspect)?.value ?? 'cases_per_100k_distance', [query.aspect]);
+  const aspect = useMemo(() => similarityOptions.find((opt) => opt.value === query.aspect)?.value ?? "deaths_distance", [query.aspect]);
 
   const secondary = useMemo(() => `${first(castArray(defaultTo(query.secondary, "")))}`, [query.secondary]);
 
@@ -186,7 +186,7 @@ const Explorer = () => {
   const { data: regionData } = useRegionData(regionIds);
 
   const timelineStats = useMemo(() => {
-    const stats: Record<string, { sinceFirstCase: number; sinceFirstDeath: number }> = {};
+    const stats: Record<string, { sinceFirstCase: number; sinceFirstDeath: number; latestCases: number; latestDeaths: number; latestDate: Date }> = {};
 
     if (!regionData || Object.keys(regionData).length < 2) {
       return undefined;
@@ -196,9 +196,14 @@ const Explorer = () => {
       const firstCase = timeline.find((row) => row.cases > 0);
       const firstDeath = timeline.find((row) => row.deaths > 0);
 
+      const latestRow = last(timeline);
+
       stats[key] = {
         sinceFirstCase: firstCase ? differenceInDays(new Date(), firstCase.date) : 0,
         sinceFirstDeath: firstDeath ? differenceInDays(new Date(), firstDeath.date) : 0,
+        latestCases: latestRow?.cases ?? 0,
+        latestDeaths: latestRow?.deaths ?? 0,
+        latestDate: latestRow?.date ?? new Date(),
       };
     });
 
@@ -225,7 +230,7 @@ const Explorer = () => {
         <Segment placeholder>
           <Header icon>
             <Icon name="search" />
-            Find Region
+            Search Region
           </Header>
           {regionSelector}
         </Segment>
@@ -327,7 +332,15 @@ const Explorer = () => {
                   <Header as="h3">
                     <Flag name={currentRegion.flag} /> {currentRegion.displayName}
                   </Header>
-                  <Statistic.Group horizontal>
+                  <Statistic.Group horizontal size="tiny">
+                    <Statistic>
+                      <Statistic.Value>{displayNumberFormatter(timelineStats[currentRegion.key]?.latestCases)}</Statistic.Value>
+                      <Statistic.Label>Confirmed cases</Statistic.Label>
+                    </Statistic>
+                    <Statistic>
+                      <Statistic.Value>{displayNumberFormatter(timelineStats[currentRegion.key]?.latestDeaths)}</Statistic.Value>
+                      <Statistic.Label>Confirmed deaths</Statistic.Label>
+                    </Statistic>
                     <Statistic>
                       <Statistic.Value>{displayNumberFormatter(currentRegion.population)}</Statistic.Value>
                       <Statistic.Label>Population</Statistic.Label>
@@ -341,11 +354,11 @@ const Explorer = () => {
                       <Statistic.Label>inhab/km²</Statistic.Label>
                     </Statistic>
                     <Statistic>
-                      <Statistic.Value>{timelineStats[currentRegion.key]?.sinceFirstCase}</Statistic.Value>
+                      <Statistic.Value>{displayNumberFormatter(timelineStats[currentRegion.key]?.sinceFirstCase)}</Statistic.Value>
                       <Statistic.Label>Days since first case</Statistic.Label>
                     </Statistic>
                     <Statistic>
-                      <Statistic.Value>{timelineStats[currentRegion.key]?.sinceFirstDeath}</Statistic.Value>
+                      <Statistic.Value>{displayNumberFormatter(timelineStats[currentRegion.key]?.sinceFirstDeath)}</Statistic.Value>
                       <Statistic.Label>Days since first death</Statistic.Label>
                     </Statistic>
                   </Statistic.Group>
@@ -355,7 +368,21 @@ const Explorer = () => {
                     <Flag name={secondaryRegion.flag} />
                     {secondaryRegion?.displayName}
                   </Header>
-                  <Statistic.Group horizontal>
+                  <Statistic.Group horizontal size="tiny">
+                    <Statistic>
+                      <Statistic.Value>
+                        <DiffIndicator primaryValue={timelineStats[currentRegion.key]?.latestCases} secondaryValue={timelineStats[secondaryRegion.key]?.latestCases} />{" "}
+                        {displayNumberFormatter(timelineStats[secondaryRegion.key]?.latestCases)}
+                      </Statistic.Value>
+                      <Statistic.Label>Confirmed cases</Statistic.Label>
+                    </Statistic>
+                    <Statistic>
+                      <Statistic.Value>
+                        <DiffIndicator primaryValue={timelineStats[currentRegion.key]?.latestDeaths} secondaryValue={timelineStats[secondaryRegion.key]?.latestDeaths} />{" "}
+                        {displayNumberFormatter(timelineStats[secondaryRegion.key]?.latestDeaths)}
+                      </Statistic.Value>
+                      <Statistic.Label>Confirmed deaths</Statistic.Label>
+                    </Statistic>
                     <Statistic>
                       <Statistic.Value>
                         <DiffIndicator primaryValue={currentRegion.population} secondaryValue={secondaryRegion.population} /> {displayNumberFormatter(secondaryRegion.population)}
@@ -378,14 +405,14 @@ const Explorer = () => {
                     <Statistic>
                       <Statistic.Value>
                         <DiffIndicator primaryValue={timelineStats[currentRegion.key]?.sinceFirstCase} secondaryValue={timelineStats[secondaryRegion.key]?.sinceFirstCase} />{" "}
-                        {timelineStats[secondaryRegion.key]?.sinceFirstCase}
+                        {displayNumberFormatter(timelineStats[secondaryRegion.key]?.sinceFirstCase)}
                       </Statistic.Value>
                       <Statistic.Label>Days since first case</Statistic.Label>
                     </Statistic>
                     <Statistic>
                       <Statistic.Value>
                         <DiffIndicator primaryValue={timelineStats[currentRegion.key]?.sinceFirstDeath} secondaryValue={timelineStats[secondaryRegion.key]?.sinceFirstDeath} />{" "}
-                        {timelineStats[secondaryRegion.key]?.sinceFirstDeath}
+                        {displayNumberFormatter(timelineStats[secondaryRegion.key]?.sinceFirstDeath)}
                       </Statistic.Value>
                       <Statistic.Label>Days since first death</Statistic.Label>
                     </Statistic>
