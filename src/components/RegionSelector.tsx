@@ -113,8 +113,12 @@ export default function RegionSelector({ value, onChange, multiple = true, filte
     if (search.length < 1) return selectedOptions;
 
     const result = fuse.search(search, { limit: 30 }).map(({ item }) => item);
-    return selectedOptions.concat(result);
-  }, [fromValue, search, selectedOptions, fuse, regions]);
+    if (multiple) {
+
+      return selectedOptions.concat(result);
+    }
+    return result;
+  }, [fromValue, search, selectedOptions, fuse, multiple, regions]);
 
   const options = useMemo(() => {
     return allOptions.filter((o) => filter(o.value));
@@ -212,7 +216,7 @@ export default function RegionSelector({ value, onChange, multiple = true, filte
         </div>
       )}
       <Dropdown
-      className={multiple ? undefined : 'large'}
+        className={multiple ? undefined : 'large'}
         selectOnNavigation={false}
         style={{ zIndex: 12 }}
         placeholder={fromValue === "all" ? "Search for countries, states, provinces..." : `Choose regions from ${fromValue}...`}

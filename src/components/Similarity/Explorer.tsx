@@ -1,21 +1,20 @@
 import { csv, format } from "d3";
-import { groupBy, keyBy, orderBy, castArray, defaultTo, last } from "lodash";
+import { differenceInDays } from "date-fns";
+import { castArray, defaultTo, groupBy, isEmpty, keyBy, last, orderBy } from "lodash";
 import first from "lodash/first";
 import React, { useCallback, useEffect, useMemo } from "react";
 import { queryCache, useQuery } from "react-query";
 import { generatePath, useHistory, useParams } from "react-router-dom";
-import { Dropdown, Flag, Grid, Header, Icon, List, Loader, Popup, Segment, Statistic, SemanticICONS } from "semantic-ui-react";
+import { Divider, Dropdown, Flag, Grid, Header, Icon, Label, List, Loader, Popup, Segment, SemanticICONS, Statistic } from "semantic-ui-react";
 import { DEFAULT_OPTIONS, SIMILARITY_API } from "../../constants";
 import useMetadata from "../../hooks/useMetadata";
+import useQueryString from "../../hooks/useQueryString";
+import useRegionData from "../../hooks/useRegionData";
 import { getByRegionId } from "../../utils/metadata";
 import CustomizableChart from "../CustomizableChart";
 import RegionSelector from "../RegionSelector";
 import TrendChart from "../TrendChart";
-import useQueryString from "../../hooks/useQueryString";
-
 import "./Explorer.css";
-import useRegionData from "../../hooks/useRegionData";
-import { differenceInDays } from "date-fns";
 
 const displayNumberFormatter = format(",.2~f");
 
@@ -55,6 +54,8 @@ const Explorer = () => {
 
   const aspect = useMemo(() => similarityOptions.find((opt) => opt.value === query.aspect)?.value ?? "deaths_distance", [query.aspect]);
 
+  const aspectOption = useMemo(() => similarityOptions.find((opt) => opt.value === aspect), [aspect]);
+
   const secondary = useMemo(() => `${first(castArray(defaultTo(query.secondary, "")))}`, [query.secondary]);
 
   const setSecondary = (value: string) => {
@@ -76,14 +77,15 @@ const Explorer = () => {
         pathname: generatePath("/similarity/:region?", {
           region: first(Object.keys(regions)) || undefined,
         }),
+        search: `?aspect=${aspect}`,
       });
     },
-    [history]
+    [aspect, history]
   );
 
   const { data: metadata } = useMetadata();
 
-  const { data } = useQuery("region-clustering", () => csv(`${SIMILARITY_API}/api/v1/regions`));
+  const { data, status } = useQuery("region-clustering", () => csv(`${SIMILARITY_API}/api/v1/regions`));
 
   const [dataByKey, dataByCluster] = useMemo(() => {
     if (!data || !metadata) return [{}, {}];
@@ -127,7 +129,16 @@ const Explorer = () => {
         clearInterval(timer);
       };
     }
-  }, [currentRegion, data, topSimilarData, topSimilarDataStatus]);
+  }, [currentRegion, topSimilarData, topSimilarDataStatus]);
+
+  useEffect(() => {
+    if (status === "success" && isEmpty(data)) {
+      const timer = setInterval(() => queryCache.refetchQueries("region-clustering", { force: true }), 1000);
+      return () => {
+        clearInterval(timer);
+      };
+    }
+  }, [status, data]);
 
   const isIncidence = ["cases_per_100k_distance", "deaths_per_100k_distance"].includes(aspect);
 
@@ -135,24 +146,34 @@ const Explorer = () => {
     if (!topSimilarData || !currentRegion) return [];
 
     const { days } = currentRegion;
-    const maxValue = Math.max(...topSimilarData.map((i) => Number(i[aspect] ?? 0)));
 
-    return orderBy(
-      topSimilarData,
-      (item) => {
+    let effectiveTopSimilar = topSimilarData.filter((row) => {
+      const region = dataByKey[row.region ?? ""];
+      if (!region) {
+        return false;
+      }
+
+      return Number(region.days) >= days - 30;
+    });
+
+    effectiveTopSimilar = orderBy(effectiveTopSimilar, (x) => Number(x[aspect]), "asc");
+
+    const maxDistance = Math.max(...effectiveTopSimilar.map((i) => Number(i[aspect] ?? 0)));
+
+    const withSimilarity = orderBy(
+      effectiveTopSimilar.map((item) => {
         const region = dataByKey[item.region!];
-
-        if (!region) {
-          console.warn("Region not found.", { key: item.region });
-          return 0;
-        }
-
-        const similarity = 1 - Number(item[aspect] ?? 0) / maxValue;
+        const similarity = 1 - Number(item[aspect] ?? 0) / maxDistance;
         const daysFactor = Math.min(1, region.days / days);
-        return similarity * daysFactor;
-      },
+
+        item["similarity"] = `${similarity * daysFactor}`;
+        return item;
+      }),
+      (x) => Number(x.similarity),
       "desc"
     );
+
+    return withSimilarity.filter((x) => Number(x.similarity) > 0.6);
   }, [aspect, currentRegion, dataByKey, topSimilarData]);
 
   const clusterBuddies = useMemo(() => {
@@ -186,7 +207,10 @@ const Explorer = () => {
   const { data: regionData } = useRegionData(regionIds);
 
   const timelineStats = useMemo(() => {
-    const stats: Record<string, { sinceFirstCase: number; sinceFirstDeath: number; latestCases: number; latestDeaths: number; latestDate: Date }> = {};
+    const stats: Record<
+      string,
+      { sinceFirstCase: number; sinceFirstDeath: number; latestCases: number; latestDeaths: number; latestCasesPer100k: number; latestDeathsPer100k: number; latestDate: Date }
+    > = {};
 
     if (!regionData || Object.keys(regionData).length < 2) {
       return undefined;
@@ -203,17 +227,21 @@ const Explorer = () => {
         sinceFirstDeath: firstDeath ? differenceInDays(new Date(), firstDeath.date) : 0,
         latestCases: latestRow?.cases ?? 0,
         latestDeaths: latestRow?.deaths ?? 0,
+        latestCasesPer100k: ((latestRow?.cases ?? 0) / dataByKey[key].population) * 100000,
+        latestDeathsPer100k: ((latestRow?.deaths ?? 0) / dataByKey[key].population) * 100000,
         latestDate: latestRow?.date ?? new Date(),
       };
     });
 
     return stats;
-  }, [regionData]);
+  }, [dataByKey, regionData]);
 
-  if (!data || !metadata) {
+  if (isEmpty(data) || !metadata) {
     return (
       <div style={{ height: "350px", display: "flex", justifyContent: "center", alignItems: "center" }}>
-        <Loader active inline />
+        <Loader active inline>
+          Loading latest data...
+        </Loader>
       </div>
     );
   }
@@ -233,6 +261,45 @@ const Explorer = () => {
             Search Region
           </Header>
           {regionSelector}
+        </Segment>
+      </div>
+    );
+  }
+
+  if (topSimilarData && sortedTopSimilar?.length === 0) {
+    return (
+      <div style={{ padding: "0 20px" }}>
+        <Segment placeholder>
+          <Header style={{ fontWeight: 500 }} icon>
+            <Icon name="folder open outline" />
+            Oh no! Looks like we don't have similar regions <br /> to <b>{currentRegion.displayName}</b> regarding <b>{aspectOption?.content}</b>.
+          </Header>
+
+          <Segment basic textAlign="center">
+            <Grid columns={2} stackable>
+              <Grid.Column>
+                <Header>Search for another region</Header>
+                {regionSelector}
+              </Grid.Column>
+
+              <Grid.Column>
+                <Header>Change selected aspect</Header>
+                <div style={{ width: "100%", maxWidth: "350px", margin: "0 auto", textTransform: "capitalize" }}>
+                  <Dropdown
+                    selection
+                    fluid
+                    search
+                    style={{ fontWeight: 700 }}
+                    className="large"
+                    onChange={(_: any, { value }: any) => setAspect(value)}
+                    options={similarityOptions}
+                    value={aspect}
+                  />
+                </div>
+              </Grid.Column>
+            </Grid>
+            <Divider vertical>Or</Divider>
+          </Segment>
         </Segment>
       </div>
     );
@@ -277,17 +344,19 @@ const Explorer = () => {
                         <span style={{ display: "inline-block", opacity: 0.8, color: "rgba(0,0,0,.87)", width: "20px", marginRight: 5 }}>{idx + 1}</span>
                         <Flag name={dataByKey[r.region!].flag} />
                         {dataByKey[r.region!].displayName}
-                        {r.is_same_cluster === "True" && (
+                        {dataByKey[r.region!].cluster === currentRegion.cluster && (
                           <>
                             {" "}
                             <Popup
                               basic
-                              inverted
                               trigger={<Icon name="star" color="yellow" />}
-                              content={`${dataByKey[r.region!].displayName} has similar attributes when compared with ${currentRegion.displayName}`}
+                              content={`${dataByKey[r.region!].displayName} has similar attributes when compared to ${currentRegion.displayName}`}
                             />
                           </>
-                        )}
+                        )}{" "}
+                        <Label size="tiny" color={getColor(r.similarity)}>
+                          {displayNumberFormatter(parseFloat(r.similarity!) * 100)}%
+                        </Label>
                       </div>
                     </List.Item>
                   ))}
@@ -342,6 +411,14 @@ const Explorer = () => {
                       <Statistic.Label>Confirmed deaths</Statistic.Label>
                     </Statistic>
                     <Statistic>
+                      <Statistic.Value>{displayNumberFormatter(timelineStats[currentRegion.key]?.latestCasesPer100k)}</Statistic.Value>
+                      <Statistic.Label>Confirmed cases per 100k inhab.</Statistic.Label>
+                    </Statistic>
+                    <Statistic>
+                      <Statistic.Value>{displayNumberFormatter(timelineStats[currentRegion.key]?.latestDeathsPer100k)}</Statistic.Value>
+                      <Statistic.Label>Confirmed deaths per 100k inhab.</Statistic.Label>
+                    </Statistic>
+                    <Statistic>
                       <Statistic.Value>{displayNumberFormatter(currentRegion.population)}</Statistic.Value>
                       <Statistic.Label>Population</Statistic.Label>
                     </Statistic>
@@ -382,6 +459,26 @@ const Explorer = () => {
                         {displayNumberFormatter(timelineStats[secondaryRegion.key]?.latestDeaths)}
                       </Statistic.Value>
                       <Statistic.Label>Confirmed deaths</Statistic.Label>
+                    </Statistic>
+                    <Statistic>
+                      <Statistic.Value>
+                        <DiffIndicator
+                          primaryValue={timelineStats[currentRegion.key]?.latestCasesPer100k}
+                          secondaryValue={timelineStats[secondaryRegion.key]?.latestCasesPer100k}
+                        />{" "}
+                        {displayNumberFormatter(timelineStats[secondaryRegion.key]?.latestCasesPer100k)}
+                      </Statistic.Value>
+                      <Statistic.Label>Confirmed cases per 100k inhab.</Statistic.Label>
+                    </Statistic>
+                    <Statistic>
+                      <Statistic.Value>
+                        <DiffIndicator
+                          primaryValue={timelineStats[currentRegion.key]?.latestDeathsPer100k}
+                          secondaryValue={timelineStats[secondaryRegion.key]?.latestDeathsPer100k}
+                        />{" "}
+                        {displayNumberFormatter(timelineStats[secondaryRegion.key]?.latestDeathsPer100k)}
+                      </Statistic.Value>
+                      <Statistic.Label>Confirmed deaths per 100k inhab.</Statistic.Label>
                     </Statistic>
                     <Statistic>
                       <Statistic.Value>
@@ -487,4 +584,18 @@ function DiffIndicator({ primaryValue, secondaryValue }: { primaryValue: number;
   const isHugeDiff = Math.abs(diff) > secondaryValue || Math.abs(diff) > primaryValue;
 
   return <Icon name={`angle ${isHugeDiff ? "double " : ""}${diff > 0 ? "down" : "up"}` as SemanticICONS} color={diff > 0 ? "red" : "green"} />;
+}
+
+function getColor(similarity?: string) {
+  const n = parseFloat(similarity ?? "0");
+
+  if (n >= 0.9) {
+    return "green";
+  }
+
+  if (n >= 0.85) {
+    return "olive";
+  }
+
+  return "yellow";
 }
