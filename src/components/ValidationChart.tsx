@@ -1,5 +1,5 @@
 import * as d3 from "d3";
-import { addDays, eachDayOfInterval, format, startOfDay, subDays } from "date-fns";
+import { addDays, eachDayOfInterval, differenceInCalendarDays, format, startOfDay, subDays } from "date-fns";
 import get from "lodash/get";
 import last from "lodash/last";
 import sortBy from "lodash/sortBy";
@@ -22,10 +22,12 @@ const displayNumberFormatter = d3.format(",.2~f");
 const ordinalFormattter = (n: number) => numeral(n).format("Oo");
 const numberFormatter = d3.format(".2~s");
 
-export type PredictionsChartProps = Omit<Props, "options" | "series" | "type"> & ChartOptions;
+export type ValidationChartProps = Omit<Props, "options" | "series" | "type"> & ChartOptions;
 
-function PredictionsChart(props: PredictionsChartProps, ref: React.Ref<any>) {
-  const { chartType = "line", title, metric, showDataLabels, isCumulative, dayInterval, selectedRegions, alignAt = 0, predictionDays, ...rest } = props;
+function ValidationChart(props: ValidationChartProps, ref: React.Ref<any>) {
+  const { chartType = "line", title, metric, showDataLabels, isCumulative, dayInterval, selectedRegions, alignAt = 0, predictionDays, predPreviousDate, ...rest } = props;
+
+  console.log("validation chart", predPreviousDate);
 
   const regionsIds = useMemo(() => Object.keys(selectedRegions), [selectedRegions]);
 
@@ -132,15 +134,73 @@ function PredictionsChart(props: PredictionsChartProps, ref: React.Ref<any>) {
         ];
       }
 
+      let previousSerie: { name: string; key: string; data: { x: any; y: number; isPrediction: any }[] }[] = [];
+
+      if (predPreviousDate) {
+        console.log("prev date", predPreviousDate);
+        // console.log("serie", serie);
+        // console.log("last date", lastDate);
+        // const nextDate = addDays(new Date(), predictionDays);
+        // console.log("next date", nextDate);
+        const previousPredictionSerie = eachDayOfInterval({
+          start: predPreviousDate,
+          end: lastDate,
+        });
+        // console.log("previous serie", previousPredictionSerie);
+        const diffDays = differenceInCalendarDays(predPreviousDate, lastDate);
+        // console.log("dif days", diffDays);
+        // console.log("serieData", serieData);
+        // console.log("serieData sliced", serieData.slice(0, diffDays));
+
+        console.log("predDiff", predDiff);
+        console.log("X len", X.length);
+        console.log("Test Size", TEST_SIZE);
+        console.log("diff days", diffDays);
+        console.log("minErrorIndex", minErrorIndex);
+        const previousSeriePredictions = previousPredictionSerie.slice(1).reduce<any[]>((arr, date, index) => {
+          const predValue = pred(X.length + TEST_SIZE + index + diffDays) + predDiff;
+          console.log("predicting", X.length + TEST_SIZE + index + diffDays, "=", predValue);
+          // const lastMetric = (arr[index - 1] || last(dataSinceFirstCase))[metric] as number;
+
+          arr.push({
+            date: date,
+            [metric]: Math.round(predValue),
+            isPrediction: true,
+          });
+          return arr;
+        }, []);
+
+        previousSerie = [regressors[minErrorIndex]].map((r) => {
+          return {
+            name: serie.name + " (Validation)",
+            key: serie.key + "__Validation",
+            data: serieData
+              .slice(0, diffDays)
+              .concat(previousSeriePredictions)
+              .map((row: any, index) => {
+                return {
+                  x: row.date.getTime(),
+                  y: row[metric],
+                  isPrediction: row.isPrediction || false,
+                };
+              }),
+          };
+        });
+
+        console.log("prev serie", previousSerie[0]);
+      }
+
       return [
         {
           ...serie,
-          data: serieData.concat(nextSeriePredictions).map((row: any) => ({
+          data: serieData.concat(predPreviousDate ? [] : nextSeriePredictions).map((row: any) => ({
             x: row.date.getTime(),
             y: row[metric],
             isPrediction: row.isPrediction || false,
           })),
         },
+        ...previousSerie,
+        // previousSerie,
         // ...[regressors[minErrorIndex]].map((r, index) => {
         //   const pred = (n: number) => Math.round(r.regressor.predict(n));
         //   return {
@@ -157,7 +217,7 @@ function PredictionsChart(props: PredictionsChartProps, ref: React.Ref<any>) {
         // }),
       ];
     });
-  }, [dayInterval, filteredSeries, metric, predictionDays]);
+  }, [dayInterval, filteredSeries, metric, predPreviousDate, predictionDays]);
 
   const sortedSeries = useMemo(() => {
     return sortBy(seriesWithPredictions, chartType === "heatmap" ? (s) => get(s.data, [s.data.length - 1, "y"], 0) : "name");
@@ -300,4 +360,4 @@ function PredictionsChart(props: PredictionsChartProps, ref: React.Ref<any>) {
   );
 }
 
-export default React.forwardRef(PredictionsChart);
+export default React.forwardRef(ValidationChart);
