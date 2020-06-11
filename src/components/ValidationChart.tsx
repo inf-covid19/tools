@@ -25,9 +25,9 @@ const numberFormatter = d3.format(".2~s");
 export type ValidationChartProps = Omit<Props, "options" | "series" | "type"> & ChartOptions;
 
 function ValidationChart(props: ValidationChartProps, ref: React.Ref<any>) {
-  const { chartType = "line", title, metric, showDataLabels, isCumulative, dayInterval, selectedRegions, alignAt = 0, predictionDays, predPreviousDate, ...rest } = props;
+  const { chartType = "line", title, metric, showDataLabels, isCumulative, dayInterval, selectedRegions, alignAt = 0, predictionDays, validatePrediction, ...rest } = props;
 
-  console.log("validation chart", predPreviousDate);
+  const predPreviousDate = validatePrediction ? subDays(new Date(), dayInterval) : null;
 
   const regionsIds = useMemo(() => Object.keys(selectedRegions), [selectedRegions]);
 

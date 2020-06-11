@@ -6,7 +6,7 @@ export default function PredictionsEditor() {
   return (
     <Editor
       id="predictions"
-      availableOptions={["chartType", "metric", "showDataLabels", "title", "dayInterval", "selectedRegions", "predictionDays", "predPreviousDate"]}
+      availableOptions={["chartType", "metric", "showDataLabels", "title", "dayInterval", "selectedRegions", "predictionDays", "validatePrediction"]}
       render={(ref, options) => {
         return <PredictionsChart ref={ref} {...options} height={600} />;
       }}

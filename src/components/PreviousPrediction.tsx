@@ -1,8 +1,8 @@
-import React, { useMemo } from "react";
+import React from "react";
 import { Modal, Dropdown } from "semantic-ui-react";
-import { subDays } from "date-fns";
-import { first, last } from "lodash";
 import ValidationChart, { ValidationChartProps } from "./ValidationChart";
+import { getByRegionId } from "../utils/metadata";
+import useMetadata from "../hooks/useMetadata";
 
 type Props = {
   options: ValidationChartProps;
@@ -13,15 +13,14 @@ export default function PreviousPrediction(props: Props) {
   const [dayInterval, setDayInterval] = React.useState(10);
   const [selectedRegion, setSelectedRegion] = React.useState("");
 
-  const getRegionTitle = (v: string) => {
-    const [rest, region] = [first(v.split(":")), last(v.split(":"))];
+  const { data: metadata } = useMetadata();
+  if (!metadata) return null;
 
-    const [country, state] = [first(rest?.split(".")), last(rest?.split("."))];
-
-    return `${region}, ${state}, ${country}`;
+  const getRegionTitle = (id: string) => {
+    return getByRegionId(metadata, id).displayName;
   };
 
-  const selectedRegionTitle = useMemo(() => getRegionTitle(selectedRegion), [selectedRegion]);
+  const selectedRegionTitle = selectedRegion ? getRegionTitle(selectedRegion) : "";
 
   return (
     <React.Fragment>
@@ -68,7 +67,6 @@ export default function PreviousPrediction(props: Props) {
             <ValidationChart
               {...props.options}
               selectedRegions={{ [selectedRegion]: true }}
-              predPreviousDate={subDays(new Date(), dayInterval)}
               dayInterval={Math.abs(dayInterval * 2)}
               height={600}
               title={"Validation chart for " + selectedRegionTitle}

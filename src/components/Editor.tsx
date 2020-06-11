@@ -28,7 +28,7 @@ export type ChartOptions = {
   spread: number;
   neighbors: number;
   minDist: number;
-  predPreviousDate?: Date;
+  validatePrediction?: boolean;
 };
 
 const SAVED_CHARTS_KEY = "covid19-tools.editor.savedCharts.v2";
@@ -69,9 +69,6 @@ const getDefaultsValues = (id?: string): ChartOptions => {
       if (parsedDefaults.hasOwnProperty("selectedCountries")) {
         parsedDefaults.selectedRegions = parsedDefaults.selectedCountries;
         delete parsedDefaults.selectedCountries;
-      }
-      if (parsedDefaults.hasOwnProperty("predPreviousDate")) {
-        parsedDefaults.predPreviousDate = new Date(parsedDefaults.predPreviousDate);
       }
 
       Object.entries(parsedDefaults.selectedRegions).forEach(([key, enabled]) => {
@@ -126,7 +123,7 @@ function Editor(props: EditorProps) {
     spread,
     neighbors,
     minDist,
-    predPreviousDate,
+    validatePrediction,
   } = options;
 
   const [saved, setSaved] = useState(false);
@@ -190,7 +187,7 @@ function Editor(props: EditorProps) {
                 spread,
                 neighbors,
                 minDist,
-                predPreviousDate,
+                validatePrediction,
               })}
             </Segment>
           </Grid.Column>
@@ -223,16 +220,7 @@ function Editor(props: EditorProps) {
                 {availableOptions.includes("predictionDays") && (
                   <Form.Field>
                     <label>How many days would you like to predict?</label>
-                    <input
-                      disabled={!!predPreviousDate}
-                      type="number"
-                      placeholder="Enter a number"
-                      min="1"
-                      max="30"
-                      defaultValue={predictionDays}
-                      onChange={setPredictionsDays}
-                      onBlur={setPredictionsDays}
-                    />
+                    <input type="number" placeholder="Enter a number" min="1" max="30" defaultValue={predictionDays} onChange={setPredictionsDays} onBlur={setPredictionsDays} />
                   </Form.Field>
                 )}
 
@@ -423,7 +411,7 @@ function Editor(props: EditorProps) {
 
                   <ExportChart title={options.title} metric={options.metric} isCumulative={options.isCumulative} chart={chartRef} />
 
-                  {availableOptions.includes("predPreviousDate") && <PreviousPrediction options={options} />}
+                  {availableOptions.includes("validatePrediction") && <PreviousPrediction options={options} />}
                 </div>
               </Form>
             </Segment>
