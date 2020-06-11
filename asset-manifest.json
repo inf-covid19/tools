@@ -1,25 +1,25 @@
 {
   "files": {
-    "main.css": "https://covid19.ufrgs.dev/tools/static/css/main.d828ba5a.chunk.css",
-    "main.js": "https://covid19.ufrgs.dev/tools/static/js/main.cac84f48.chunk.js",
-    "main.js.map": "https://covid19.ufrgs.dev/tools/static/js/main.cac84f48.chunk.js.map",
+    "main.css": "https://covid19.ufrgs.dev/tools/static/css/main.c340c77b.chunk.css",
+    "main.js": "https://covid19.ufrgs.dev/tools/static/js/main.090bd189.chunk.js",
+    "main.js.map": "https://covid19.ufrgs.dev/tools/static/js/main.090bd189.chunk.js.map",
     "runtime-main.js": "https://covid19.ufrgs.dev/tools/static/js/runtime-main.02811f64.js",
     "runtime-main.js.map": "https://covid19.ufrgs.dev/tools/static/js/runtime-main.02811f64.js.map",
-    "static/js/2.ac4a0ff2.chunk.js": "https://covid19.ufrgs.dev/tools/static/js/2.ac4a0ff2.chunk.js",
-    "static/js/2.ac4a0ff2.chunk.js.map": "https://covid19.ufrgs.dev/tools/static/js/2.ac4a0ff2.chunk.js.map",
+    "static/js/2.a2e1e685.chunk.js": "https://covid19.ufrgs.dev/tools/static/js/2.a2e1e685.chunk.js",
+    "static/js/2.a2e1e685.chunk.js.map": "https://covid19.ufrgs.dev/tools/static/js/2.a2e1e685.chunk.js.map",
     "index.html": "https://covid19.ufrgs.dev/tools/index.html",
-    "precache-manifest.ff382834f9db8e64721ba0186ecbd623.js": "https://covid19.ufrgs.dev/tools/precache-manifest.ff382834f9db8e64721ba0186ecbd623.js",
+    "precache-manifest.22828b997ae6ab4bb92ee2fd040d65b5.js": "https://covid19.ufrgs.dev/tools/precache-manifest.22828b997ae6ab4bb92ee2fd040d65b5.js",
     "service-worker.js": "https://covid19.ufrgs.dev/tools/service-worker.js",
-    "static/css/main.d828ba5a.chunk.css.map": "https://covid19.ufrgs.dev/tools/static/css/main.d828ba5a.chunk.css.map",
-    "static/js/2.ac4a0ff2.chunk.js.LICENSE.txt": "https://covid19.ufrgs.dev/tools/static/js/2.ac4a0ff2.chunk.js.LICENSE.txt",
+    "static/css/main.c340c77b.chunk.css.map": "https://covid19.ufrgs.dev/tools/static/css/main.c340c77b.chunk.css.map",
+    "static/js/2.a2e1e685.chunk.js.LICENSE.txt": "https://covid19.ufrgs.dev/tools/static/js/2.a2e1e685.chunk.js.LICENSE.txt",
     "static/media/logo.0fb68d66.svg": "https://covid19.ufrgs.dev/tools/static/media/logo.0fb68d66.svg",
     "static/media/ufrgs-inf.png": "https://covid19.ufrgs.dev/tools/static/media/ufrgs-inf.1abd8f9e.png",
     "static/media/ufrgs.png": "https://covid19.ufrgs.dev/tools/static/media/ufrgs.6440c8a1.png"
   },
   "entrypoints": [
     "static/js/runtime-main.02811f64.js",
-    "static/js/2.ac4a0ff2.chunk.js",
-    "static/css/main.d828ba5a.chunk.css",
-    "static/js/main.cac84f48.chunk.js"
+    "static/js/2.a2e1e685.chunk.js",
+    "static/css/main.c340c77b.chunk.css",
+    "static/js/main.090bd189.chunk.js"
   ]
 }
