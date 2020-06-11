@@ -103,6 +103,6 @@ const ChartContainer = styled.div`
   margin-top: 20px;
 
   @media screen and (max-width: 500px) {
-    grid-template-columns: 1fr;
+    grid-template-columns: 100%;
   }
 `;

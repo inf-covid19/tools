@@ -552,7 +552,7 @@ const Explorer = () => {
               <Header as="h3">
                 Trend comparison between {currentRegion?.displayName} and {secondaryRegion?.displayName}
               </Header>
-              <Grid columns={2}>
+              <Grid columns={2} stackable>
                 <Grid.Column>
                   <TrendChart {...DEFAULT_OPTIONS} selectedRegions={chartRegions} alignAt={1} height={250} metric={"cases"} title={``} />
                 </Grid.Column>
@@ -581,7 +581,7 @@ const Container = styled.div`
   grid-template-columns: 450px 1fr;
 
   @media screen and (max-width: 500px) {
-    grid-template-columns: 1fr;
+    grid-template-columns: 100%;
   }
 `
 
