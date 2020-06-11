@@ -6,3 +6,11 @@
 .header--dropdown > .dropdown {
   margin-left: 5px;
 }
+
+
+.ui.statistic> .value {
+  white-space: nowrap!important;
+}
+.ui.statistic> .label {
+  text-align: left!important;
+}
