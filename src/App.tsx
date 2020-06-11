@@ -73,7 +73,7 @@ const MENU_ITEMS = [
 
 function App() {
   const lastUpdated = useLastUpdated();
-  const lastLocation = useMemo(() => localStorage.getItem(LAST_TAB_KEY) || MENU_ITEMS[0].path, []);
+  const lastLocation = useMemo(() => localStorage.getItem(LAST_TAB_KEY) || '/similarity', []);
 
   const { loading } = useMetadata();
 
