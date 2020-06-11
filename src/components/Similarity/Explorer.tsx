@@ -15,6 +15,7 @@ import CustomizableChart from "../CustomizableChart";
 import RegionSelector from "../RegionSelector";
 import TrendChart from "../TrendChart";
 import "./Explorer.css";
+import styled from "styled-components";
 
 const displayNumberFormatter = format(",.2~f");
 
@@ -310,7 +311,7 @@ const Explorer = () => {
       {regionSelector}
 
       {timelineStats && topSimilarData && topSimilarData.length > 0 && secondaryRegion ? (
-        <div style={{ display: "grid", gridTemplateColumns: "450px 1fr" }}>
+        <Container>
           <div style={{ padding: 10 }}>
             <Segment>
               <Header as="h3">
@@ -396,7 +397,7 @@ const Explorer = () => {
 
           <div style={{ padding: 10 }}>
             <Segment>
-              <Grid columns={2}>
+              <Grid stackable columns={2}>
                 <Grid.Column>
                   <Header as="h3">
                     <Flag name={currentRegion.flag} /> {currentRegion.displayName}
@@ -561,7 +562,7 @@ const Explorer = () => {
               </Grid>
             </Segment>
           </div>
-        </div>
+        </Container>
       ) : (
         <div style={{ height: "350px", display: "flex", justifyContent: "center", alignItems: "center" }}>
           <Loader active inline>
@@ -574,6 +575,15 @@ const Explorer = () => {
 };
 
 export default Explorer;
+
+const Container = styled.div`
+  display: grid;
+  grid-template-columns: 450px 1fr;
+
+  @media screen and (max-width: 500px) {
+    grid-template-columns: 1fr;
+  }
+`
 
 function DiffIndicator({ primaryValue, secondaryValue }: { primaryValue: number; secondaryValue: number }) {
   if (primaryValue === secondaryValue) {

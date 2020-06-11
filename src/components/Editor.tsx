@@ -161,7 +161,7 @@ function Editor(props: EditorProps) {
           <RegionSelector value={selectedRegions} onChange={setSelectedRegions} />
         </Container>
       )}
-      <Grid padded>
+      <Grid padded stackable>
         <Grid.Row>
           <Grid.Column width={12}>
             <Segment>

@@ -101,4 +101,8 @@ const ChartContainer = styled.div`
   grid-template-columns: repeat(auto-fill, minmax(450px, 1fr));
   grid-gap: 30px;
   margin-top: 20px;
+
+  @media screen and (max-width: 500px) {
+    grid-template-columns: 1fr;
+  }
 `;
