@@ -9,9 +9,9 @@ type Props = {
 };
 
 export default function PreviousPrediction(props: Props) {
-  const [isModalOpen, setModalOpen] = React.useState(false);
+  const [isModalOpen, setModalOpen] = React.useState(true);
   const [dayInterval, setDayInterval] = React.useState(10);
-  const [selectedRegion, setSelectedRegion] = React.useState("");
+  const [selectedRegion, setSelectedRegion] = React.useState("Brazil.regions.RN:Natal");
 
   const { data: metadata } = useMetadata();
   if (!metadata) return null;
@@ -42,7 +42,7 @@ export default function PreviousPrediction(props: Props) {
           })}
         </Dropdown.Menu>
       </Dropdown>
-      <Modal open={isModalOpen} onClose={() => setModalOpen(false)}>
+      <Modal size="fullscreen" open={isModalOpen} onClose={() => setModalOpen(false)}>
         <Modal.Header>Validate {selectedRegionTitle} predictions</Modal.Header>
         <Modal.Content>
           <Modal.Description>
@@ -67,7 +67,9 @@ export default function PreviousPrediction(props: Props) {
             <ValidationChart
               {...props.options}
               selectedRegions={{ [selectedRegion]: true }}
-              dayInterval={Math.abs(dayInterval * 2)}
+              dayInterval={89}
+              // dayInterval={Math.abs(dayInterval * 2)}
+              predictionDays={0}
               height={600}
               title={"Validation chart for " + selectedRegionTitle}
             />
