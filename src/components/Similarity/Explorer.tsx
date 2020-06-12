@@ -267,7 +267,7 @@ const Explorer = () => {
     );
   }
 
-  if (topSimilarData && sortedTopSimilar?.length === 0) {
+  if (topSimilarData?.length && sortedTopSimilar?.length === 0) {
     return (
       <div style={{ padding: "0 20px" }}>
         <Segment placeholder>
