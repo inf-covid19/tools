@@ -102,7 +102,7 @@ const Explorer = () => {
         ...getByRegionId(metadata, item.key!),
       };
 
-      if (parsedItem.days <= 0) {
+      if (parsedItem.days <= 0 || !parsedItem.file) {
         return [];
       }
 

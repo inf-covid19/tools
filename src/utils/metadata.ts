@@ -29,6 +29,13 @@ export function getByRegionId(metadata: Metadata, regionId: string) {
   }
 
   const data: MetadataRegion = get(metadata, regionPath);
+
+  if(!data) {
+    console.warn("Unable to locate on metadata.json", regionId)
+
+    return data;
+  }
+
   const countryData = metadata[country];
 
   return {
