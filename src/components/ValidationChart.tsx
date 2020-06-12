@@ -62,13 +62,11 @@ function ValidationChart(props: ValidationChartProps, ref: React.Ref<any>) {
           { X: [], Y: [] }
         );
       };
-
       const mean = (list: any) => list.reduce((prev: any, curr: any) => prev + curr) / list.length;
       const getBestModel = (sliceIndex: number, threshold: number) => {
         const testData = reduceToTrainData(dataSinceFirstCase.slice(sliceIndex, sliceIndex + threshold)).Y;
 
         const regressors = [...Array(sliceIndex)].flatMap((_, index: number) => {
-          // console.log("index", index);
           const { X, Y } = reduceToTrainData(dataSinceFirstCase.slice(index, sliceIndex - threshold));
 
           // regressor degrees
@@ -99,24 +97,12 @@ function ValidationChart(props: ValidationChartProps, ref: React.Ref<any>) {
         return regressors[minErrorIndex];
       };
 
-      console.log(
-        "data",
-        dataSinceFirstCase.map((row) => ({
-          date: format(row.date, "dd/MM"),
-          value: row[metric],
-        }))
-      );
-
       const BASE_INDEX = 30;
       const seriesNData = [1, 5, 10, 20, 30].map((threshold) => {
-        // const seriesNData = [5].map((threshold) => {
-        let lastPred = 0;
-
         return {
           name: threshold + "d",
           key: threshold + "d",
           data: dataSinceFirstCase.slice(BASE_INDEX).flatMap((row, index) => {
-            console.log(threshold + "d", index);
             const bestModel = getBestModel(BASE_INDEX + index, threshold);
 
             if (!bestModel) return [];
@@ -127,34 +113,21 @@ function ValidationChart(props: ValidationChartProps, ref: React.Ref<any>) {
             const fPrediction = predFn(bestModel.X.length - 1);
             const predDiff = fActual - fPrediction;
 
-            // console.log("best Model", bestModel);
-            console.log("fA", fActual, "fP", fPrediction);
             const predIndex = bestModel.X.length + threshold;
 
-            // const lastMetric = dataSinceFirstCase[BASE_INDEX + index - predIndex][metric];
-
-            // const predDiff = predFn(predIndex) - lastMetric;
-            // const predDiff = 0;
-
-            // const predValue = lastPred ? lastMetric + predDiff : predFn(predIndex);
             const predValue = predFn(predIndex) + predDiff;
 
-            // console.log("stats", "pi", predIndex, "pv", predValue, "lp", lastPred, "lm", lastMetric, "pd", predDiff);
-
-            lastPred = predValue;
             return {
               x: row.date.getTime(),
               y: predValue,
               isPrediction: true,
             };
-            // return serieItem;
           }),
         };
       });
 
       console.log("serie Nd", seriesNData);
 
-      // const serieData = alignTimeseries(dataSinceFirstCase, subDays(startOfDay(new Date()), dayInterval));
       const serieData = alignTimeseries(dataSinceFirstCase, first(dataSinceFirstCase)!.date);
       if (dataSinceFirstCase.length <= 2) {
         return [

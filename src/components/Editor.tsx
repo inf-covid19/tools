@@ -6,7 +6,7 @@ import RegionSelector from "./RegionSelector";
 import { omit } from "lodash";
 import ExportChart from "./ExportChart";
 import debounce from "lodash/debounce";
-import PreviousPrediction from "./PreviousPrediction";
+import ValidationPrediction from "./ValidationPrediction";
 
 type SelectedCountriesMap = Record<string, boolean>;
 export type ChartOptions = {
@@ -411,7 +411,7 @@ function Editor(props: EditorProps) {
 
                   <ExportChart title={options.title} metric={options.metric} isCumulative={options.isCumulative} chart={chartRef} />
 
-                  {availableOptions.includes("validatePrediction") && <PreviousPrediction options={options} />}
+                  {availableOptions.includes("validatePrediction") && <ValidationPrediction options={options} />}
                 </div>
               </Form>
             </Segment>

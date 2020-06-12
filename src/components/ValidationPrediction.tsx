@@ -8,10 +8,9 @@ type Props = {
   options: ValidationChartProps;
 };
 
-export default function PreviousPrediction(props: Props) {
-  const [isModalOpen, setModalOpen] = React.useState(true);
-  const [dayInterval, setDayInterval] = React.useState(10);
-  const [selectedRegion, setSelectedRegion] = React.useState("Brazil.regions.RN:Natal");
+export default function ValidationPrediction(props: Props) {
+  const [isModalOpen, setModalOpen] = React.useState(false);
+  const [selectedRegion, setSelectedRegion] = React.useState("");
 
   const { data: metadata } = useMetadata();
   if (!metadata) return null;
@@ -45,35 +44,15 @@ export default function PreviousPrediction(props: Props) {
       <Modal size="fullscreen" open={isModalOpen} onClose={() => setModalOpen(false)}>
         <Modal.Header>Validate {selectedRegionTitle} predictions</Modal.Header>
         <Modal.Content>
-          <Modal.Description>
-            <p>Choose days range to compare real values with our algorithm predictions.</p>
-            <Dropdown className="button" text={`${dayInterval} days range`}>
-              <Dropdown.Menu>
-                {[5, 10, 15, 20, 30].map((diff, index) => (
-                  <Dropdown.Item
-                    key={index}
-                    text={`${diff} days`}
-                    selected={dayInterval === diff}
-                    onClick={() => {
-                      setDayInterval(diff);
-                    }}
-                  />
-                ))}
-              </Dropdown.Menu>
-            </Dropdown>
-          </Modal.Description>
-          <br></br>
-          {dayInterval && (
+          {
             <ValidationChart
               {...props.options}
               selectedRegions={{ [selectedRegion]: true }}
-              dayInterval={89}
-              // dayInterval={Math.abs(dayInterval * 2)}
               predictionDays={0}
               height={600}
               title={"Validation chart for " + selectedRegionTitle}
             />
-          )}
+          }
           ;
         </Modal.Content>
       </Modal>
