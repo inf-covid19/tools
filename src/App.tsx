@@ -21,6 +21,12 @@ const LAST_TAB_KEY = "covid19-tools.api.lastTab";
 
 const MENU_ITEMS = [
   {
+    name: "Similarity Explorer",
+    path: "/similarity/:region?",
+    component: SimilarityExplorer,
+    icon: "searchengin",
+  },
+  {
     name: "Chart Editor",
     path: "/editor",
     component: ChartEditor,
@@ -45,12 +51,6 @@ const MENU_ITEMS = [
   //   isBeta: false,
   //   icon: "object ungroup outline",
   // },
-  {
-    name: "Similarity Explorer",
-    path: "/similarity/:region?",
-    component: SimilarityExplorer,
-    icon: "searchengin",
-  },
   {
     name: "Region Metrics",
     path: "/metrics/:region?",
