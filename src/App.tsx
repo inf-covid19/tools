@@ -16,16 +16,11 @@ import { DATA_SOURCES } from "./constants";
 import useLastUpdated from "./hooks/useLastUpdated";
 import useMetadata from "./hooks/useMetadata";
 import styled from "styled-components";
+import first from "lodash/first";
 
 const LAST_TAB_KEY = "covid19-tools.api.lastTab";
 
 const MENU_ITEMS = [
-  {
-    name: "Similarity Explorer",
-    path: "/similarity/:region?",
-    component: SimilarityExplorer,
-    icon: "searchengin",
-  },
   {
     name: "Chart Editor",
     path: "/editor",
@@ -52,6 +47,12 @@ const MENU_ITEMS = [
   //   icon: "object ungroup outline",
   // },
   {
+    name: "Similarity Explorer",
+    path: "/similarity/:region?",
+    component: SimilarityExplorer,
+    icon: "searchengin",
+  },
+  {
     name: "Region Metrics",
     path: "/metrics/:region?",
     component: Metrics,
@@ -73,7 +74,7 @@ const MENU_ITEMS = [
 
 function App() {
   const lastUpdated = useLastUpdated();
-  const lastLocation = useMemo(() => localStorage.getItem(LAST_TAB_KEY) || '/similarity', []);
+  const lastLocation = useMemo(() => localStorage.getItem(LAST_TAB_KEY) || first(MENU_ITEMS)!.path, []);
 
   const { loading } = useMetadata();
 
