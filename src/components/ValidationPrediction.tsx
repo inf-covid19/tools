@@ -44,16 +44,7 @@ export default function ValidationPrediction(props: Props) {
       <Modal size="fullscreen" open={isModalOpen} onClose={() => setModalOpen(false)}>
         <Modal.Header>Validate {selectedRegionTitle} predictions</Modal.Header>
         <Modal.Content>
-          {
-            <ValidationChart
-              {...props.options}
-              selectedRegions={{ [selectedRegion]: true }}
-              predictionDays={0}
-              height={600}
-              title={"Validation chart for " + selectedRegionTitle}
-            />
-          }
-          ;
+          <ValidationChart {...props.options} selectedRegions={{ [selectedRegion]: true }} predictionDays={0} height={600} title={"Validation chart for " + selectedRegionTitle} />
         </Modal.Content>
       </Modal>
     </React.Fragment>

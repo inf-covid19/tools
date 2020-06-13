@@ -139,7 +139,7 @@ function CustomizableChart(props: CustomizableChartProps, ref: React.Ref<any>) {
         y: {
           formatter: (value: number, point: any) => {
             const prevValue = point?.w?.config?.series[point.seriesIndex]?.data[point.dataPointIndex - 1]?.y ?? value;
-            return `${displayNumberFormatter(value)} ${metric}${isIncidence ? " per 100k inhab." : ""} (${increaseNumberFormatter((value - prevValue) / prevValue * 100)}%)`
+            return `${displayNumberFormatter(value)} ${metric}${isIncidence ? " per 100k inhab." : ""} (${increaseNumberFormatter(((value - prevValue) / prevValue) * 100)}%)`;
           },
         },
         x: {
@@ -165,10 +165,7 @@ function CustomizableChart(props: CustomizableChartProps, ref: React.Ref<any>) {
         },
         title: {
           offsetX: 5,
-          text:
-            chartType === "heatmap"
-              ? undefined
-              : `${isCumulative ? "Total" : "Daily"} Confirmed ${titleCase(metric)}${isIncidence ? " (per 100k inhab.)" : ""}`,
+          text: chartType === "heatmap" ? undefined : `${isCumulative ? "Total" : "Daily"} Confirmed ${titleCase(metric)}${isIncidence ? " (per 100k inhab.)" : ""}`,
         },
       },
       dataLabels: {
