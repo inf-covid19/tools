@@ -355,7 +355,7 @@ const Explorer = () => {
                             />
                           </>
                         )}{" "}
-                        <Label size="tiny" color={getColor(r.similarity)}>
+                        <Label style={{display: 'none'}} size="tiny" color={getColor(r.similarity)}>
                           {displayNumberFormatter(parseFloat(r.similarity!) * 100)}%
                         </Label>
                       </div>
