@@ -1,14 +1,14 @@
 {
   "files": {
     "main.css": "https://covid19.ufrgs.dev/tools/static/css/main.c340c77b.chunk.css",
-    "main.js": "https://covid19.ufrgs.dev/tools/static/js/main.babab274.chunk.js",
-    "main.js.map": "https://covid19.ufrgs.dev/tools/static/js/main.babab274.chunk.js.map",
+    "main.js": "https://covid19.ufrgs.dev/tools/static/js/main.4c367744.chunk.js",
+    "main.js.map": "https://covid19.ufrgs.dev/tools/static/js/main.4c367744.chunk.js.map",
     "runtime-main.js": "https://covid19.ufrgs.dev/tools/static/js/runtime-main.02811f64.js",
     "runtime-main.js.map": "https://covid19.ufrgs.dev/tools/static/js/runtime-main.02811f64.js.map",
     "static/js/2.96bbf538.chunk.js": "https://covid19.ufrgs.dev/tools/static/js/2.96bbf538.chunk.js",
     "static/js/2.96bbf538.chunk.js.map": "https://covid19.ufrgs.dev/tools/static/js/2.96bbf538.chunk.js.map",
     "index.html": "https://covid19.ufrgs.dev/tools/index.html",
-    "precache-manifest.1467691555425b111337145f779364b0.js": "https://covid19.ufrgs.dev/tools/precache-manifest.1467691555425b111337145f779364b0.js",
+    "precache-manifest.6787d35e39fa647c83cf306552d2b61f.js": "https://covid19.ufrgs.dev/tools/precache-manifest.6787d35e39fa647c83cf306552d2b61f.js",
     "service-worker.js": "https://covid19.ufrgs.dev/tools/service-worker.js",
     "static/css/main.c340c77b.chunk.css.map": "https://covid19.ufrgs.dev/tools/static/css/main.c340c77b.chunk.css.map",
     "static/js/2.96bbf538.chunk.js.LICENSE.txt": "https://covid19.ufrgs.dev/tools/static/js/2.96bbf538.chunk.js.LICENSE.txt",
@@ -20,6 +20,6 @@
     "static/js/runtime-main.02811f64.js",
     "static/js/2.96bbf538.chunk.js",
     "static/css/main.c340c77b.chunk.css",
-    "static/js/main.babab274.chunk.js"
+    "static/js/main.4c367744.chunk.js"
   ]
 }
