@@ -76,6 +76,7 @@ export const PLACE_TYPE_LABEL_MAPPING: Record<string, string> = {
   departamento: "Departments",
   provincia: "Provinces",
   province: "Provinces",
+  territory: "Territories",
   lower_tier_local_authority: "LTLAs",
 };
 

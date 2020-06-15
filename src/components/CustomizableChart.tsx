@@ -138,8 +138,8 @@ function CustomizableChart(props: CustomizableChartProps, ref: React.Ref<any>) {
       tooltip: {
         y: {
           formatter: (value: number, point: any) => {
-            const prevValue = point?.w?.config?.series[point.seriesIndex]?.data[point.dataPointIndex - 1]?.y ?? 0;
-            return `${displayNumberFormatter(value)} ${metric}${isIncidence ? " per 100k inhab." : ""} (${increaseNumberFormatter((value -prevValue)/prevValue * 100)}%)`
+            const prevValue = point?.w?.config?.series[point.seriesIndex]?.data[point.dataPointIndex - 1]?.y ?? value;
+            return `${displayNumberFormatter(value)} ${metric}${isIncidence ? " per 100k inhab." : ""} (${increaseNumberFormatter((value - prevValue) / prevValue * 100)}%)`
           },
         },
         x: {

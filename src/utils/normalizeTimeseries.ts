@@ -8,6 +8,9 @@ const PLACE_TYPE_COLUMN_MAPPING: Record<string, string> = {
   state: "state",
   city: "city",
   county: "county",
+  territory: "state",
+  province: 'province',
+  country: 'country',
 };
 
 const REGION_CUSTOM_CONFIG = {
@@ -15,6 +18,16 @@ const REGION_CUSTOM_CONFIG = {
     columns: {
       cases: "confirmed",
     },
+  },
+  Canada: {
+    place_types: {
+      territory: "province",
+    },
+  },
+  Ecuador:{
+    place_types: {
+      unknown: 'province'
+    }
   },
 };
 
@@ -66,7 +79,7 @@ export default function normalizeTimeseries(regionId: string, timeseriesRaw: DSV
 
   // filtering based on region, because it can have multiple regions in the same csv
   if (!isCountry) {
-    timeseries = timeseries.filter((row) => regionData.place_type === row.place_type && row[get(PLACE_TYPE_COLUMN_MAPPING, row.place_type!, "region")] === regionData.name);
+    timeseries = timeseries.filter((row) => regionData.place_type === row.place_type && row[get(REGION_CUSTOM_CONFIG, [country, 'place_types', row.place_type!], get(PLACE_TYPE_COLUMN_MAPPING, row.place_type!, "region"))] === regionData.name);
   }
 
   // ensure order (more recent sits at the end of the timeseries)
