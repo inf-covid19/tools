@@ -78,7 +78,7 @@ function ValidationChart(props: ValidationChartProps, ref: React.Ref<any>) {
         };
         const mean = (list: any) => list.reduce((prev: any, curr: any) => prev + curr) / list.length;
         const getBestModel = (sliceIndex: number, threshold: number) => {
-          const testData = reduceToTrainData(dataSinceFirstCase.slice(sliceIndex, sliceIndex + threshold)).Y;
+          const testData = reduceToTrainData(dataSinceFirstCase.slice(sliceIndex - threshold, sliceIndex)).Y;
 
           const regressors = [...Array(sliceIndex)].flatMap((_, index: number) => {
             const { X, Y } = reduceToTrainData(dataSinceFirstCase.slice(index, sliceIndex - threshold));
