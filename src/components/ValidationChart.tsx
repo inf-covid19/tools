@@ -9,15 +9,14 @@ import ReactApexChart, { Props } from "react-apexcharts";
 import { Loader } from "semantic-ui-react";
 import useMetadata from "../hooks/useMetadata";
 import useRegionData from "../hooks/useRegionData";
-import useSeriesColors from "../hooks/useSeriesColors";
 import { getByRegionId } from "../utils/metadata";
 import { alignTimeseries } from "../utils/normalizeTimeseries";
 import { ChartOptions } from "./Editor";
-import useColorScale from "../hooks/useColorScale";
 import { isNumber, first, last, debounce } from "lodash";
 import { titleCase } from "../utils/string";
 
 const displayNumberFormatter = d3.format(",.2~f");
+const increaseNumberFormatter = d3.format("+.1~f");
 const ordinalFormattter = (n: number) => numeral(n).format("Oo");
 const numberFormatter = d3.format(".2~s");
 
@@ -30,6 +29,7 @@ type ChartSerie = {
     x: number;
     y: number;
     isPrediction: boolean;
+    rawValue: number;
   }[];
 };
 
@@ -113,30 +113,39 @@ function ValidationChart(props: ValidationChartProps, ref: React.Ref<any>) {
 
         const BASE_INDEX = 30;
         const seriesNData = [1, 5, 10, 20, 30].map((threshold) => {
+          const serieName = threshold.toString().padStart(2, "0") + "d";
           return {
-            name: threshold + "d",
-            key: threshold + "d",
-            data: dataSinceFirstCase.slice(BASE_INDEX).flatMap((row, index) => {
-              const bestModel = getBestModel(BASE_INDEX + index, threshold);
+            name: serieName,
+            key: serieName,
+            data: dataSinceFirstCase
+              .slice(BASE_INDEX)
+              .flatMap((row, index) => {
+                const bestModel = getBestModel(BASE_INDEX + index, threshold);
 
-              if (!bestModel) return [];
+                if (!bestModel) return [];
 
-              const predFn = (n: number) => Math.round(bestModel.regressor.predict(n));
+                const predFn = (n: number) => Math.round(bestModel.regressor.predict(n));
 
-              const fActual = last(bestModel.Y)! as number;
-              const fPrediction = predFn(bestModel.X.length - 1);
-              const predDiff = fActual - fPrediction;
+                const fActual = last(bestModel.Y)! as number;
+                const fPrediction = predFn(bestModel.X.length - 1);
+                const predDiff = fActual - fPrediction;
 
-              const predIndex = bestModel.X.length + threshold;
+                const predIndex = bestModel.X.length + threshold;
 
-              const predValue = predFn(predIndex) + predDiff;
+                const predValue = predFn(predIndex) + predDiff;
 
-              return {
-                x: row.date.getTime(),
-                y: predValue,
-                isPrediction: true,
-              };
-            }),
+                const rawValue = dataSinceFirstCase[BASE_INDEX + index][metric];
+
+                const errorFromRaw = (predValue - rawValue) / predValue;
+
+                return {
+                  x: row.date.getTime(),
+                  y: errorFromRaw * 100,
+                  isPrediction: true,
+                  rawValue: predValue,
+                };
+              })
+              .slice(-BASE_INDEX),
           };
         });
 
@@ -157,11 +166,14 @@ function ValidationChart(props: ValidationChartProps, ref: React.Ref<any>) {
         resolve([
           {
             ...serie,
-            data: serieData.map((row: any) => ({
-              x: row.date.getTime(),
-              y: row[metric],
-              isPrediction: row.isPrediction || false,
-            })),
+            data: serieData
+              .map((row: any) => ({
+                x: row.date.getTime(),
+                y: 0,
+                isPrediction: row.isPrediction || false,
+                rawValue: row[metric],
+              }))
+              .slice(-BASE_INDEX),
           },
           ...seriesNData,
         ]);
@@ -179,12 +191,8 @@ function ValidationChart(props: ValidationChartProps, ref: React.Ref<any>) {
   }, [filteredSeries, metric]);
 
   const sortedSeries = useMemo(() => {
-    return sortBy(seriesWithPredictions, chartType === "heatmap" ? (s) => get(s.data, [s.data.length - 1, "y"], 0) : "name");
-  }, [chartType, seriesWithPredictions]);
-
-  const seriesColors = useSeriesColors(sortedSeries);
-
-  const colorScale = useColorScale(sortedSeries);
+    return sortBy(seriesWithPredictions, "name");
+  }, [seriesWithPredictions]);
 
   const chartOptions = useMemo(() => {
     return {
@@ -205,12 +213,11 @@ function ValidationChart(props: ValidationChartProps, ref: React.Ref<any>) {
           },
         },
       },
-      colors: seriesColors,
       tooltip: {
         y: {
           formatter: (value: number, point: any) => {
             const pointData = point?.w?.config?.series[point.seriesIndex].data[point.dataPointIndex];
-            return `${displayNumberFormatter(value)} ${metric}${pointData && pointData.isPrediction ? " (Prediction)" : ""}`;
+            return `${displayNumberFormatter(pointData.rawValue)} ${metric}${pointData && pointData.isPrediction ? ` (Prediction) (${increaseNumberFormatter(value)}%)` : ""}`;
           },
         },
         x: {
@@ -255,11 +262,26 @@ function ValidationChart(props: ValidationChartProps, ref: React.Ref<any>) {
       },
       plotOptions: {
         heatmap: {
-          colorScale,
+          enableShades: false,
+          colorScale: {
+            ranges: [
+              { color: "#67001F", from: -100, to: -5 },
+              { color: "#B2182B", from: -4.99, to: -4 },
+              { color: "#D6604D", from: -3.99, to: -3 },
+              { color: "#F4A582", from: -2.99, to: -2 },
+              { color: "#FDDBC7", from: -1.99, to: -1 },
+              { color: "#CCCCCC", from: -0.99, to: 0.99 },
+              { color: "#D1E5F0", from: 1, to: 1.99 },
+              { color: "#92C5DE", from: 2, to: 2.99 },
+              { color: "#4393C3", from: 3, to: 3.99 },
+              { color: "#2166AC", from: 4, to: 4.99 },
+              { color: "#053061", from: 5, to: 100 },
+            ],
+          },
         },
       },
     };
-  }, [seriesColors, alignAt, chartType, showDataLabels, title, isCumulative, metric, colorScale]);
+  }, [alignAt, chartType, showDataLabels, title, isCumulative, metric]);
 
   if (chartLoading) {
     return (

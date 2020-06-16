@@ -9,8 +9,8 @@ type Props = {
 };
 
 export default function ValidationPrediction(props: Props) {
-  const [isModalOpen, setModalOpen] = React.useState(false);
-  const [selectedRegion, setSelectedRegion] = React.useState("");
+  const [isModalOpen, setModalOpen] = React.useState(true);
+  const [selectedRegion, setSelectedRegion] = React.useState("Brazil.regions.RN:Natal");
 
   const { data: metadata } = useMetadata();
   if (!metadata) return null;
@@ -44,7 +44,13 @@ export default function ValidationPrediction(props: Props) {
       <Modal size="fullscreen" open={isModalOpen} onClose={() => setModalOpen(false)}>
         <Modal.Header>Validate {selectedRegionTitle} predictions</Modal.Header>
         <Modal.Content>
-          <ValidationChart {...props.options} selectedRegions={{ [selectedRegion]: true }} predictionDays={0} height={600} title={"Validation chart for " + selectedRegionTitle} />
+          <ValidationChart
+            {...props.options}
+            selectedRegions={{ [selectedRegion]: true }}
+            predictionDays={0}
+            height={600}
+            title={"Heatmap of prediction's error for " + selectedRegionTitle}
+          />
         </Modal.Content>
       </Modal>
     </React.Fragment>
