@@ -168,6 +168,7 @@ function Editor(props: EditorProps) {
         <Grid.Row>
           <Grid.Column width={12}>
             <Segment>
+              {availableOptions.includes("validatePrediction") && <ValidationPrediction options={options} />}
               {props.render(chartRef, {
                 chartType,
                 isCumulative,
@@ -194,10 +195,7 @@ function Editor(props: EditorProps) {
           <Grid.Column width={4}>
             <Segment style={{ height: "100%" }}>
               <Form>
-                <Header>
-                  Options
-                  <div style={{ float: "right" }}>{availableOptions.includes("validatePrediction") && <ValidationPrediction options={options} />}</div>
-                </Header>
+                <Header>Options</Header>
 
                 {availableOptions.includes("title") && (
                   <Form.Field>

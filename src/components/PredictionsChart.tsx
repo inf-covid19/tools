@@ -200,6 +200,11 @@ function PredictionsChart(props: PredictionsChartProps, ref: React.Ref<any>) {
           },
         },
       },
+      grid: {
+        padding: {
+          bottom: 20,
+        },
+      },
       colors: seriesColors,
       tooltip: {
         y: {

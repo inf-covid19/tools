@@ -258,9 +258,6 @@ function ValidationChart(props: ValidationChartProps, ref: React.Ref<any>) {
           fontFamily: "Lato, 'Helvetica Neue', Arial, Helvetica, sans-serif",
         },
       },
-      legend: {
-        position: "bottom",
-      },
       plotOptions: {
         heatmap: {
           enableShades: false,

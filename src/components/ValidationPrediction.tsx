@@ -23,7 +23,7 @@ export default function ValidationPrediction(props: Props) {
 
   return (
     <React.Fragment>
-      <Dropdown className="icon" direction="left" floating icon="info circle" title="How accurate is it?">
+      <Dropdown style={{ float: "right", zIndex: 1000 }} text="How accurate is it?" className="basic small button icon" labeled floating icon="info circle">
         <Dropdown.Menu>
           {Object.entries(props.options.selectedRegions).map(([region, isSelected], index) => {
             return (
