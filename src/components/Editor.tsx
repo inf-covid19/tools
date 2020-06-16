@@ -194,7 +194,10 @@ function Editor(props: EditorProps) {
           <Grid.Column width={4}>
             <Segment style={{ height: "100%" }}>
               <Form>
-                <Header>Options</Header>
+                <Header>
+                  Options
+                  <div style={{ float: "right" }}>{availableOptions.includes("validatePrediction") && <ValidationPrediction options={options} />}</div>
+                </Header>
 
                 {availableOptions.includes("title") && (
                   <Form.Field>
@@ -410,8 +413,6 @@ function Editor(props: EditorProps) {
                   </Button>
 
                   <ExportChart title={options.title} metric={options.metric} isCumulative={options.isCumulative} chart={chartRef} />
-
-                  {availableOptions.includes("validatePrediction") && <ValidationPrediction options={options} />}
                 </div>
               </Form>
             </Segment>
