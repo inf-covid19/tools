@@ -46,6 +46,7 @@ export default function ValidationPrediction(props: Props) {
         <Modal.Content>
           <ValidationChart
             {...props.options}
+            chartType="heatmap"
             selectedRegions={{ [selectedRegion]: true }}
             predictionDays={0}
             height={600}
