@@ -42,16 +42,9 @@ export default function ValidationPrediction(props: Props) {
         </Dropdown.Menu>
       </Dropdown>
       <Modal size="fullscreen" open={isModalOpen} onClose={() => setModalOpen(false)}>
-        <Modal.Header>Validate {selectedRegionTitle} predictions</Modal.Header>
+        <Modal.Header>Prediction Error for {selectedRegionTitle} in the last 30, 20, 10, 5 and 1 days.</Modal.Header>
         <Modal.Content>
-          <ValidationChart
-            {...props.options}
-            chartType="heatmap"
-            selectedRegions={{ [selectedRegion]: true }}
-            predictionDays={0}
-            height={600}
-            title={"Heatmap of prediction's error for " + selectedRegionTitle}
-          />
+          <ValidationChart {...props.options} chartType="heatmap" selectedRegions={{ [selectedRegion]: true }} predictionDays={0} height={600} title="" />
         </Modal.Content>
       </Modal>
     </React.Fragment>
