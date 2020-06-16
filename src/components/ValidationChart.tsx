@@ -1,6 +1,5 @@
 import * as d3 from "d3";
 import { format } from "date-fns";
-import get from "lodash/get";
 import sortBy from "lodash/sortBy";
 import PolynomialRegression from "ml-regression-polynomial";
 import numeral from "numeral";
@@ -265,17 +264,17 @@ function ValidationChart(props: ValidationChartProps, ref: React.Ref<any>) {
           enableShades: false,
           colorScale: {
             ranges: [
-              { color: "#67001F", from: -100, to: -5 },
+              { color: "#67001F", name: "< -5", from: Number.MIN_SAFE_INTEGER, to: -5 },
               { color: "#B2182B", from: -4.99, to: -4 },
               { color: "#D6604D", from: -3.99, to: -3 },
               { color: "#F4A582", from: -2.99, to: -2 },
               { color: "#FDDBC7", from: -1.99, to: -1 },
-              { color: "#CCCCCC", from: -0.99, to: 0.99 },
-              { color: "#D1E5F0", from: 1, to: 1.99 },
-              { color: "#92C5DE", from: 2, to: 2.99 },
-              { color: "#4393C3", from: 3, to: 3.99 },
-              { color: "#2166AC", from: 4, to: 4.99 },
-              { color: "#053061", from: 5, to: 100 },
+              { color: "#CCCCCC", from: -0.99, to: 1 },
+              { color: "#D1E5F0", from: 1.01, to: 2 },
+              { color: "#92C5DE", from: 2.01, to: 3 },
+              { color: "#4393C3", from: 3.01, to: 4 },
+              { color: "#2166AC", from: 4.01, to: 5 },
+              { color: "#053061", name: "5 > ", from: 5, to: Number.MAX_SAFE_INTEGER },
             ],
           },
         },

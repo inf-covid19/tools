@@ -9,8 +9,8 @@ type Props = {
 };
 
 export default function ValidationPrediction(props: Props) {
-  const [isModalOpen, setModalOpen] = React.useState(true);
-  const [selectedRegion, setSelectedRegion] = React.useState("Brazil.regions.RN:Natal");
+  const [isModalOpen, setModalOpen] = React.useState(false);
+  const [selectedRegion, setSelectedRegion] = React.useState("");
 
   const { data: metadata } = useMetadata();
   if (!metadata) return null;
