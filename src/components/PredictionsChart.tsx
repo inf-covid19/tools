@@ -22,7 +22,7 @@ const displayNumberFormatter = d3.format(",.2~f");
 const ordinalFormattter = (n: number) => numeral(n).format("Oo");
 const numberFormatter = d3.format(".2~s");
 
-type PredictionsChartProps = Omit<Props, "options" | "series" | "type"> & ChartOptions;
+export type PredictionsChartProps = Omit<Props, "options" | "series" | "type"> & ChartOptions;
 
 function PredictionsChart(props: PredictionsChartProps, ref: React.Ref<any>) {
   const { chartType = "line", title, metric, showDataLabels, isCumulative, dayInterval, selectedRegions, alignAt = 0, predictionDays, ...rest } = props;
@@ -198,6 +198,11 @@ function PredictionsChart(props: PredictionsChartProps, ref: React.Ref<any>) {
             pan: false,
             reset: false,
           },
+        },
+      },
+      grid: {
+        padding: {
+          bottom: 20,
         },
       },
       colors: seriesColors,

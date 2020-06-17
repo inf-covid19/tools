@@ -6,6 +6,7 @@ import RegionSelector from "./RegionSelector";
 import { omit } from "lodash";
 import ExportChart from "./ExportChart";
 import debounce from "lodash/debounce";
+import ValidationPrediction from "./ValidationPrediction";
 
 type SelectedCountriesMap = Record<string, boolean>;
 export type ChartOptions = {
@@ -27,6 +28,7 @@ export type ChartOptions = {
   spread: number;
   neighbors: number;
   minDist: number;
+  validatePrediction?: boolean;
 };
 
 const SAVED_CHARTS_KEY = "covid19-tools.editor.savedCharts.v2";
@@ -121,6 +123,7 @@ function Editor(props: EditorProps) {
     spread,
     neighbors,
     minDist,
+    validatePrediction,
   } = options;
 
   const [saved, setSaved] = useState(false);
@@ -165,6 +168,7 @@ function Editor(props: EditorProps) {
         <Grid.Row>
           <Grid.Column width={12}>
             <Segment>
+              {availableOptions.includes("validatePrediction") && <ValidationPrediction options={options} />}
               {props.render(chartRef, {
                 chartType,
                 isCumulative,
@@ -184,6 +188,7 @@ function Editor(props: EditorProps) {
                 spread,
                 neighbors,
                 minDist,
+                validatePrediction,
               })}
             </Segment>
           </Grid.Column>
