@@ -21,7 +21,7 @@ export default function ValidationPrediction(props: Props) {
 
   const selectedRegionTitle = selectedRegion ? getRegionTitle(selectedRegion) : "";
 
-  const filteredRegions = Object.entries(props.options.selectedRegions).filter(([isSelected]) => isSelected);
+  const filteredRegions = Object.keys(props.options.selectedRegions);
 
   return (
     <React.Fragment>
@@ -34,25 +34,23 @@ export default function ValidationPrediction(props: Props) {
           labelPosition="left"
           disabled={filteredRegions.length <= 0}
           onClick={() => {
-            setSelectedRegion(filteredRegions[0][0]);
+            setSelectedRegion(filteredRegions[0]);
             setModalOpen(true);
           }}
         />
       ) : (
         <Dropdown style={{ float: "right", zIndex: 1000 }} text="How accurate is it?" className="basic small button icon" labeled floating icon="info circle">
           <Dropdown.Menu>
-            {Object.entries(props.options.selectedRegions).map(([region, isSelected], index) => {
+            {filteredRegions.map((region, index) => {
               return (
-                isSelected && (
-                  <Dropdown.Item
-                    key={index}
-                    text={getRegionTitle(region)}
-                    onClick={() => {
-                      setSelectedRegion(region);
-                      setModalOpen(true);
-                    }}
-                  />
-                )
+                <Dropdown.Item
+                  key={index}
+                  text={getRegionTitle(region)}
+                  onClick={() => {
+                    setSelectedRegion(region);
+                    setModalOpen(true);
+                  }}
+                />
               );
             })}
           </Dropdown.Menu>
