@@ -33,7 +33,7 @@ const REGION_CUSTOM_CONFIG = {
 
 const parseDate = (row: DSVRowString, country: string, isCountry: boolean) => {
   const dateColumn = get(REGION_CUSTOM_CONFIG, [country, "columns", "date"], isCountry ? "dateRep" : "date");
-  const dateFormat = get(REGION_CUSTOM_CONFIG, [country, "date", "format"], isCountry ? "dd/MM/yyyy" : "yyyy-MM-dd");
+  const dateFormat = get(REGION_CUSTOM_CONFIG, [country, "date", "format"], "yyyy-MM-dd");
 
   return parse(row[dateColumn]!, dateFormat, startOfDay(new Date()));
 };
