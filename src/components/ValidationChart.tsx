@@ -17,6 +17,7 @@ const displayNumberFormatter = d3.format(",.2~f");
 const increaseNumberFormatter = d3.format("+.1~f");
 const ordinalFormattter = (n: number) => numeral(n).format("Oo");
 const numberFormatter = d3.format(".2~s");
+const predErrorFormatter = d3.format("+");
 
 export type ValidationChartProps = Omit<Props, "options" | "series" | "type"> & ChartOptions;
 
@@ -141,6 +142,7 @@ function ValidationChart(props: ValidationChartProps, ref: React.Ref<any>) {
                   y: errorFromRaw * 100,
                   isPrediction: true,
                   rawValue: predValue,
+                  rawError: predValue - rawValue,
                 };
               })
               .slice(-BASE_INDEX),
@@ -252,7 +254,10 @@ function ValidationChart(props: ValidationChartProps, ref: React.Ref<any>) {
         formatter: (n: number, point: any) => {
           const pointData = point?.w?.config?.series[point.seriesIndex].data[point.dataPointIndex];
           const value = pointData.rawValue;
-          return value >= 1000 ? numberFormatter(value) : value;
+
+          const error = pointData.rawError | 0;
+
+          return [value >= 1000 ? numberFormatter(value) : value, error ? predErrorFormatter(error) : ""];
         },
       },
       title: {
