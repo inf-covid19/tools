@@ -6,6 +6,7 @@ import styled from "styled-components/macro";
 import useMetadata from "../../../hooks/useMetadata";
 import useRegionData from "../../../hooks/useRegionData";
 import ChartWrapper from "../ChartWrapper";
+import { average } from "../../../utils/math";
 
 const displayNumberFormatter = d3.format(",.2~f");
 
@@ -16,7 +17,7 @@ function DeathsChart({ regionId }: { regionId: string }) {
   const series = useMemo(() => {
     if (!data || !metadata) return null;
 
-    const timeseries = data[regionId].filter(row => row.deaths > 0);
+    const timeseries = data[regionId].filter((row) => row.deaths > 0);
 
     return [
       {
@@ -33,6 +34,18 @@ function DeathsChart({ regionId }: { regionId: string }) {
           x: row.date,
           y: row.deaths_daily,
         })),
+      },
+      {
+        type: "area",
+        name: "7-day Avg. Confirmed Deaths",
+        data: timeseries.map((row, index) => {
+          const dailyValues = timeseries.slice(Math.max(0, index - 6), index + 1).map((r) => r.deaths_daily);
+
+          return {
+            x: row.date,
+            y: Math.round(average(dailyValues)),
+          };
+        }),
       },
     ];
   }, [data, metadata, regionId]);
@@ -97,9 +110,27 @@ function DeathsChart({ regionId }: { regionId: string }) {
             text: "Daily Confirmed Deaths",
           },
         },
+        {
+          seriesName: "Daily Confirmed Deaths",
+          show: false,
+          labels: {
+            formatter: displayNumberFormatter,
+          },
+        },
       ],
       dataLabels: {
         enabled: false,
+      },
+      fill: {
+        type: "gradient",
+        gradient: {
+          inverseColors: false,
+          shade: "light",
+          type: "vertical",
+          opacityFrom: 0.85,
+          opacityTo: 0.55,
+          stops: [0, 100, 100, 100],
+        },
       },
     };
   }, []);
