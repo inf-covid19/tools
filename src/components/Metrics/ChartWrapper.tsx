@@ -1,7 +1,7 @@
 import React from "react";
 import { Segment, Header } from "semantic-ui-react";
 
-function ChartWrapper({ title, subtitle, children }: React.PropsWithChildren<{ title: string; subtitle: string }>) {
+function ChartWrapper({ title, subtitle, children }: React.PropsWithChildren<{ title: string; subtitle: string | React.ReactNode }>) {
   return (
     <div>
       <Segment>
