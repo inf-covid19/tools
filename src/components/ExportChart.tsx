@@ -1,9 +1,10 @@
 import * as d3 from "d3";
 import download from "downloadjs";
-import { get, keyBy, uniq } from "lodash";
+import { get, keyBy, uniq, first } from "lodash";
 import React, { useMemo } from "react";
 import { Dropdown } from "semantic-ui-react";
 import slugify from "slugify";
+import { format } from "date-fns";
 
 type Props = {
   title: string;
@@ -61,10 +62,12 @@ export default function ExportChart({ chart, title, isCumulative, metric }: Prop
             });
             const seriesNames = series.map((item) => item.name);
 
-            const data = [["", ...seriesNames]];
+            const isDate = new Date(first(X) ?? 1).getFullYear() >= 2019;
+            const data = [[isDate ? "Date" : "Order", ...seriesNames]];
 
             X?.forEach((x) => {
-              data.push([`${x}`, ...seriesKeyed.map((item) => `${get(item.data, [x, "y"], "")}`)]);
+              const xValue = isDate ? format(new Date(x), "yyyy-MM-dd") : x;
+              data.push([`${xValue}`, ...seriesKeyed.map((item) => `${get(item.data, [x, "y"], "")}`)]);
             });
 
             const csv = d3.csvFormatRows(data);
