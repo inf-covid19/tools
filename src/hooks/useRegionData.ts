@@ -28,7 +28,7 @@ export default function useRegionData(regionIds: string[]) {
 
       const dataByKey: Record<string, TimeseriesRow[]> = {};
 
-      const data = await Promise.all(files.map((file) => csv(`https://raw.githubusercontent.com/inf-covid19/covid19-data/master/${file}?v=2`)));
+      const data = await Promise.all(files.map((file) => file.startsWith("/") ? csv(file) : csv(`https://raw.githubusercontent.com/inf-covid19/covid19-data/master/${file}?v=2`)));
       data.forEach((raw, index) => {
         keysByFile[files[index]].forEach((key) => {
           dataByKey[key] = normalizeTimeseries(key, raw, getByRegionId(metadata, key));

@@ -23,6 +23,13 @@ export type Metadata = Record<string, MetadataCountry>;
 const fetchMetadata = async () => {
   const response = await fetch("https://raw.githubusercontent.com/inf-covid19/covid19-data/master/data/metadata.json");
   const data = await response.json();
+
+  data["Brazil"].regions["RS:Soledade"] = {
+    name: "Soledade",
+    parent: "RS",
+    place_type: "city",
+    file: "/data/Brazil.regions.RS:Soledade.csv",
+  };
   return data as Metadata;
 };
 
