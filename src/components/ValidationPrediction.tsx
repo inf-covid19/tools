@@ -27,7 +27,7 @@ export default function ValidationPrediction(props: Props) {
     <React.Fragment>
       {filteredRegions.length <= 1 ? (
         <Button
-          style={{ float: "right", zIndex: 1000 }}
+          style={{ float: "right", zIndex: 10 }}
           content="How accurate is it?"
           className="basic small"
           icon="info circle"
@@ -39,7 +39,7 @@ export default function ValidationPrediction(props: Props) {
           }}
         />
       ) : (
-        <Dropdown style={{ float: "right", zIndex: 1000 }} text="How accurate is it?" className="basic small button icon" labeled floating icon="info circle">
+        <Dropdown style={{ float: "right", zIndex: 10 }} text="How accurate is it?" className="basic small button icon" labeled floating icon="info circle">
           <Dropdown.Menu>
             {filteredRegions.map((region, index) => {
               return (

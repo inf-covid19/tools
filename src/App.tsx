@@ -1,7 +1,7 @@
 import * as fns from "date-fns";
 import React, { useEffect, useMemo } from "react";
 import ReactGA from "react-ga";
-import { generatePath, Link, Redirect, Route, Switch, useLocation } from "react-router-dom";
+import { generatePath, Link, Redirect, Route, Switch, useLocation, matchPath } from "react-router-dom";
 import { Container, Header, Icon, Menu, SemanticICONS } from "semantic-ui-react";
 import LogoINF from "./assets/ufrgs-inf.png";
 import LogoUFRGS from "./assets/ufrgs.png";
@@ -17,6 +17,8 @@ import useLastUpdated from "./hooks/useLastUpdated";
 import useMetadata from "./hooks/useMetadata";
 import styled from "styled-components";
 import first from "lodash/first";
+import useWhiteLabel from "./hooks/useWhiteLabel";
+import { sortBy } from "lodash";
 
 const LAST_TAB_KEY = "covid19-tools.api.lastTab";
 
@@ -73,12 +75,33 @@ const MENU_ITEMS = [
 ];
 
 function App() {
+  const {
+    enabled: isWhiteLabelMode,
+    title = "COVID-19 Analysis Tools",
+    subtitle = "A set of configurable tools around COVID-19 data.",
+    logo = { src: LogoINF, alt: "Instituto de Informática UFGRS" },
+    sources,
+  } = useWhiteLabel();
+
   const lastUpdated = useLastUpdated();
-  const lastLocation = useMemo(() => localStorage.getItem(LAST_TAB_KEY) || first(MENU_ITEMS)!.path, []);
+
+  const indexPath = isWhiteLabelMode ? `/metrics` : first(MENU_ITEMS)!.path;
+
+  const lastLocation = useMemo(() => localStorage.getItem(LAST_TAB_KEY) || indexPath, [indexPath]);
 
   const { loading } = useMetadata();
 
   const location = useLocation();
+
+  const menuItems = useMemo(() => {
+    const items = isWhiteLabelMode ? MENU_ITEMS.filter((item) => item.component) : MENU_ITEMS;
+
+    return sortBy(items, (item) =>
+      matchPath(indexPath, {
+        path: item.path,
+      })
+    );
+  }, [indexPath, isWhiteLabelMode]);
 
   useEffect(() => {
     localStorage.setItem(LAST_TAB_KEY, location.pathname);
@@ -95,16 +118,16 @@ function App() {
         <img src={LogoUFRGS} height="100" alt="Universidade Federal do Rio Grande do Sul (UFRGS)" />{" "}
         <div>
           <Header as="h1">
-            COVID-19 Analysis Tools
-            <Header.Subheader>A set of configurable tools around COVID-19 data.</Header.Subheader>
+            {title}
+            <Header.Subheader>{subtitle}</Header.Subheader>
           </Header>
         </div>
-        <img src={LogoINF} height="100" alt="Instituto de Informática UFGRS" />
+        <img height="100" {...logo} />
       </TopHeader>
 
       <Container fluid>
         <MenuStyled pointing secondary icon="labeled">
-          {MENU_ITEMS.map((item) =>
+          {menuItems.map((item) =>
             item.external ? (
               <Menu.Item href={item.external} target="_blank" name={item.name}>
                 <Icon name={item.icon as SemanticICONS} />
@@ -124,9 +147,11 @@ function App() {
         </MenuStyled>
 
         <Switch>
-          {MENU_ITEMS.filter((item) => item.component).map((item) => (
-            <Route key={item.name} path={item.path} component={item.component} />
-          ))}
+          {menuItems
+            .filter((item) => item.component)
+            .map((item) => (
+              <Route key={item.name} path={item.path} component={item.component} />
+            ))}
           <Route path="*">
             <Redirect to={lastLocation} />
           </Route>
@@ -137,7 +162,7 @@ function App() {
         <span>
           Sources:{" "}
           <ListDescriptor>
-            {DATA_SOURCES.map((src) => (
+            {(isWhiteLabelMode ? [...sources, ...DATA_SOURCES] : DATA_SOURCES).map((src) => (
               <a key={src.url} rel="noopener noreferrer" target="_blank" href={src.url}>
                 {src.name}
               </a>
@@ -154,7 +179,7 @@ export default App;
 
 const TopHeader = styled.header`
   display: flex;
-  padding: 0 2em 2em;
+  padding: 0.5em 2em 2em;
   align-items: center;
   justify-content: center;
   text-align: center;
@@ -189,7 +214,7 @@ const MenuStyled = styled(Menu)`
 
   @media screen and (max-width: 1024px) {
     > .item {
-      min-width: unset!important;
+      min-width: unset !important;
       font-size: 0.7em;
 
       > span {

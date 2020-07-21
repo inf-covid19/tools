@@ -232,6 +232,7 @@ export default function RegionSelector({ value, onChange, multiple = true, filte
         noResultsMessage={search.length < 1 ? "Start typing..." : "No results found."}
         onChange={onChangeHandler}
         onSearchChange={onSearchChangeHandler}
+        readonly
       />
     </div>
   );

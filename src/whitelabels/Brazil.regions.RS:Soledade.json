@@ -1,0 +1,20 @@
+{
+  "title": "Soledade - COVID-19 Analysis",
+  "subtitle": "A set of configurable tools around COVID-19 data tailored for Soledade, RS.",
+  "defaultRegion": "Brazil.regions.RS:Soledade",
+  "defaultRegions": ["Brazil.regions.RS:Soledade"],
+  "metadata": {
+    "name": "Soledade",
+    "parent": "RS",
+    "place_type": "city",
+    "iso": "4320800",
+    "file": "/data/Brazil.regions.RS:Soledade.json"
+  },
+  "logo": { "src": "https://www.soledade.rs.gov.br/website/assets/images/logos/soledade.png", "alt": "Prefeitura Municipal de Soledade" },
+  "sources": [
+    {
+      "name": "Secretaria Municipal da Saúde, Soledade-RS",
+      "url": "https://www.soledade.rs.gov.br/website/secretarias/saude"
+    }
+  ]
+}

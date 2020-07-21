@@ -7,6 +7,7 @@ import { omit } from "lodash";
 import ExportChart from "./ExportChart";
 import debounce from "lodash/debounce";
 import ValidationPrediction from "./ValidationPrediction";
+import useWhiteLabel from "../hooks/useWhiteLabel";
 
 type SelectedCountriesMap = Record<string, boolean>;
 export type ChartOptions = {
@@ -96,7 +97,24 @@ type EditorProps = {
 function Editor(props: EditorProps) {
   const { id, availableOptions } = props;
 
-  const defaultsValues = useMemo(() => getDefaultsValues(props.id), [props.id]);
+  const { enabled: isWhiteLabelMode, defaultRegions } = useWhiteLabel();
+
+  const defaultSelectedRegions = useMemo(() => (isWhiteLabelMode ? Object.fromEntries(defaultRegions.map((regionKey) => [regionKey, true])) : {}), [
+    defaultRegions,
+    isWhiteLabelMode,
+  ]);
+
+  const defaultsValues = useMemo(() => {
+    const defaults = getDefaultsValues(props.id);
+    if (isWhiteLabelMode) {
+      return {
+        ...defaults,
+        selectedRegions: defaultSelectedRegions,
+      };
+    }
+
+    return defaults;
+  }, [defaultSelectedRegions, isWhiteLabelMode, props.id]);
 
   const [savedCharts, setSavedCharts] = useState(getSavedCharts(props.id));
 
@@ -150,7 +168,7 @@ function Editor(props: EditorProps) {
     };
   }, [saved]);
 
-  const setSelectedRegions = useCallback((regions) => setOptions((opt) => ({ ...opt, selectedRegions: regions })), []);
+  const setSelectedRegions = useCallback((regions) => setOptions((opt) => ({ ...opt, selectedRegions: { ...regions, ...defaultSelectedRegions } })), [defaultSelectedRegions]);
 
   const setPredictionsDays = useDebouncedOptionSetter("predictionDays", setOptions, transformPredictionDays);
   const setAlignAt = useDebouncedOptionSetter("alignAt", setOptions, transformAlignAt);
@@ -159,7 +177,7 @@ function Editor(props: EditorProps) {
 
   return (
     <div>
-      {availableOptions.includes("selectedRegions") && (
+      {availableOptions.includes("selectedRegions") && !isWhiteLabelMode && (
         <Container>
           <RegionSelector value={selectedRegions} onChange={setSelectedRegions} />
         </Container>

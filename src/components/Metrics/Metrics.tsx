@@ -10,11 +10,22 @@ import ReproductionChart from "./charts/ReproductionChart";
 import CasesChart from "./charts/CasesChart";
 import DeathsChart from "./charts/DeathsChart";
 import CaseFatalityChart from "./charts/CaseFatalityChart";
+import useWhiteLabel from "../../hooks/useWhiteLabel";
 
 function Metrics() {
   const history = useHistory();
+  const { enabled: isWhiteLabelMode, defaultRegion } = useWhiteLabel();
 
-  const { region: regionKey } = useParams<{ region?: string }>();
+  const { region: regionKeyParam } = useParams<{ region?: string }>();
+
+  const regionKey = useMemo(() => {
+    if (isWhiteLabelMode) {
+      return defaultRegion;
+    }
+
+    return regionKeyParam;
+  }, [defaultRegion, isWhiteLabelMode, regionKeyParam]);
+
   const selectedRegions = useMemo(() => (regionKey ? { [regionKey]: true } : {}), [regionKey]);
 
   const setSelectedRegions = useCallback(
@@ -43,7 +54,7 @@ function Metrics() {
       </LoaderWrapper>
     );
   }
-  const regionSelector = (
+  const regionSelector = isWhiteLabelMode ? null : (
     <RegionSelectorWrapper>
       <RegionSelector value={selectedRegions} onChange={setSelectedRegions} multiple={false} />
     </RegionSelectorWrapper>

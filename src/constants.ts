@@ -81,3 +81,5 @@ export const PLACE_TYPE_LABEL_MAPPING: Record<string, string> = {
 };
 
 export const SIMILARITY_API = `${process.env.REACT_APP_SIMILARITY_API}`;
+
+export const WHITE_LABEL_ID = `${process.env.REACT_APP_WHITE_LABEL_ID}`;

@@ -16,6 +16,7 @@ import RegionSelector from "../RegionSelector";
 import TrendChart from "../TrendChart";
 import "./Explorer.css";
 import styled from "styled-components";
+import useWhiteLabel from "../../hooks/useWhiteLabel";
 
 const displayNumberFormatter = format(",.2~f");
 
@@ -48,8 +49,18 @@ const similarityOptions = [
 
 const Explorer = () => {
   const history = useHistory();
-  const { region: regionKey } = useParams<{ region?: string }>();
+  const { enabled: isWhiteLabelMode, defaultRegion } = useWhiteLabel();
+
+  const { region: regionKeyParam } = useParams<{ region?: string }>();
   const [query, setQuery] = useQueryString();
+
+  const regionKey = useMemo(() => {
+    if (isWhiteLabelMode) {
+      return defaultRegion;
+    }
+
+    return regionKeyParam;
+  }, [defaultRegion, isWhiteLabelMode, regionKeyParam]);
 
   const region = useMemo(() => (regionKey ? { [regionKey]: true } : {}), [regionKey]);
 
@@ -247,7 +258,7 @@ const Explorer = () => {
     );
   }
 
-  const regionSelector = (
+  const regionSelector = isWhiteLabelMode ? null : (
     <div style={{ width: "100%", maxWidth: "350px", margin: "0 auto" }}>
       <RegionSelector value={region} onChange={setSelectedRegions} multiple={false} filter={regionFilter} />
     </div>
@@ -355,7 +366,7 @@ const Explorer = () => {
                             />
                           </>
                         )}{" "}
-                        <Label style={{display: 'none'}} size="tiny" color={getColor(r.similarity)}>
+                        <Label style={{ display: "none" }} size="tiny" color={getColor(r.similarity)}>
                           {displayNumberFormatter(parseFloat(r.similarity!) * 100)}%
                         </Label>
                       </div>
@@ -583,7 +594,7 @@ const Container = styled.div`
   @media screen and (max-width: 500px) {
     grid-template-columns: 100%;
   }
-`
+`;
 
 function DiffIndicator({ primaryValue, secondaryValue }: { primaryValue: number; secondaryValue: number }) {
   if (primaryValue === secondaryValue) {
