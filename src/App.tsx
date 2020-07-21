@@ -19,6 +19,7 @@ import styled from "styled-components";
 import first from "lodash/first";
 import useWhiteLabel from "./hooks/useWhiteLabel";
 import { sortBy } from "lodash";
+import { Helmet } from "react-helmet";
 
 const LAST_TAB_KEY = "covid19-tools.api.lastTab";
 
@@ -114,6 +115,10 @@ function App() {
 
   return (
     <div>
+      <Helmet>
+        <title>{title}</title>
+        <meta name="description" content={subtitle} />
+      </Helmet>
       <TopHeader>
         <img src={LogoUFRGS} height="100" alt="Universidade Federal do Rio Grande do Sul (UFRGS)" />{" "}
         <div>
@@ -122,7 +127,7 @@ function App() {
             <Header.Subheader>{subtitle}</Header.Subheader>
           </Header>
         </div>
-        <img height="100" {...logo} />
+        <img height="100" src={logo.src} alt={logo.alt} />
       </TopHeader>
 
       <Container fluid>
