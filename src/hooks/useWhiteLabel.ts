@@ -9,6 +9,7 @@ type WhiteLabelSpec = {
   metadata: MetadataRegion;
   defaultRegion: string;
   defaultRegions: string[];
+  defaultSimilarityAspect?: string;
   logo: { src: string; alt: string };
   sources: { name: string; url: string }[];
 };

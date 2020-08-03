@@ -49,7 +49,7 @@ const similarityOptions = [
 
 const Explorer = () => {
   const history = useHistory();
-  const { enabled: isWhiteLabelMode, defaultRegion } = useWhiteLabel();
+  const { enabled: isWhiteLabelMode, defaultRegion, defaultSimilarityAspect = 'deaths_distance' } = useWhiteLabel();
 
   const { region: regionKeyParam } = useParams<{ region?: string }>();
   const [query, setQuery] = useQueryString();
@@ -64,7 +64,7 @@ const Explorer = () => {
 
   const region = useMemo(() => (regionKey ? { [regionKey]: true } : {}), [regionKey]);
 
-  const aspect = useMemo(() => similarityOptions.find((opt) => opt.value === query.aspect)?.value ?? "deaths_distance", [query.aspect]);
+  const aspect = useMemo(() => similarityOptions.find((opt) => opt.value === query.aspect)?.value ?? defaultSimilarityAspect, [defaultSimilarityAspect, query.aspect]);
 
   const aspectOption = useMemo(() => similarityOptions.find((opt) => opt.value === aspect), [aspect]);
 

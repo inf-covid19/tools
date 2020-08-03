@@ -1,6 +1,7 @@
 {
   "title": "Soledade - COVID-19 Analysis",
   "subtitle": "A set of configurable tools around COVID-19 data tailored for Soledade, RS.",
+  "defaultSimilarityAspect": "cases_distance",
   "defaultRegion": "Brazil.regions.RS:Soledade",
   "defaultRegions": ["Brazil.regions.RS:Soledade"],
   "metadata": {
