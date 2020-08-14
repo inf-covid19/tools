@@ -86,7 +86,7 @@ function TrendChart(props: TrendChartProps, ref: React.Ref<any>) {
       ...series,
       data: series.data.map((item) => ({
         ...item,
-        x: xScaler(item.x),
+        x: defaultTo(xScaler(item.x), 0),
         y: defaultTo(yScaler(item.y), 0),
       })),
     }));
