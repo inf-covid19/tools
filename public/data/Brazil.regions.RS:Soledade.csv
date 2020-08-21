@@ -125,4 +125,6 @@ date,state,city,place_type,confirmed,deaths
 2020-08-17,RS,"Soledade",city,155,2
 2020-08-18,RS,"Soledade",city,155,2
 2020-08-19,RS,"Soledade",city,158,3
+2020-08-20,RS,"Soledade",city,158,3
+2020-08-21,RS,"Soledade",city,162,3
 
