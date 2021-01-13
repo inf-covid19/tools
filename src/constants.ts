@@ -26,8 +26,8 @@ export const DEFAULT_OPTIONS = {
 
 export const DEFAULT_COUNTRIES = [
   "Brazil",
-  "United_States_of_America",
-  "United_Kingdom",
+  "United States",
+  "United Kingdom",
   "China",
   "Sweden",
   "Spain",
@@ -36,7 +36,7 @@ export const DEFAULT_COUNTRIES = [
   "Canada",
   "Portugal",
   "Italy",
-  "South_Korea",
+  "South Korea",
   "Iran",
   "Israel",
   "Netherlands",
