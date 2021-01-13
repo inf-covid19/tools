@@ -73,5 +73,5 @@ function getFlag(data: Pick<MetadataCountry, "name" | "geoId">) {
     return 'greece';
   }
 
-  return data.geoId.toLowerCase() as FlagNameValues;
+  return data.name.toLowerCase() as FlagNameValues;
 }
