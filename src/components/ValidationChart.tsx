@@ -4,7 +4,7 @@ import PolynomialRegression from "ml-regression-polynomial";
 import numeral from "numeral";
 import React, { useMemo, useState, useEffect } from "react";
 import ReactApexChart, { Props } from "react-apexcharts";
-import { Loader } from "semantic-ui-react";
+import { Dimmer, Loader } from "semantic-ui-react";
 import useMetadata from "../hooks/useMetadata";
 import useRegionData from "../hooks/useRegionData";
 import { getByRegionId } from "../utils/metadata";
@@ -62,132 +62,139 @@ function ValidationChart(props: ValidationChartProps, ref: React.Ref<any>) {
   }, [series, selectedRegions]);
 
   useEffect(() => {
-    new Promise((resolve) => {
-      filteredSeries.flatMap((serie) => {
-        const dataSinceFirstCase = serie.data.filter((d) => d.cases > 0);
+    setTimeout(() => {
+      const loadPredictionErrorsPromise = new Promise((resolve) => {
+        filteredSeries.flatMap((serie) => {
+          const dataSinceFirstCase = serie.data.filter((d) => d.cases > 0);
 
-        const reduceToTrainData = (slice: any) => {
-          return slice.reduce(
-            (acc: { X: any; Y: any }, row: { cases: any; deaths: any }, index: any) => ({
-              X: [...acc.X, index],
-              Y: [...acc.Y, metric === "cases" ? row.cases : row.deaths],
-            }),
-            { X: [], Y: [] }
-          );
-        };
-        const mean = (list: any) => list.reduce((prev: any, curr: any) => prev + curr) / list.length;
-        const getBestModel = (sliceIndex: number, threshold: number) => {
-          const testData = reduceToTrainData(dataSinceFirstCase.slice(sliceIndex - threshold, sliceIndex)).Y;
-
-          const regressors = [...Array(sliceIndex)].flatMap((_, index: number) => {
-            const { X, Y } = reduceToTrainData(dataSinceFirstCase.slice(index, sliceIndex - threshold));
-
-            // regressor degrees
-            return [2].flatMap((v) => {
-              try {
-                const degree = X.length > 2 ? v : 1;
-                const regressor = new PolynomialRegression(X, Y, degree);
-                const pred = (n: number) => Math.round(regressor.predict(n));
-
-                const seErrors = testData.map((realValue: number, index: number) => {
-                  const predValue = pred(Y.length + index);
-                  return Math.pow(realValue - predValue, 2);
-                });
-
-                return {
-                  regressor,
-                  mse: mean(seErrors),
-                  X,
-                  Y,
-                };
-              } catch (error) {
-                return [];
-              }
-            });
-          });
-          const mseErrors = regressors.map((r) => r.mse);
-          const minErrorIndex = mseErrors.indexOf(Math.min(...mseErrors));
-          return regressors[minErrorIndex];
-        };
-
-        const BASE_INDEX = 30;
-        const seriesNData = [1, 5, 10, 20, 30].map((threshold) => {
-          const serieName = threshold + "d";
-          return {
-            name: serieName,
-            key: serieName,
-            data: dataSinceFirstCase
-              .slice(BASE_INDEX)
-              .flatMap((row, index) => {
-                const bestModel = getBestModel(BASE_INDEX + index, threshold);
-
-                if (!bestModel) return [];
-
-                const predFn = (n: number) => Math.round(bestModel.regressor.predict(n));
-
-                const fActual = last(bestModel.Y)! as number;
-                const fPrediction = predFn(bestModel.X.length - 1);
-                const predDiff = fActual - fPrediction;
-
-                const predIndex = bestModel.X.length + threshold;
-
-                const predValue = predFn(predIndex) + predDiff;
-
-                const rawValue = dataSinceFirstCase[BASE_INDEX + index][metric];
-
-                const errorFromRaw = (predValue - rawValue) / predValue;
-
-                return {
-                  x: row.date.getTime(),
-                  y: errorFromRaw * 100,
-                  isPrediction: true,
-                  rawValue: predValue,
-                  rawError: predValue - rawValue,
-                };
-              })
-              .slice(-BASE_INDEX),
+          const reduceToTrainData = (slice: any) => {
+            return slice.reduce(
+              (acc: { X: any; Y: any }, row: { cases: any; deaths: any }, index: any) => ({
+                X: [...acc.X, index],
+                Y: [...acc.Y, metric === "cases" ? row.cases : row.deaths],
+              }),
+              { X: [], Y: [] }
+            );
           };
-        });
+          const mean = (list: any) => list.reduce((prev: any, curr: any) => prev + curr) / list.length;
+          const getBestModel = (sliceIndex: number, threshold: number) => {
+            const testData = reduceToTrainData(dataSinceFirstCase.slice(sliceIndex - threshold, sliceIndex)).Y;
 
-        const serieData = alignTimeseries(dataSinceFirstCase, first(dataSinceFirstCase)!.date);
-        if (dataSinceFirstCase.length <= 2) {
-          return [
+            const regressors = [...Array(sliceIndex)].flatMap((_, index: number) => {
+              const { X, Y } = reduceToTrainData(dataSinceFirstCase.slice(index, sliceIndex - threshold));
+
+              // regressor degrees
+              return [2].flatMap((v) => {
+                try {
+                  const degree = X.length > 2 ? v : 1;
+                  const regressor = new PolynomialRegression(X, Y, degree);
+                  const pred = (n: number) => Math.round(regressor.predict(n));
+
+                  const seErrors = testData.map((realValue: number, index: number) => {
+                    const predValue = pred(Y.length + index);
+                    return Math.pow(realValue - predValue, 2);
+                  });
+
+                  return {
+                    regressor,
+                    mse: mean(seErrors),
+                    X,
+                    Y,
+                  };
+                } catch (error) {
+                  return [];
+                }
+              });
+            });
+            const mseErrors = regressors.map((r) => r.mse);
+            const minErrorIndex = mseErrors.indexOf(Math.min(...mseErrors));
+            return regressors[minErrorIndex];
+          };
+
+          const BASE_INDEX = 30;
+          console.log("BASE INDEX", BASE_INDEX);
+          const seriesNData = [1, 5, 10, 20, 30].map((threshold) => {
+            const serieName = threshold + "d";
+            return {
+              name: serieName,
+              key: serieName,
+              data: dataSinceFirstCase
+                .slice(BASE_INDEX)
+                .flatMap((row, index) => {
+                  const bestModel = getBestModel(BASE_INDEX + index, threshold);
+
+                  if (!bestModel) return [];
+
+                  const predFn = (n: number) => Math.round(bestModel.regressor.predict(n));
+
+                  const fActual = last(bestModel.Y)! as number;
+                  const fPrediction = predFn(bestModel.X.length - 1);
+                  const predDiff = fActual - fPrediction;
+
+                  const predIndex = bestModel.X.length + threshold;
+
+                  const predValue = predFn(predIndex) + predDiff;
+
+                  const rawValue = dataSinceFirstCase[BASE_INDEX + index][metric];
+
+                  const errorFromRaw = (predValue - rawValue) / predValue;
+
+                  return {
+                    x: row.date.getTime(),
+                    y: errorFromRaw * 100,
+                    isPrediction: true,
+                    rawValue: predValue,
+                    rawError: predValue - rawValue,
+                  };
+                })
+                .slice(-BASE_INDEX),
+            };
+          });
+
+          console.log("SeriesNData");
+          console.log(seriesNData);
+
+          const serieData = alignTimeseries(dataSinceFirstCase, first(dataSinceFirstCase)!.date);
+          if (dataSinceFirstCase.length <= 2) {
+            return [
+              {
+                ...serie,
+                data: serieData.map((row) => ({
+                  x: row.date.getTime(),
+                  y: row[metric],
+                  isPrediction: false,
+                })),
+              },
+            ];
+          }
+
+          resolve([
             {
               ...serie,
-              data: serieData.map((row) => ({
-                x: row.date.getTime(),
-                y: row[metric],
-                isPrediction: false,
-              })),
+              data: serieData
+                .map((row: any) => ({
+                  x: row.date.getTime(),
+                  y: 0,
+                  isPrediction: row.isPrediction || false,
+                  rawValue: row[metric],
+                }))
+                .slice(-BASE_INDEX),
             },
-          ];
-        }
-
-        resolve([
-          {
-            ...serie,
-            data: serieData
-              .map((row: any) => ({
-                x: row.date.getTime(),
-                y: 0,
-                isPrediction: row.isPrediction || false,
-                rawValue: row[metric],
-              }))
-              .slice(-BASE_INDEX),
-          },
-          ...seriesNData,
-        ]);
+            ...seriesNData,
+          ]);
+        });
       });
-    })
-      .then((result) => {
-        debounce(() => {
-          setSeriesWithPredictions(result as ChartSerie[]);
-          setChartLoading(false);
-        }, 500)();
-      })
-      .catch((err) => {
-        console.log(err);
-      });
+      Promise.all([loadPredictionErrorsPromise])
+        .then((result) => {
+          debounce(() => {
+            setSeriesWithPredictions(result as ChartSerie[]);
+            setChartLoading(false);
+          }, 500)();
+        })
+        .catch((err) => {
+          console.log(err);
+        });
+    });
   }, [filteredSeries, metric]);
 
   const sortedSeries = useMemo(() => {
@@ -293,8 +300,9 @@ function ValidationChart(props: ValidationChartProps, ref: React.Ref<any>) {
   if (chartLoading) {
     return (
       <div style={{ height: props.height, display: "flex", justifyContent: "center", alignItems: "center" }}>
-        <Loader active inline />
-        Loading
+        <Dimmer active inverted>
+          <Loader active inline content="This may take a few minutes..." />
+        </Dimmer>
       </div>
     );
   }
