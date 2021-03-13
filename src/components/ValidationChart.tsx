@@ -112,7 +112,6 @@ function ValidationChart(props: ValidationChartProps, ref: React.Ref<any>) {
           };
 
           const BASE_INDEX = 30;
-          console.log("BASE INDEX", BASE_INDEX);
           const seriesNData = [1, 5, 10, 20, 30].map((threshold) => {
             const serieName = threshold + "d";
             return {
@@ -151,9 +150,6 @@ function ValidationChart(props: ValidationChartProps, ref: React.Ref<any>) {
             };
           });
 
-          console.log("SeriesNData");
-          console.log(seriesNData);
-
           const serieData = alignTimeseries(dataSinceFirstCase, first(dataSinceFirstCase)!.date);
           if (dataSinceFirstCase.length <= 2) {
             return [
@@ -187,7 +183,7 @@ function ValidationChart(props: ValidationChartProps, ref: React.Ref<any>) {
       Promise.all([loadPredictionErrorsPromise])
         .then((result) => {
           debounce(() => {
-            setSeriesWithPredictions(result as ChartSerie[]);
+            setSeriesWithPredictions(result[0] as ChartSerie[]);
             setChartLoading(false);
           }, 500)();
         })
@@ -279,16 +275,16 @@ function ValidationChart(props: ValidationChartProps, ref: React.Ref<any>) {
           enableShades: false,
           colorScale: {
             ranges: [
-              { color: "#67001F", name: "< -5", from: Number.MIN_SAFE_INTEGER, to: -5 },
-              { color: "#B2182B", name: "[-4.99, -4]", from: -4.99, to: -4 },
-              { color: "#D6604D", name: "[-3.99, -3]", from: -3.99, to: -3 },
-              { color: "#F4A582", name: "[-2.99, -2]", from: -2.99, to: -2 },
-              { color: "#FDDBC7", name: "[-1.99, -1]", from: -1.99, to: -1 },
-              { color: "#CCCCCC", name: "[-0.99, 1]", from: -0.99, to: 1 },
-              { color: "#D1E5F0", name: "[1.01, 2]", from: 1.01, to: 2 },
-              { color: "#92C5DE", name: "[2.01, 3]", from: 2.01, to: 3 },
-              { color: "#4393C3", name: "[3.01, 4]", from: 3.01, to: 4 },
-              { color: "#2166AC", name: "[4.01, 5]", from: 4.01, to: 5 },
+              { color: "#67001F", name: "< -5", from: Number.MIN_SAFE_INTEGER, to: -5.01 },
+              { color: "#B2182B", name: "[-5, -4.01]", from: -5, to: -4.01 },
+              { color: "#D6604D", name: "[-4, -3.01]", from: -4, to: -3.01 },
+              { color: "#F4A582", name: "[-3, -2.01]", from: -3, to: -2.01 },
+              { color: "#FDDBC7", name: "[-2, -1.01]", from: -2, to: -1.01 },
+              { color: "#CCCCCC", name: "[-1, 0.99]", from: -1, to: 0.99 },
+              { color: "#D1E5F0", name: "[1, 1.99]", from: 1, to: 1.99 },
+              { color: "#92C5DE", name: "[2, 2.99]", from: 2, to: 2.99 },
+              { color: "#4393C3", name: "[3, 3.99]", from: 3, to: 3.99 },
+              { color: "#2166AC", name: "[4, 4.99]", from: 4, to: 4.99 },
               { color: "#053061", name: "5 >", from: 5, to: Number.MAX_SAFE_INTEGER },
             ],
           },
