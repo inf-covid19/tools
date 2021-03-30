@@ -5,7 +5,7 @@ import last from "lodash/last";
 import sortBy from "lodash/sortBy";
 import PolynomialRegression from "ml-regression-polynomial";
 import numeral from "numeral";
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import ReactApexChart, { Props } from "react-apexcharts";
 import { Loader } from "semantic-ui-react";
 import useMetadata from "../hooks/useMetadata";
@@ -50,9 +50,14 @@ function PredictionsChart(props: PredictionsChartProps, ref: React.Ref<any>) {
     return series.filter((s) => !!selectedRegions[s.key]);
   }, [series, selectedRegions]);
 
-  const seriesWithPredictions = useMemo(() => {
+  const [seriesWithPredictions, setSeriesWithPredictions] = useState<any>([]);
+
+  const seriesWithPredictions111 = useMemo(() => {
     return filteredSeries.flatMap((serie) => {
       const dataSinceFirstCase = serie.data.filter((d) => d.cases > 0);
+
+      // console.log("dataSinceFirstCase");
+      // console.log(dataSinceFirstCase);
 
       const TEST_SIZE = 7;
       const TRAIN_SIZE = dataSinceFirstCase.length;
@@ -96,6 +101,10 @@ function PredictionsChart(props: PredictionsChartProps, ref: React.Ref<any>) {
       const mseErrors = regressors.map((r) => r.mse);
       const minErrorIndex = mseErrors.indexOf(Math.min(...mseErrors));
       const { X, regressor } = regressors[minErrorIndex];
+
+      // console.log("erros", mseErrors);
+      // console.log("regressor", regressors[minErrorIndex]);
+
       const pred = (n: number) => Math.round(regressor.predict(n));
       const lastDate = last(dataSinceFirstCase)!.date;
       const predictionSerie = eachDayOfInterval({
@@ -135,6 +144,7 @@ function PredictionsChart(props: PredictionsChartProps, ref: React.Ref<any>) {
       return [
         {
           ...serie,
+          // data: serieData.concat(nextSeriePredictions).map((row: any) => ({
           data: serieData.concat(nextSeriePredictions).map((row: any) => ({
             x: row.date.getTime(),
             y: row[metric],
@@ -159,6 +169,92 @@ function PredictionsChart(props: PredictionsChartProps, ref: React.Ref<any>) {
     });
   }, [dayInterval, filteredSeries, metric, predictionDays]);
 
+  // console.log("series with prediction 1111");
+  // console.log(seriesWithPredictions111);
+
+  // console.log("Series with Predictions");
+  // console.log(seriesWithPredictions);
+
+  // console.log("filteredSeries");
+  // console.log(filteredSeries);
+
+  useEffect(() => {
+    //   fetch('https://httpbin.org/post', {
+    //   method: 'POST',
+    //   headers: {
+    //     'Accept': 'application/json',
+    //     'Content-Type': 'application/json'
+    //   },
+    //   body: JSON.stringify({a: 1, b: 'Textual content'})
+    // });
+    const allPredictions = filteredSeries.flatMap(async (serie) => {
+      // filteredSeries.length > 0 &&
+      const response = await fetch(`http://localhost:8000/api/v1/predictions/${metric}`, {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          records: serie.data.filter((d) => d.cases > 0),
+          days: predictionDays,
+        }),
+      });
+      // .then((r) => {
+      //   console.log("fetch finished");
+      //   r.json().then(({ predictions }) => {
+      //     console.log("jsonPreds", predictions);
+
+      //     const serieWithPreds = serie.data.concat(predictions).map((row: any) => {
+      //       return {
+      //         x: new Date(row.date).getTime(),
+      //         y: row[metric],
+      //         isPrediction: row.isPrediction || false,
+      //       };
+      //     });
+
+      //     setSeriesWithPredictions([
+      //       ...
+      //     ])
+
+      //     console.log("serie with preds", serieWithPreds);
+      //   });
+      // })
+      // .catch((err) => {
+      //   console.log("Error fetch", err);
+      // })
+      const predictions = await response.json();
+      return predictions;
+    });
+    Promise.all(allPredictions).then((json: any) => {
+      // console.log("All preds", json);
+
+      const serieWithPreds = filteredSeries.flatMap((serie, index) => [
+        {
+          ...serie,
+          // data: serieData.concat(nextSeriePredictions).map((row: any) => ({
+          // data: serie.data.concat(json[index].predictions).map((row: any) => ({
+          data: alignTimeseries(serie.data, subDays(startOfDay(new Date()), dayInterval))
+            .concat(json[index].predictions)
+            .map((row: any) => ({
+              x: new Date(row.date).getTime(),
+              y: row[metric],
+              isPrediction: row.isPrediction || false,
+            })),
+        },
+      ]);
+      // return {
+      //   x: new Date(row.date).getTime(),
+      //   y: row[metric],
+      //   isPrediction: row.isPrediction || false,
+      // };
+
+      // console.log("Serie with preds", serieWithPreds);
+
+      setSeriesWithPredictions(serieWithPreds);
+    });
+  }, [dayInterval, filteredSeries, metric, predictionDays]);
+
   const sortedSeries = useMemo(() => {
     return sortBy(seriesWithPredictions, chartType === "heatmap" ? (s) => get(s.data, [s.data.length - 1, "y"], 0) : "name");
   }, [chartType, seriesWithPredictions]);
@@ -168,10 +264,10 @@ function PredictionsChart(props: PredictionsChartProps, ref: React.Ref<any>) {
     let x2 = addDays(startOfDay(new Date()), predictionDays).getTime();
 
     sortedSeries.forEach(({ data }) => {
-      const predictions = data.filter((d) => d.isPrediction);
+      const predictions = data.filter((d: any) => d.isPrediction);
 
-      x1 = Math.min(x1, ...predictions.map((d) => d.x));
-      x2 = Math.max(x2, ...predictions.map((d) => d.x));
+      x1 = Math.min(x1, ...predictions.map((d: any) => d.x));
+      x2 = Math.max(x2, ...predictions.map((d: any) => d.x));
     });
 
     return [x1, x2];
@@ -274,7 +370,7 @@ function PredictionsChart(props: PredictionsChartProps, ref: React.Ref<any>) {
     };
   }, [seriesColors, alignAt, predictionX1, predictionX2, chartType, showDataLabels, title, isCumulative, metric, colorScale]);
 
-  if (loading) {
+  if (loading || seriesWithPredictions.length === 0) {
     return (
       <div style={{ height: props.height, display: "flex", justifyContent: "center", alignItems: "center" }}>
         <Loader active inline />

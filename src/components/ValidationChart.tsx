@@ -19,6 +19,14 @@ const ordinalFormattter = (n: number) => numeral(n).format("Oo");
 const numberFormatter = d3.format(".2~s");
 const predErrorFormatter = d3.format("+");
 
+const ax = [0.0, 1.0, 2.0, 3.0, 4.0, 5.0];
+const ay = [0.0, 0.8, 0.9, 0.1, -0.8, -1.0];
+const az = new PolynomialRegression(ax, ay, 3);
+
+console.log("11", az.predict(0.5));
+console.log("11", az.predict(3.5));
+console.log("11", az.predict(10));
+
 export type ValidationChartProps = Omit<Props, "options" | "series" | "type"> & ChartOptions;
 
 type ChartSerie = {
@@ -65,7 +73,10 @@ function ValidationChart(props: ValidationChartProps, ref: React.Ref<any>) {
     setTimeout(() => {
       const loadPredictionErrorsPromise = new Promise((resolve) => {
         filteredSeries.flatMap((serie) => {
-          const dataSinceFirstCase = serie.data.filter((d) => d.cases > 0);
+          const dataSinceFirstCase = serie.data.filter((d) => d.cases > 0).slice(-70);
+
+          // console.log("datasincefirstcase");
+          // console.log(dataSinceFirstCase);
 
           const reduceToTrainData = (slice: any) => {
             return slice.reduce(
@@ -107,13 +118,19 @@ function ValidationChart(props: ValidationChartProps, ref: React.Ref<any>) {
               });
             });
             const mseErrors = regressors.map((r) => r.mse);
+
             const minErrorIndex = mseErrors.indexOf(Math.min(...mseErrors));
+            // console.log("mseErrors", mseErrors);
+            // console.log("minErrorIndex", minErrorIndex);
+            // console.log("regressors", regressors);
             return regressors[minErrorIndex];
           };
 
           const BASE_INDEX = 30;
+          // console.log("Best model", 1, getBestModel(BASE_INDEX + 1, 1));
           const seriesNData = [1, 5, 10, 20, 30].map((threshold) => {
             const serieName = threshold + "d";
+            // console.log("--------------");
             return {
               name: serieName,
               key: serieName,
@@ -121,6 +138,8 @@ function ValidationChart(props: ValidationChartProps, ref: React.Ref<any>) {
                 .slice(BASE_INDEX)
                 .flatMap((row, index) => {
                   const bestModel = getBestModel(BASE_INDEX + index, threshold);
+
+                  // console.log("bestModel", index, bestModel.mse);
 
                   if (!bestModel) return [];
 
@@ -182,10 +201,68 @@ function ValidationChart(props: ValidationChartProps, ref: React.Ref<any>) {
       });
       Promise.all([loadPredictionErrorsPromise])
         .then((result) => {
-          debounce(() => {
-            setSeriesWithPredictions(result[0] as ChartSerie[]);
-            setChartLoading(false);
-          }, 500)();
+          console.log("Local result");
+          console.log(result[0]);
+
+          fetch(`http://localhost:8000/api/v1/predictions/${metric}/errors`, {
+            method: "POST",
+            headers: {
+              Accept: "application/json",
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              records: filteredSeries[0].data.filter((d) => d.cases > 0),
+              thresholds: [1, 5, 10, 20, 30],
+            }),
+          })
+            .then((res) => {
+              res.json().then((json) => {
+                console.log("json", json);
+
+                const dataSinceFirstCase = filteredSeries[0].data.filter((d) => d.cases > 0).slice(-50);
+
+                const serieData = alignTimeseries(dataSinceFirstCase, first(dataSinceFirstCase)!.date);
+
+                const bla = [
+                  {
+                    ...filteredSeries[0],
+                    data: serieData
+                      .map((row: any) => ({
+                        x: row.date.getTime(),
+                        y: 0,
+                        isPrediction: row.isPrediction || false,
+                        rawValue: row[metric],
+                      }))
+                      .slice(-30),
+                  },
+                  // ...seriesNData,
+                ].concat(
+                  json.series.map((errorSerie: any) => {
+                    // console.log("errorSerie", errorSerie);
+                    return {
+                      name: `${errorSerie.threshold}d`,
+                      key: `${errorSerie.threshold}d`,
+                      data: errorSerie.data.map((row: any) => ({
+                        ...row,
+                        x: new Date(row.x).getTime(),
+                      })),
+                    };
+                  })
+                );
+
+                console.log("bla", bla);
+                setSeriesWithPredictions(bla as ChartSerie[]);
+                setChartLoading(false);
+              });
+            })
+            .catch((err) => {
+              console.log("err", err);
+            });
+
+          // debounce(() => {
+          //   setSeriesWithPredictions(result[0] as ChartSerie[]);
+          //   setChartLoading(false);
+          // }, 500)();
         })
         .catch((err) => {
           console.log(err);
