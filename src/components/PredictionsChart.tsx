@@ -1,9 +1,7 @@
 import * as d3 from "d3";
-import { addDays, eachDayOfInterval, format, startOfDay, subDays } from "date-fns";
+import { addDays, format, startOfDay, subDays } from "date-fns";
 import get from "lodash/get";
-import last from "lodash/last";
 import sortBy from "lodash/sortBy";
-import PolynomialRegression from "ml-regression-polynomial";
 import numeral from "numeral";
 import React, { useEffect, useMemo, useState } from "react";
 import ReactApexChart, { Props } from "react-apexcharts";
@@ -17,6 +15,7 @@ import { ChartOptions } from "./Editor";
 import useColorScale from "../hooks/useColorScale";
 import { isNumber } from "lodash";
 import { titleCase } from "../utils/string";
+import { PREDICTIONS_API } from "../constants";
 
 const displayNumberFormatter = d3.format(",.2~f");
 const ordinalFormattter = (n: number) => numeral(n).format("Oo");
@@ -52,144 +51,9 @@ function PredictionsChart(props: PredictionsChartProps, ref: React.Ref<any>) {
 
   const [seriesWithPredictions, setSeriesWithPredictions] = useState<any>([]);
 
-  const seriesWithPredictions111 = useMemo(() => {
-    return filteredSeries.flatMap((serie) => {
-      const dataSinceFirstCase = serie.data.filter((d) => d.cases > 0);
-
-      // console.log("dataSinceFirstCase");
-      // console.log(dataSinceFirstCase);
-
-      const TEST_SIZE = 7;
-      const TRAIN_SIZE = dataSinceFirstCase.length;
-
-      const reduceFunction = (slice: any) => {
-        return slice.reduce(
-          (acc: { X: any; Y: any }, row: { cases: any; deaths: any }, index: any) => ({
-            X: [...acc.X, index],
-            Y: [...acc.Y, metric === "cases" ? row.cases : row.deaths],
-          }),
-          { X: [], Y: [] }
-        );
-      };
-
-      const testSlice = reduceFunction(dataSinceFirstCase.slice(-TEST_SIZE));
-
-      const mean = (list: any) => list.reduce((prev: any, curr: any) => prev + curr) / list.length;
-
-      const regressors = [...Array(Math.min(TRAIN_SIZE))].flatMap((_, index: number) => {
-        const { X, Y } = reduceFunction(dataSinceFirstCase.slice(-(2 * TEST_SIZE + index)).slice(0, TEST_SIZE + index));
-
-        // regressor degrees
-        return [2].map((v) => {
-          const degree = X.length > 2 ? v : 1;
-          const regressor = new PolynomialRegression(X, Y, degree);
-          const pred = (n: number) => Math.round(regressor.predict(n));
-
-          const seErrors = testSlice.Y.map((realValue: number, index: number) => {
-            const predValue = pred(Y.length + index);
-            return Math.pow(realValue - predValue, 2);
-          });
-
-          return {
-            regressor,
-            mse: mean(seErrors),
-            X,
-            Y,
-          };
-        });
-      });
-      const mseErrors = regressors.map((r) => r.mse);
-      const minErrorIndex = mseErrors.indexOf(Math.min(...mseErrors));
-      const { X, regressor } = regressors[minErrorIndex];
-
-      // console.log("erros", mseErrors);
-      // console.log("regressor", regressors[minErrorIndex]);
-
-      const pred = (n: number) => Math.round(regressor.predict(n));
-      const lastDate = last(dataSinceFirstCase)!.date;
-      const predictionSerie = eachDayOfInterval({
-        start: lastDate,
-        end: addDays(lastDate, predictionDays),
-      });
-      const fActual = last(testSlice.Y)! as number;
-      const fPrediction = pred(X.length + TEST_SIZE - 1);
-      const predDiff = fActual - fPrediction;
-
-      const nextSeriePredictions = predictionSerie.slice(1).reduce<any[]>((arr, date, index) => {
-        const predValue = pred(X.length + TEST_SIZE + index) + predDiff;
-        const lastMetric = (arr[index - 1] || last(dataSinceFirstCase))[metric] as number;
-
-        arr.push({
-          date: date,
-          [metric]: Math.round(Math.max(predValue, lastMetric)),
-          isPrediction: true,
-        });
-        return arr;
-      }, []);
-
-      const serieData = alignTimeseries(dataSinceFirstCase, subDays(startOfDay(new Date()), dayInterval));
-      if (dataSinceFirstCase.length <= 2) {
-        return [
-          {
-            ...serie,
-            data: serieData.map((row) => ({
-              x: row.date.getTime(),
-              y: row[metric],
-              isPrediction: false,
-            })),
-          },
-        ];
-      }
-
-      return [
-        {
-          ...serie,
-          // data: serieData.concat(nextSeriePredictions).map((row: any) => ({
-          data: serieData.concat(nextSeriePredictions).map((row: any) => ({
-            x: row.date.getTime(),
-            y: row[metric],
-            isPrediction: row.isPrediction || false,
-          })),
-        },
-        // ...[regressors[minErrorIndex]].map((r, index) => {
-        //   const pred = (n: number) => Math.round(r.regressor.predict(n));
-        //   return {
-        //     name: serie.name + " (Prediction) " + (TEST_SIZE + X.length) + " " + regressor.degree,
-        //     key: serie.key + "__Prediction" + (TEST_SIZE + X.length) + " " + regressor.degree,
-        //     data: serieData.concat(nextSeriePredictions).map((row: any, index) => {
-        //       return {
-        //         x: row.date.getTime(),
-        //         y: pred(index + minErrorIndex),
-        //         isPrediction: row.isPrediction || false,
-        //       };
-        //     }),
-        //   };
-        // }),
-      ];
-    });
-  }, [dayInterval, filteredSeries, metric, predictionDays]);
-
-  // console.log("series with prediction 1111");
-  // console.log(seriesWithPredictions111);
-
-  // console.log("Series with Predictions");
-  // console.log(seriesWithPredictions);
-
-  // console.log("filteredSeries");
-  // console.log(filteredSeries);
-
   useEffect(() => {
-    //   fetch('https://httpbin.org/post', {
-    //   method: 'POST',
-    //   headers: {
-    //     'Accept': 'application/json',
-    //     'Content-Type': 'application/json'
-    //   },
-    //   body: JSON.stringify({a: 1, b: 'Textual content'})
-    // });
-    const allPredictions = filteredSeries.flatMap(async (serie) => {
-      // filteredSeries.length > 0 &&
-      const response = await fetch(`http://localhost:8000/api/v1/predictions/${metric}`, {
+    const allPromises = filteredSeries.flatMap(async (serie) => {
+      const response = await fetch(`${PREDICTIONS_API}/api/v1/predictions/${metric}`, {
         method: "POST",
         headers: {
           Accept: "application/json",
@@ -200,56 +64,25 @@ function PredictionsChart(props: PredictionsChartProps, ref: React.Ref<any>) {
           days: predictionDays,
         }),
       });
-      // .then((r) => {
-      //   console.log("fetch finished");
-      //   r.json().then(({ predictions }) => {
-      //     console.log("jsonPreds", predictions);
-
-      //     const serieWithPreds = serie.data.concat(predictions).map((row: any) => {
-      //       return {
-      //         x: new Date(row.date).getTime(),
-      //         y: row[metric],
-      //         isPrediction: row.isPrediction || false,
-      //       };
-      //     });
-
-      //     setSeriesWithPredictions([
-      //       ...
-      //     ])
-
-      //     console.log("serie with preds", serieWithPreds);
-      //   });
-      // })
-      // .catch((err) => {
-      //   console.log("Error fetch", err);
-      // })
       const predictions = await response.json();
       return predictions;
     });
-    Promise.all(allPredictions).then((json: any) => {
-      // console.log("All preds", json);
+    Promise.all(allPromises).then((json: any) => {
+      const serieWithPreds = filteredSeries.flatMap((serie, index) => {
+        const currentSeries = alignTimeseries(serie.data, subDays(startOfDay(new Date()), dayInterval));
+        const predictionSeries = json[index].predictions;
 
-      const serieWithPreds = filteredSeries.flatMap((serie, index) => [
-        {
-          ...serie,
-          // data: serieData.concat(nextSeriePredictions).map((row: any) => ({
-          // data: serie.data.concat(json[index].predictions).map((row: any) => ({
-          data: alignTimeseries(serie.data, subDays(startOfDay(new Date()), dayInterval))
-            .concat(json[index].predictions)
-            .map((row: any) => ({
+        return [
+          {
+            ...serie,
+            data: currentSeries.concat(predictionSeries).map((row: any) => ({
               x: new Date(row.date).getTime(),
               y: row[metric],
               isPrediction: row.isPrediction || false,
             })),
-        },
-      ]);
-      // return {
-      //   x: new Date(row.date).getTime(),
-      //   y: row[metric],
-      //   isPrediction: row.isPrediction || false,
-      // };
-
-      // console.log("Serie with preds", serieWithPreds);
+          },
+        ];
+      });
 
       setSeriesWithPredictions(serieWithPreds);
     });

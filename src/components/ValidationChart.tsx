@@ -11,6 +11,7 @@ import { alignTimeseries } from "../utils/normalizeTimeseries";
 import { ChartOptions } from "./Editor";
 import { isNumber, first } from "lodash";
 import { titleCase } from "../utils/string";
+import { PREDICTIONS_API } from "../constants";
 
 const displayNumberFormatter = d3.format(",.2~f");
 const increaseNumberFormatter = d3.format("+.1~f");
@@ -63,7 +64,7 @@ function ValidationChart(props: ValidationChartProps, ref: React.Ref<any>) {
   useEffect(() => {
     const selectedSerie = filteredSeries[0];
     const baseIndex = 30;
-    fetch(`http://localhost:8000/api/v1/predictions/${metric}/errors`, {
+    fetch(`${PREDICTIONS_API}/api/v1/predictions/${metric}/errors`, {
       method: "POST",
       headers: {
         Accept: "application/json",
