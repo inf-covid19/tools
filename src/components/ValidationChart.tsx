@@ -1,7 +1,7 @@
 import * as d3 from "d3";
 import { format } from "date-fns";
 import numeral from "numeral";
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useMemo } from "react";
 import ReactApexChart, { Props } from "react-apexcharts";
 import { Dimmer, Loader } from "semantic-ui-react";
 import useMetadata from "../hooks/useMetadata";
@@ -12,6 +12,7 @@ import { ChartOptions } from "./Editor";
 import { isNumber, first } from "lodash";
 import { titleCase } from "../utils/string";
 import { PREDICTIONS_API } from "../constants";
+import { useQuery } from "react-query";
 
 const displayNumberFormatter = d3.format(",.2~f");
 const increaseNumberFormatter = d3.format("+.1~f");
@@ -39,9 +40,6 @@ function ValidationChart(props: ValidationChartProps, ref: React.Ref<any>) {
 
   const { data, error } = useRegionData(regionsIds);
   const { data: metadata } = useMetadata();
-  const [seriesWithErrors, setSeriesWithErrors] = useState([] as ChartSerie[]);
-
-  const [chartLoading, setChartLoading] = useState(true);
 
   const series = useMemo(() => {
     if (!data || !metadata) {
@@ -61,10 +59,10 @@ function ValidationChart(props: ValidationChartProps, ref: React.Ref<any>) {
     return series.filter((s) => !!selectedRegions[s.key]);
   }, [series, selectedRegions]);
 
-  useEffect(() => {
+  const predictionsErrorQuery = useQuery(["predictionsError", filteredSeries, metric], () => {
     const selectedSerie = filteredSeries[0];
     const baseIndex = 30;
-    fetch(`${PREDICTIONS_API}/api/v1/predictions/${metric}/errors`, {
+    return fetch(`${PREDICTIONS_API}/api/v1/predictions/${metric}/errors`, {
       method: "POST",
       headers: {
         Accept: "application/json",
@@ -75,45 +73,45 @@ function ValidationChart(props: ValidationChartProps, ref: React.Ref<any>) {
         thresholds: [1, 5, 10, 20, 30],
         base_index: baseIndex,
       }),
-    })
-      .then((res) => {
-        res.json().then((json) => {
-          const dataSinceFirstCase = selectedSerie.data.filter((d) => d.cases > 0).slice(-50);
+    }).then((res) => {
+      return res.json().then((json) => {
+        const dataSinceFirstCase = selectedSerie.data.filter((d) => d.cases > 0).slice(-50);
 
-          const serieData = alignTimeseries(dataSinceFirstCase, first(dataSinceFirstCase)!.date);
+        const serieData = alignTimeseries(dataSinceFirstCase, first(dataSinceFirstCase)!.date);
 
-          const seriesWithErrors = [
-            {
-              ...selectedSerie,
-              data: serieData
-                .map((row: any) => ({
-                  x: row.date.getTime(),
-                  y: 0,
-                  isPrediction: row.isPrediction || false,
-                  rawValue: row[metric],
-                }))
-                .slice(-baseIndex),
-            },
-          ].concat(
-            json.series.map((errorSerie: any) => {
-              return {
-                name: `${errorSerie.threshold}d`,
-                key: `${errorSerie.threshold}d`,
-                data: errorSerie.data.map((row: any) => ({
-                  ...row,
-                  x: new Date(row.x).getTime(),
-                })),
-              };
-            })
-          );
-          setSeriesWithErrors(seriesWithErrors as ChartSerie[]);
-          setChartLoading(false);
-        });
-      })
-      .catch((err) => {
-        console.error("error while fetching", err);
+        const seriesWithErrors = [
+          {
+            ...selectedSerie,
+            data: serieData
+              .map((row: any) => ({
+                x: row.date.getTime(),
+                y: 0,
+                isPrediction: row.is_prediction || false,
+                rawValue: row[metric],
+              }))
+              .slice(-baseIndex),
+          },
+        ].concat(
+          json.series.map((errorSerie: any) => {
+            return {
+              name: `${errorSerie.threshold}d`,
+              key: `${errorSerie.threshold}d`,
+              data: errorSerie.data.map((row: any) => ({
+                y: row.y,
+                x: new Date(row.x).getTime(),
+                isPrediction: row.is_prediction,
+                rawValue: row.raw_value,
+                rawError: row.raw_error,
+              })),
+            };
+          })
+        );
+        return seriesWithErrors;
       });
-  }, [filteredSeries, metric]);
+    });
+  });
+
+  const seriesWithErrors = predictionsErrorQuery.data || [];
 
   const sortedSeries = useMemo(() => {
     return [...seriesWithErrors].reverse();
@@ -215,7 +213,7 @@ function ValidationChart(props: ValidationChartProps, ref: React.Ref<any>) {
     };
   }, [alignAt, chartType, showDataLabels, title, isCumulative, metric]);
 
-  if (chartLoading) {
+  if (predictionsErrorQuery.isFetching) {
     return (
       <div style={{ height: props.height, display: "flex", justifyContent: "center", alignItems: "center" }}>
         <Dimmer active inverted>

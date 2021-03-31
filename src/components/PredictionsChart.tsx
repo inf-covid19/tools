@@ -3,7 +3,7 @@ import { addDays, format, startOfDay, subDays } from "date-fns";
 import get from "lodash/get";
 import sortBy from "lodash/sortBy";
 import numeral from "numeral";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo } from "react";
 import ReactApexChart, { Props } from "react-apexcharts";
 import { Loader } from "semantic-ui-react";
 import useMetadata from "../hooks/useMetadata";
@@ -16,6 +16,7 @@ import useColorScale from "../hooks/useColorScale";
 import { isNumber } from "lodash";
 import { titleCase } from "../utils/string";
 import { PREDICTIONS_API } from "../constants";
+import { useQuery } from "react-query";
 
 const displayNumberFormatter = d3.format(",.2~f");
 const ordinalFormattter = (n: number) => numeral(n).format("Oo");
@@ -49,9 +50,7 @@ function PredictionsChart(props: PredictionsChartProps, ref: React.Ref<any>) {
     return series.filter((s) => !!selectedRegions[s.key]);
   }, [series, selectedRegions]);
 
-  const [seriesWithPredictions, setSeriesWithPredictions] = useState<any>([]);
-
-  useEffect(() => {
+  const predictionQuery = useQuery(["predictionsData", dayInterval, filteredSeries, metric, predictionDays], () => {
     const allPromises = filteredSeries.flatMap(async (serie) => {
       const response = await fetch(`${PREDICTIONS_API}/api/v1/predictions/${metric}`, {
         method: "POST",
@@ -67,7 +66,7 @@ function PredictionsChart(props: PredictionsChartProps, ref: React.Ref<any>) {
       const predictions = await response.json();
       return predictions;
     });
-    Promise.all(allPromises).then((json: any) => {
+    return Promise.all(allPromises).then((json: any) => {
       const serieWithPreds = filteredSeries.flatMap((serie, index) => {
         const currentSeries = alignTimeseries(serie.data, subDays(startOfDay(new Date()), dayInterval));
         const predictionSeries = json[index].predictions;
@@ -83,10 +82,10 @@ function PredictionsChart(props: PredictionsChartProps, ref: React.Ref<any>) {
           },
         ];
       });
-
-      setSeriesWithPredictions(serieWithPreds);
+      return serieWithPreds;
     });
-  }, [dayInterval, filteredSeries, metric, predictionDays]);
+  });
+  const seriesWithPredictions = predictionQuery.data || [];
 
   const sortedSeries = useMemo(() => {
     return sortBy(seriesWithPredictions, chartType === "heatmap" ? (s) => get(s.data, [s.data.length - 1, "y"], 0) : "name");
@@ -203,7 +202,7 @@ function PredictionsChart(props: PredictionsChartProps, ref: React.Ref<any>) {
     };
   }, [seriesColors, alignAt, predictionX1, predictionX2, chartType, showDataLabels, title, isCumulative, metric, colorScale]);
 
-  if (loading || seriesWithPredictions.length === 0) {
+  if (loading || predictionQuery.isFetching) {
     return (
       <div style={{ height: props.height, display: "flex", justifyContent: "center", alignItems: "center" }}>
         <Loader active inline />

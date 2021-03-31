@@ -106,7 +106,7 @@ function App() {
         <MenuStyled pointing secondary icon="labeled">
           {MENU_ITEMS.map((item) =>
             item.external ? (
-              <Menu.Item href={item.external} target="_blank" name={item.name}>
+              <Menu.Item key={item.name} href={item.external} target="_blank" name={item.name}>
                 <Icon name={item.icon as SemanticICONS} />
                 <span>{item.name}</span>
               </Menu.Item>
@@ -189,7 +189,7 @@ const MenuStyled = styled(Menu)`
 
   @media screen and (max-width: 1024px) {
     > .item {
-      min-width: unset!important;
+      min-width: unset !important;
       font-size: 0.7em;
 
       > span {
