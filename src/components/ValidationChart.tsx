@@ -98,7 +98,7 @@ function ValidationChart(props: ValidationChartProps, ref: React.Ref<any>) {
             y: row_1.y,
             x: new Date(row_1.x).getTime(),
             isPrediction: row_1.is_prediction,
-            rawValue: row_1.raw_value,
+            rawValue: row_1.pred_value,
             rawError: row_1.raw_error,
           })),
         };
