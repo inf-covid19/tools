@@ -63,8 +63,7 @@ function PredictionsChart(props: PredictionsChartProps, ref: React.Ref<any>) {
           days: predictionDays,
         }),
       });
-      const predictions = await response.json();
-      return predictions;
+      return response.json();
     });
     return Promise.all(allPromises).then((json: any) => {
       const serieWithPreds = filteredSeries.flatMap((serie, index) => {
@@ -85,6 +84,7 @@ function PredictionsChart(props: PredictionsChartProps, ref: React.Ref<any>) {
       return serieWithPreds;
     });
   });
+
   const seriesWithPredictions = predictionQuery.data || [];
 
   const sortedSeries = useMemo(() => {
@@ -202,7 +202,7 @@ function PredictionsChart(props: PredictionsChartProps, ref: React.Ref<any>) {
     };
   }, [seriesColors, alignAt, predictionX1, predictionX2, chartType, showDataLabels, title, isCumulative, metric, colorScale]);
 
-  if (loading || predictionQuery.isFetching) {
+  if (loading || predictionQuery.status === "loading") {
     return (
       <div style={{ height: props.height, display: "flex", justifyContent: "center", alignItems: "center" }}>
         <Loader active inline />
@@ -210,7 +210,7 @@ function PredictionsChart(props: PredictionsChartProps, ref: React.Ref<any>) {
     );
   }
 
-  if (error) {
+  if (error || predictionQuery.status === "error") {
     return (
       <div style={{ height: props.height, display: "flex", justifyContent: "center", alignItems: "center", textAlign: "center" }}>
         Ooops! Something is wrong.

@@ -12,7 +12,7 @@ if (process.env.NODE_ENV === "production") {
   ReactGA.initialize(process.env.REACT_APP_GA_TRACKING_CODE!);
 }
 
-const queryConfig = { refetchAllOnWindowFocus: false };
+const queryConfig = { refetchAllOnWindowFocus: false, staleTime: 1000 * 60 * 5 };
 
 ReactDOM.render(
   <React.StrictMode>

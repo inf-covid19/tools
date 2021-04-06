@@ -59,10 +59,10 @@ function ValidationChart(props: ValidationChartProps, ref: React.Ref<any>) {
     return series.filter((s) => !!selectedRegions[s.key]);
   }, [series, selectedRegions]);
 
-  const predictionsErrorQuery = useQuery(["predictionsError", filteredSeries, metric], () => {
+  const predictionsErrorQuery = useQuery(["predictionsError", filteredSeries, metric], async () => {
     const selectedSerie = filteredSeries[0];
     const baseIndex = 30;
-    return fetch(`${PREDICTIONS_API}/api/v1/predictions/${metric}/errors`, {
+    const res = await fetch(`${PREDICTIONS_API}/api/v1/predictions/${metric}/errors`, {
       method: "POST",
       headers: {
         Accept: "application/json",
@@ -73,42 +73,38 @@ function ValidationChart(props: ValidationChartProps, ref: React.Ref<any>) {
         thresholds: [1, 5, 10, 20, 30],
         base_index: baseIndex,
       }),
-    }).then((res) => {
-      return res.json().then((json) => {
-        const dataSinceFirstCase = selectedSerie.data.filter((d) => d.cases > 0).slice(-50);
-
-        const serieData = alignTimeseries(dataSinceFirstCase, first(dataSinceFirstCase)!.date);
-
-        const seriesWithErrors = [
-          {
-            ...selectedSerie,
-            data: serieData
-              .map((row: any) => ({
-                x: row.date.getTime(),
-                y: 0,
-                isPrediction: row.is_prediction || false,
-                rawValue: row[metric],
-              }))
-              .slice(-baseIndex),
-          },
-        ].concat(
-          json.series.map((errorSerie: any) => {
-            return {
-              name: `${errorSerie.threshold}d`,
-              key: `${errorSerie.threshold}d`,
-              data: errorSerie.data.map((row: any) => ({
-                y: row.y,
-                x: new Date(row.x).getTime(),
-                isPrediction: row.is_prediction,
-                rawValue: row.raw_value,
-                rawError: row.raw_error,
-              })),
-            };
-          })
-        );
-        return seriesWithErrors;
-      });
     });
+    const json = await res.json();
+    const dataSinceFirstCase = selectedSerie.data.filter((d_1) => d_1.cases > 0).slice(-50);
+    const serieData = alignTimeseries(dataSinceFirstCase, first(dataSinceFirstCase)!.date);
+    const seriesWithErrors = [
+      {
+        ...selectedSerie,
+        data: serieData
+          .map((row: any) => ({
+            x: row.date.getTime(),
+            y: 0,
+            isPrediction: row.is_prediction || false,
+            rawValue: row[metric],
+          }))
+          .slice(-baseIndex),
+      },
+    ].concat(
+      json.series.map((errorSerie: any) => {
+        return {
+          name: `${errorSerie.threshold}d`,
+          key: `${errorSerie.threshold}d`,
+          data: errorSerie.data.map((row_1: any) => ({
+            y: row_1.y,
+            x: new Date(row_1.x).getTime(),
+            isPrediction: row_1.is_prediction,
+            rawValue: row_1.raw_value,
+            rawError: row_1.raw_error,
+          })),
+        };
+      })
+    );
+    return seriesWithErrors;
   });
 
   const seriesWithErrors = predictionsErrorQuery.data || [];
@@ -195,16 +191,16 @@ function ValidationChart(props: ValidationChartProps, ref: React.Ref<any>) {
           enableShades: false,
           colorScale: {
             ranges: [
-              { color: "#67001F", name: "< -5", from: Number.MIN_SAFE_INTEGER, to: -5.01 },
-              { color: "#B2182B", name: "[-5, -4.01]", from: -5, to: -4.01 },
-              { color: "#D6604D", name: "[-4, -3.01]", from: -4, to: -3.01 },
-              { color: "#F4A582", name: "[-3, -2.01]", from: -3, to: -2.01 },
-              { color: "#FDDBC7", name: "[-2, -1.01]", from: -2, to: -1.01 },
-              { color: "#CCCCCC", name: "[-1, 0.99]", from: -1, to: 0.99 },
-              { color: "#D1E5F0", name: "[1, 1.99]", from: 1, to: 1.99 },
-              { color: "#92C5DE", name: "[2, 2.99]", from: 2, to: 2.99 },
-              { color: "#4393C3", name: "[3, 3.99]", from: 3, to: 3.99 },
-              { color: "#2166AC", name: "[4, 4.99]", from: 4, to: 4.99 },
+              { color: "#67001F", name: "< -5", from: Number.MIN_SAFE_INTEGER, to: -5 },
+              { color: "#B2182B", name: "[-5, -4.01]", from: -5, to: -4 },
+              { color: "#D6604D", name: "[-4, -3.01]", from: -4, to: -3 },
+              { color: "#F4A582", name: "[-3, -2.01]", from: -3, to: -2 },
+              { color: "#FDDBC7", name: "[-2, -1.01]", from: -2, to: -1 },
+              { color: "#CCCCCC", name: "[-1, 0.99]", from: -1, to: 1 },
+              { color: "#D1E5F0", name: "[1, 1.99]", from: 1, to: 2 },
+              { color: "#92C5DE", name: "[2, 2.99]", from: 2, to: 3 },
+              { color: "#4393C3", name: "[3, 3.99]", from: 3, to: 4 },
+              { color: "#2166AC", name: "[4, 4.99]", from: 4, to: 5 },
               { color: "#053061", name: "5 >", from: 5, to: Number.MAX_SAFE_INTEGER },
             ],
           },
