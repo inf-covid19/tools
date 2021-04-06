@@ -1,8 +1,7 @@
 import * as d3 from "d3";
 import { format } from "date-fns";
-import PolynomialRegression from "ml-regression-polynomial";
 import numeral from "numeral";
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useMemo } from "react";
 import ReactApexChart, { Props } from "react-apexcharts";
 import { Dimmer, Loader } from "semantic-ui-react";
 import useMetadata from "../hooks/useMetadata";
@@ -10,8 +9,10 @@ import useRegionData from "../hooks/useRegionData";
 import { getByRegionId } from "../utils/metadata";
 import { alignTimeseries } from "../utils/normalizeTimeseries";
 import { ChartOptions } from "./Editor";
-import { isNumber, first, last, debounce } from "lodash";
+import { isNumber, first } from "lodash";
 import { titleCase } from "../utils/string";
+import { PREDICTIONS_API } from "../constants";
+import { useQuery } from "react-query";
 
 const displayNumberFormatter = d3.format(",.2~f");
 const increaseNumberFormatter = d3.format("+.1~f");
@@ -39,9 +40,6 @@ function ValidationChart(props: ValidationChartProps, ref: React.Ref<any>) {
 
   const { data, error } = useRegionData(regionsIds);
   const { data: metadata } = useMetadata();
-  const [seriesWithPredictions, setSeriesWithPredictions] = useState([] as ChartSerie[]);
-
-  const [chartLoading, setChartLoading] = useState(true);
 
   const series = useMemo(() => {
     if (!data || !metadata) {
@@ -61,141 +59,59 @@ function ValidationChart(props: ValidationChartProps, ref: React.Ref<any>) {
     return series.filter((s) => !!selectedRegions[s.key]);
   }, [series, selectedRegions]);
 
-  useEffect(() => {
-    setTimeout(() => {
-      const loadPredictionErrorsPromise = new Promise((resolve) => {
-        filteredSeries.flatMap((serie) => {
-          const dataSinceFirstCase = serie.data.filter((d) => d.cases > 0);
-
-          const reduceToTrainData = (slice: any) => {
-            return slice.reduce(
-              (acc: { X: any; Y: any }, row: { cases: any; deaths: any }, index: any) => ({
-                X: [...acc.X, index],
-                Y: [...acc.Y, metric === "cases" ? row.cases : row.deaths],
-              }),
-              { X: [], Y: [] }
-            );
-          };
-          const mean = (list: any) => list.reduce((prev: any, curr: any) => prev + curr) / list.length;
-          const getBestModel = (sliceIndex: number, threshold: number) => {
-            const testData = reduceToTrainData(dataSinceFirstCase.slice(sliceIndex - threshold, sliceIndex)).Y;
-
-            const regressors = [...Array(sliceIndex)].flatMap((_, index: number) => {
-              const { X, Y } = reduceToTrainData(dataSinceFirstCase.slice(index, sliceIndex - threshold));
-
-              // regressor degrees
-              return [2].flatMap((v) => {
-                try {
-                  const degree = X.length > 2 ? v : 1;
-                  const regressor = new PolynomialRegression(X, Y, degree);
-                  const pred = (n: number) => Math.round(regressor.predict(n));
-
-                  const seErrors = testData.map((realValue: number, index: number) => {
-                    const predValue = pred(Y.length + index);
-                    return Math.pow(realValue - predValue, 2);
-                  });
-
-                  return {
-                    regressor,
-                    mse: mean(seErrors),
-                    X,
-                    Y,
-                  };
-                } catch (error) {
-                  return [];
-                }
-              });
-            });
-            const mseErrors = regressors.map((r) => r.mse);
-            const minErrorIndex = mseErrors.indexOf(Math.min(...mseErrors));
-            return regressors[minErrorIndex];
-          };
-
-          const BASE_INDEX = 30;
-          const seriesNData = [1, 5, 10, 20, 30].map((threshold) => {
-            const serieName = threshold + "d";
-            return {
-              name: serieName,
-              key: serieName,
-              data: dataSinceFirstCase
-                .slice(BASE_INDEX)
-                .flatMap((row, index) => {
-                  const bestModel = getBestModel(BASE_INDEX + index, threshold);
-
-                  if (!bestModel) return [];
-
-                  const predFn = (n: number) => Math.round(bestModel.regressor.predict(n));
-
-                  const fActual = last(bestModel.Y)! as number;
-                  const fPrediction = predFn(bestModel.X.length - 1);
-                  const predDiff = fActual - fPrediction;
-
-                  const predIndex = bestModel.X.length + threshold;
-
-                  const predValue = predFn(predIndex) + predDiff;
-
-                  const rawValue = dataSinceFirstCase[BASE_INDEX + index][metric];
-
-                  const errorFromRaw = (predValue - rawValue) / predValue;
-
-                  return {
-                    x: row.date.getTime(),
-                    y: errorFromRaw * 100,
-                    isPrediction: true,
-                    rawValue: predValue,
-                    rawError: predValue - rawValue,
-                  };
-                })
-                .slice(-BASE_INDEX),
-            };
-          });
-
-          const serieData = alignTimeseries(dataSinceFirstCase, first(dataSinceFirstCase)!.date);
-          if (dataSinceFirstCase.length <= 2) {
-            return [
-              {
-                ...serie,
-                data: serieData.map((row) => ({
-                  x: row.date.getTime(),
-                  y: row[metric],
-                  isPrediction: false,
-                })),
-              },
-            ];
-          }
-
-          resolve([
-            {
-              ...serie,
-              data: serieData
-                .map((row: any) => ({
-                  x: row.date.getTime(),
-                  y: 0,
-                  isPrediction: row.isPrediction || false,
-                  rawValue: row[metric],
-                }))
-                .slice(-BASE_INDEX),
-            },
-            ...seriesNData,
-          ]);
-        });
-      });
-      Promise.all([loadPredictionErrorsPromise])
-        .then((result) => {
-          debounce(() => {
-            setSeriesWithPredictions(result[0] as ChartSerie[]);
-            setChartLoading(false);
-          }, 500)();
-        })
-        .catch((err) => {
-          console.log(err);
-        });
+  const predictionsErrorQuery = useQuery(["predictionsError", filteredSeries, metric], async () => {
+    const selectedSerie = filteredSeries[0];
+    const baseIndex = 30;
+    const res = await fetch(`${PREDICTIONS_API}/api/v1/predictions/${metric}/errors`, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        records: selectedSerie.data.filter((d) => d.cases > 0),
+        thresholds: [1, 5, 10, 20, 30],
+        base_index: baseIndex,
+      }),
     });
-  }, [filteredSeries, metric]);
+    const json = await res.json();
+    const dataSinceFirstCase = selectedSerie.data.filter((d_1) => d_1.cases > 0).slice(-50);
+    const serieData = alignTimeseries(dataSinceFirstCase, first(dataSinceFirstCase)!.date);
+    const seriesWithErrors = [
+      {
+        ...selectedSerie,
+        data: serieData
+          .map((row: any) => ({
+            x: row.date.getTime(),
+            y: 0,
+            isPrediction: row.is_prediction || false,
+            rawValue: row[metric],
+          }))
+          .slice(-baseIndex),
+      },
+    ].concat(
+      json.series.map((errorSerie: any) => {
+        return {
+          name: `${errorSerie.threshold}d`,
+          key: `${errorSerie.threshold}d`,
+          data: errorSerie.data.map((row_1: any) => ({
+            y: row_1.y,
+            x: new Date(row_1.x).getTime(),
+            isPrediction: row_1.is_prediction,
+            rawValue: row_1.raw_value,
+            rawError: row_1.raw_error,
+          })),
+        };
+      })
+    );
+    return seriesWithErrors;
+  });
+
+  const seriesWithErrors = predictionsErrorQuery.data || [];
 
   const sortedSeries = useMemo(() => {
-    return [...seriesWithPredictions].reverse();
-  }, [seriesWithPredictions]);
+    return [...seriesWithErrors].reverse();
+  }, [seriesWithErrors]);
 
   const chartOptions = useMemo(() => {
     return {
@@ -275,16 +191,16 @@ function ValidationChart(props: ValidationChartProps, ref: React.Ref<any>) {
           enableShades: false,
           colorScale: {
             ranges: [
-              { color: "#67001F", name: "< -5", from: Number.MIN_SAFE_INTEGER, to: -5.01 },
-              { color: "#B2182B", name: "[-5, -4.01]", from: -5, to: -4.01 },
-              { color: "#D6604D", name: "[-4, -3.01]", from: -4, to: -3.01 },
-              { color: "#F4A582", name: "[-3, -2.01]", from: -3, to: -2.01 },
-              { color: "#FDDBC7", name: "[-2, -1.01]", from: -2, to: -1.01 },
-              { color: "#CCCCCC", name: "[-1, 0.99]", from: -1, to: 0.99 },
-              { color: "#D1E5F0", name: "[1, 1.99]", from: 1, to: 1.99 },
-              { color: "#92C5DE", name: "[2, 2.99]", from: 2, to: 2.99 },
-              { color: "#4393C3", name: "[3, 3.99]", from: 3, to: 3.99 },
-              { color: "#2166AC", name: "[4, 4.99]", from: 4, to: 4.99 },
+              { color: "#67001F", name: "< -5", from: Number.MIN_SAFE_INTEGER, to: -5 },
+              { color: "#B2182B", name: "[-5, -4.01]", from: -5, to: -4 },
+              { color: "#D6604D", name: "[-4, -3.01]", from: -4, to: -3 },
+              { color: "#F4A582", name: "[-3, -2.01]", from: -3, to: -2 },
+              { color: "#FDDBC7", name: "[-2, -1.01]", from: -2, to: -1 },
+              { color: "#CCCCCC", name: "[-1, 0.99]", from: -1, to: 1 },
+              { color: "#D1E5F0", name: "[1, 1.99]", from: 1, to: 2 },
+              { color: "#92C5DE", name: "[2, 2.99]", from: 2, to: 3 },
+              { color: "#4393C3", name: "[3, 3.99]", from: 3, to: 4 },
+              { color: "#2166AC", name: "[4, 4.99]", from: 4, to: 5 },
               { color: "#053061", name: "5 >", from: 5, to: Number.MAX_SAFE_INTEGER },
             ],
           },
@@ -293,7 +209,7 @@ function ValidationChart(props: ValidationChartProps, ref: React.Ref<any>) {
     };
   }, [alignAt, chartType, showDataLabels, title, isCumulative, metric]);
 
-  if (chartLoading) {
+  if (predictionsErrorQuery.isFetching) {
     return (
       <div style={{ height: props.height, display: "flex", justifyContent: "center", alignItems: "center" }}>
         <Dimmer active inverted>

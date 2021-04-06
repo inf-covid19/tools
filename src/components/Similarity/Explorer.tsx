@@ -93,7 +93,6 @@ const Explorer = () => {
 
     const parsedData = data.flatMap((item) => {
       const parsedItem = {
-        key: item.key!,
         area_km: parseFloat(item.area_km || "0"),
         cluster: item.cluster || "",
         days: parseInt(item.days || "0"),
@@ -355,7 +354,7 @@ const Explorer = () => {
                             />
                           </>
                         )}{" "}
-                        <Label style={{display: 'none'}} size="tiny" color={getColor(r.similarity)}>
+                        <Label style={{ display: "none" }} size="tiny" color={getColor(r.similarity)}>
                           {displayNumberFormatter(parseFloat(r.similarity!) * 100)}%
                         </Label>
                       </div>
@@ -583,7 +582,7 @@ const Container = styled.div`
   @media screen and (max-width: 500px) {
     grid-template-columns: 100%;
   }
-`
+`;
 
 function DiffIndicator({ primaryValue, secondaryValue }: { primaryValue: number; secondaryValue: number }) {
   if (primaryValue === secondaryValue) {

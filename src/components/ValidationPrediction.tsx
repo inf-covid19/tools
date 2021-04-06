@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo, useCallback } from "react";
 import { Modal, Dropdown, Button } from "semantic-ui-react";
 import ValidationChart, { ValidationChartProps } from "./ValidationChart";
 import { getByRegionId } from "../utils/metadata";
@@ -13,15 +13,18 @@ export default function ValidationPrediction(props: Props) {
   const [selectedRegion, setSelectedRegion] = React.useState("");
 
   const { data: metadata } = useMetadata();
-  if (!metadata) return null;
 
-  const getRegionTitle = (id: string) => {
+  const getRegionTitle = useCallback((id: string) => {
+    if (!metadata) return id;
+
     return getByRegionId(metadata, id).displayName;
-  };
+  }, [metadata]);
 
-  const selectedRegionTitle = selectedRegion ? getRegionTitle(selectedRegion) : "";
+  const selectedRegionTitle = useMemo(() => (selectedRegion ? getRegionTitle(selectedRegion) : ""), [getRegionTitle, selectedRegion]);
 
   const filteredRegions = Object.keys(props.options.selectedRegions);
+
+  if (!metadata) return null;
 
   return (
     <React.Fragment>
