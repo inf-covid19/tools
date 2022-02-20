@@ -34,9 +34,7 @@ export type ChartOptions = {
 const SAVED_CHARTS_KEY = "covid19-tools.editor.savedCharts.v3";
 const DEFAULTS_KEY = "covid19-tools.editor.defaults.v3";
 
-function getSavedCharts(
-  id?: string
-): Array<
+function getSavedCharts(id?: string): Array<
   {
     dataURI: string;
   } & ChartOptions
@@ -150,12 +148,32 @@ function Editor(props: EditorProps) {
     };
   }, [saved]);
 
-  const setSelectedRegions = useCallback((regions) => setOptions((opt) => ({ ...opt, selectedRegions: regions })), []);
+  const chartTypeOptions = useMemo(() => {
+    const hasAlignment = alignAt > 0;
+    const numberOfLocations = Object.keys(selectedRegions).length;
+    const hasLongDayInterval = dayInterval > 120;
 
+    return [
+      { key: "heatmap", text: "Heatmap", value: "heatmap", disabled: hasAlignment || hasLongDayInterval },
+      { key: "line", text: "Line", value: "line" },
+      { key: "area", text: "Area", value: "area" },
+      { key: "bar", text: "Bar", value: "bar", disabled: numberOfLocations > 5 || hasAlignment || hasLongDayInterval },
+      { key: "scatter", text: "Scatter", value: "scatter", disabled: hasAlignment || hasLongDayInterval },
+    ];
+  }, [alignAt, dayInterval, selectedRegions]);
+
+  const setSelectedRegions = useCallback((regions) => setOptions((opt) => ({ ...opt, selectedRegions: regions })), []);
   const setPredictionsDays = useDebouncedOptionSetter("predictionDays", setOptions, transformPredictionDays);
   const setAlignAt = useDebouncedOptionSetter("alignAt", setOptions, transformAlignAt);
   const setDayInterval = useDebouncedOptionSetter("dayInterval", setOptions, transformDayInterval);
   const setTitle = useDebouncedOptionSetter("title", setOptions);
+
+  useEffect(() => {
+    const isDisabled = chartTypeOptions.find((x) => x.value === chartType)?.disabled;
+    if (isDisabled) {
+      setOptions((opt) => ({ ...opt, chartType: chartTypeOptions.find((x) => !x.disabled)?.value as ChartType }));
+    }
+  }, [chartType, chartTypeOptions]);
 
   return (
     <div>
@@ -209,13 +227,7 @@ function Editor(props: EditorProps) {
                     label="Choose chart type"
                     value={chartType}
                     onChange={(_, { value }) => setOptions({ ...options, chartType: value as ChartType })}
-                    options={[
-                      { key: "heatmap", text: "Heatmap", value: "heatmap" },
-                      { key: "line", text: "Line", value: "line" },
-                      { key: "area", text: "Area", value: "area" },
-                      { key: "bar", text: "Bar", value: "bar" },
-                      { key: "scatter", text: "Scatter", value: "scatter" },
-                    ]}
+                    options={chartTypeOptions}
                   />
                 )}
                 {availableOptions.includes("predictionDays") && (
