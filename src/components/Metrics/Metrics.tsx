@@ -98,7 +98,7 @@ const Container = styled.div`
 
 const ChartContainer = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(450px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
   grid-gap: 30px;
   margin-top: 20px;
 

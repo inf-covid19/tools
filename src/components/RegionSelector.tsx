@@ -1,11 +1,11 @@
 import Fuse from "fuse.js";
-import { castArray, defaultTo, groupBy, isEmpty, keyBy, sortBy, uniq } from "lodash";
+import { castArray, defaultTo, flatMap, groupBy, isEmpty, keyBy, sortBy, uniq } from "lodash";
 import debounce from "lodash/debounce";
 import first from "lodash/first";
 import React, { Fragment, useCallback, useMemo, useState } from "react";
 import { Dropdown, Flag, Header } from "semantic-ui-react";
 import { DEFAULT_COUNTRIES, PLACE_TYPE_LABEL_MAPPING } from "../constants";
-import useMetadata from "../hooks/useMetadata";
+import useMetadata, {Location} from "../hooks/useMetadata";
 import { getByRegionId, getDisplayNameFromLocation, getNameFromLocation } from "../utils/metadata";
 import "./RegionSelector.css";
 
@@ -30,15 +30,22 @@ export default function RegionSelector({ value, onChange, multiple = true, filte
     const arr = Object.entries(metadata).flatMap(([country, countryData]) => {
       const { flag, displayName } = getByRegionId(metadata, country);
 
-      const regions = countryData.children.map((regionData) => ({
+      const getOptionFromLocation = (regionData: Location, parent: string, country: string) => ({
         value: regionData.id,
         name: getNameFromLocation(regionData),
-        parent: regionData.administrative_area_level_1,
+        parent,
         flag,
         text: getDisplayNameFromLocation(regionData),
         type: `administrative_area_level_${regionData.administrative_area_level}`,
         country,
-      }));
+      })
+
+      const regions = flatMap(countryData.children, (regionData) => {
+        return [
+          getOptionFromLocation(regionData, regionData.administrative_area_level_1, country),
+          ...regionData.children.map(x => getOptionFromLocation(x, regionData.administrative_area_level_2!, country))
+        ]
+      });
 
       groups[country] = groupBy(regions, (r) => `${r.parent}:${r.type}`)!;
 
@@ -68,8 +75,9 @@ export default function RegionSelector({ value, onChange, multiple = true, filte
 
     if (!metadata) return defaultFromOptions;
 
-    const fromOptions = Object.entries(metadata).flatMap(([country, countryData]) => {
+    const fromOptions = sortBy(Object.entries(metadata).flatMap(([country, countryData]) => {
       if (Object.keys(countryData.children).length === 0) return [];
+
       const { displayName, flag } = getByRegionId(metadata, country);
 
       return [
@@ -79,7 +87,7 @@ export default function RegionSelector({ value, onChange, multiple = true, filte
           flag: flag,
         },
       ];
-    });
+    }), 'text');
 
     return [...defaultFromOptions, ...fromOptions];
   }, [metadata]);
@@ -101,24 +109,14 @@ export default function RegionSelector({ value, onChange, multiple = true, filte
   }, [regions, selected]);
 
   const allOptions = useMemo(() => {
-    if (fromValue !== "all") {
-      return selectedOptions.concat(
-        sortBy(
-          Object.values(regions).filter((region) => "country" in region && region.country === fromValue),
-          ["value"]
-        )
-      );
-    }
+    if (search.length < 2) return selectedOptions;
 
-    if (search.length < 1) return selectedOptions;
-
-    const result = fuse.search(search, { limit: 30 }).map(({ item }) => item);
+    const result = fuse.search(search, { limit: 10 }).map(({ item }) => item);
     if (multiple) {
-
       return selectedOptions.concat(result);
     }
     return result;
-  }, [fromValue, search, selectedOptions, fuse, multiple, regions]);
+  }, [search, selectedOptions, fuse, multiple]);
 
   const options = useMemo(() => {
     return allOptions.filter((o) => filter(o.value));
@@ -166,13 +164,14 @@ export default function RegionSelector({ value, onChange, multiple = true, filte
                 options={fromOptions}
                 value={fromValue}
                 onChange={(_: any, { value }: any) => setFromValue(value)}
+                scrolling
               />
             </Header>
           </div>
 
           <div>
             <Header as="h4" color="grey">
-              <Dropdown selectOnNavigation={false} style={{ zIndex: 13 }} text="Select region group" inline direction="left" scrolling>
+              <Dropdown selectOnNavigation={false} style={{ zIndex: 13 }} text="Select region group" inline scrolling>
                 <Dropdown.Menu>
                   <Fragment key={"world"}>
                     <Dropdown.Header icon="globe" content="World" />
@@ -219,7 +218,7 @@ export default function RegionSelector({ value, onChange, multiple = true, filte
         className={multiple ? undefined : 'large'}
         selectOnNavigation={false}
         style={{ zIndex: 12 }}
-        placeholder={fromValue === "all" ? "Search for countries, states, provinces..." : `Choose regions from ${fromValue}...`}
+        placeholder={fromValue === "all" ? "Search for countries, states, provinces..." : `Choose regions from ${getByRegionId(metadata!, fromValue).displayName}...`}
         clearable
         fluid
         search

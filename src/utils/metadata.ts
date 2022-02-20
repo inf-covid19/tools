@@ -91,11 +91,11 @@ export function getNameFromLocation(location: Location) {
 
 export function getDisplayNameFromLocation(location: Location) {
   if (location.administrative_area_level === 3) {
-    return location.administrative_area_level_3!;
+    return `${location.administrative_area_level_3!}, ${location.administrative_area_level_2!}`;
   }
 
   if (location.administrative_area_level === 2) {
-    return location.administrative_area_level_2!;
+    return `${location.administrative_area_level_2!}, ${location.administrative_area_level_1}`;
   }
 
   return location.administrative_area_level_1;

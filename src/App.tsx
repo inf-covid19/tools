@@ -33,12 +33,12 @@ const MENU_ITEMS = [
     component: TrendEditor,
     icon: "chart line",
   },
-  {
-    name: "Prediction Visualizer",
-    path: "/predictions",
-    component: PredictionsEditor,
-    icon: "chart bar",
-  },
+  // {
+  //   name: "Prediction Visualizer",
+  //   path: "/predictions",
+  //   component: PredictionsEditor,
+  //   icon: "chart bar",
+  // },
   // {
   //   name: "Projection Visualizer",
   //   path: "/projections",
