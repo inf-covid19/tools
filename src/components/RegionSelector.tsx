@@ -6,7 +6,7 @@ import React, { Fragment, useCallback, useMemo, useState } from "react";
 import { Dropdown, Flag, Header } from "semantic-ui-react";
 import { DEFAULT_COUNTRIES, PLACE_TYPE_LABEL_MAPPING } from "../constants";
 import useMetadata from "../hooks/useMetadata";
-import { getByRegionId } from "../utils/metadata";
+import { getByRegionId, getDisplayNameFromLocation, getNameFromLocation } from "../utils/metadata";
 import "./RegionSelector.css";
 
 type Props = {
@@ -30,13 +30,13 @@ export default function RegionSelector({ value, onChange, multiple = true, filte
     const arr = Object.entries(metadata).flatMap(([country, countryData]) => {
       const { flag, displayName } = getByRegionId(metadata, country);
 
-      const regions = Object.entries(countryData.regions as Record<string, any>).map(([region, regionData]) => ({
-        value: `${country}.regions.${region}`,
-        name: regionData.name as string,
-        parent: `${regionData.parent || country}`,
+      const regions = countryData.children.map((regionData) => ({
+        value: regionData.id,
+        name: getNameFromLocation(regionData),
+        parent: regionData.administrative_area_level_1,
         flag,
-        text: `${regionData.name}${regionData.parent ? `, ${regionData.parent}` : ""}, ${displayName}`,
-        type: `${regionData.place_type}`,
+        text: getDisplayNameFromLocation(regionData),
+        type: `administrative_area_level_${regionData.administrative_area_level}`,
         country,
       }));
 
@@ -69,7 +69,7 @@ export default function RegionSelector({ value, onChange, multiple = true, filte
     if (!metadata) return defaultFromOptions;
 
     const fromOptions = Object.entries(metadata).flatMap(([country, countryData]) => {
-      if (Object.keys(countryData.regions).length === 0) return [];
+      if (Object.keys(countryData.children).length === 0) return [];
       const { displayName, flag } = getByRegionId(metadata, country);
 
       return [

@@ -17,7 +17,7 @@ function ReproductionChart({ regionId }: { regionId: string }) {
   const series = useMemo(() => {
     if (!data || !metadata) return null;
 
-    const timeseries = data[regionId].filter((row) => row.cases > 50);
+    const timeseries = data[regionId].filter((row) => row.confirmed > 50);
 
     const seriesData = [];
 
@@ -26,10 +26,10 @@ function ReproductionChart({ regionId }: { regionId: string }) {
       let generation2 = 0;
       for (let j = 0; j < METHOD; j++) {
         if (i - j >= 0) {
-          generation1 += timeseries[i - j].cases_daily;
+          generation1 += timeseries[i - j].confirmed_daily;
         }
         if (i - j - 4 >= 0) {
-          generation2 += timeseries[i - j - 4].cases_daily;
+          generation2 += timeseries[i - j - 4].confirmed_daily;
         }
       }
       seriesData.push({ x: timeseries[i].date.getTime(), y: generation2 === 0 ? 0 : generation1 / generation2 });

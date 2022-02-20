@@ -31,8 +31,8 @@ export type ChartOptions = {
   validatePrediction?: boolean;
 };
 
-const SAVED_CHARTS_KEY = "covid19-tools.editor.savedCharts.v2";
-const DEFAULTS_KEY = "covid19-tools.editor.defaults.v2";
+const SAVED_CHARTS_KEY = "covid19-tools.editor.savedCharts.v3";
+const DEFAULTS_KEY = "covid19-tools.editor.defaults.v3";
 
 function getSavedCharts(
   id?: string
@@ -242,7 +242,7 @@ function Editor(props: EditorProps) {
                     value={metric}
                     onChange={(_, { value }) => setOptions({ ...options, metric: value as MetricType })}
                     options={[
-                      { key: "cases", text: "Cases", value: "cases" },
+                      { key: "confirmed", text: "Cases", value: "confirmed" },
                       { key: "deaths", text: "Deaths", value: "deaths" },
                     ]}
                   />

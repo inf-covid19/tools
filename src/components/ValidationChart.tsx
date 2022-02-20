@@ -69,13 +69,13 @@ function ValidationChart(props: ValidationChartProps, ref: React.Ref<any>) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        records: selectedSerie.data.filter((d) => d.cases > 0),
+        records: selectedSerie.data.filter((d) => d.confirmed > 0),
         thresholds: [1, 5, 10, 20, 30],
         base_index: baseIndex,
       }),
     });
     const json = await res.json();
-    const dataSinceFirstCase = selectedSerie.data.filter((d_1) => d_1.cases > 0).slice(-50);
+    const dataSinceFirstCase = selectedSerie.data.filter((d_1) => d_1.confirmed > 0).slice(-50);
     const serieData = alignTimeseries(dataSinceFirstCase, first(dataSinceFirstCase)!.date);
     const seriesWithErrors = [
       {

@@ -1,33 +1,32 @@
+import { keyBy } from "lodash";
 import { useMemo } from "react";
 import { useQuery } from "react-query";
+import { AUTOCOVS_API } from "../constants";
 
-export type MetadataRegion = {
-  name: string;
-  file: string;
-  iso: string;
-  place_type: string;
-  parent?: string;
+export type Location = {
+  administrative_area_level: number;
+  administrative_area_level_1: string;
+  administrative_area_level_2?: string;
+  administrative_area_level_3?: string;
+  children: Array<Location>;
+  id: string;
+  iso_alpha_2: string;
+  iso_alpha_3: string;
+  latitude: number;
+  longitude: number;
+  population: number;
 };
 
-export type MetadataCountry = {
-  name: string;
-  file: string;
-  geoId: string;
-  countryTerritoryCode: string;
-  parent: string;
-  regions: Record<string, MetadataRegion>;
-};
-
-export type Metadata = Record<string, MetadataCountry>;
+export type Metadata = Record<string, Location>;
 
 const fetchMetadata = async () => {
-  const response = await fetch("https://raw.githubusercontent.com/inf-covid19/covid19-data/master/data/metadata.json");
+  const response = await fetch(`${AUTOCOVS_API}/metadata`);
   const data = await response.json();
-  return data as Metadata;
+  const metadata = keyBy(data, 'id');
+  return metadata as Metadata;
 };
 
 export default function useMetadata() {
   const { data = null, status, error } = useQuery("metadata", fetchMetadata);
-
   return useMemo(() => ({ data, loading: status === "loading", error }), [data, status, error]);
 }

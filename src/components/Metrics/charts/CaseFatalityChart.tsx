@@ -23,7 +23,7 @@ function CaseFatalityChart({ regionId }: { regionId: string }) {
         name: "Case Fatality Rate",
         data: timeseries.map((row) => ({
           x: row.date,
-          y: row.deaths/row.cases * 100,
+          y: row.deaths/row.confirmed * 100,
         })),
       },
     ];
