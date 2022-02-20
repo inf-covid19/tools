@@ -7,17 +7,18 @@ import useMetadata from "../../../hooks/useMetadata";
 import useRegionData from "../../../hooks/useRegionData";
 import ChartWrapper from "../ChartWrapper";
 import { average } from "../../../utils/math";
+import { DateRange, filterByDateRange } from "./utils";
 
 const displayNumberFormatter = d3.format(",.2~f");
 
-function DeathsChart({ regionId }: { regionId: string }) {
+function DeathsChart({ regionId, dateRange }: { regionId: string, dateRange?: DateRange }) {
   const { data } = useRegionData([regionId]);
   const { data: metadata } = useMetadata();
 
   const series = useMemo(() => {
     if (!data || !metadata) return null;
 
-    const timeseries = data[regionId].filter((row) => row.deaths > 0);
+    const timeseries =filterByDateRange(data[regionId], dateRange).filter((row) => row.deaths > 0);
 
     return [
       {
@@ -48,7 +49,7 @@ function DeathsChart({ regionId }: { regionId: string }) {
         }),
       },
     ];
-  }, [data, metadata, regionId]);
+  }, [data, dateRange, metadata, regionId]);
 
   const options = useMemo(() => {
     return {

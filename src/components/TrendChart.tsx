@@ -168,7 +168,7 @@ function TrendChart(props: TrendChartProps, ref: React.Ref<any>) {
           formatter: withXScaler((n: number) => (n < 1000 ? Math.round(n) : numberFormatter(n))),
         },
         title: {
-          text: `Total Confirmed ${titleCase(metric)}`,
+          text: `Total Confirmed ${metric === 'confirmed' ? 'Cases': 'Deaths'}`,
           offsetY: 10,
         },
         tooltip: {
@@ -191,7 +191,7 @@ function TrendChart(props: TrendChartProps, ref: React.Ref<any>) {
         },
         title: {
           offsetX: 5,
-          text: `New Confirmed ${titleCase(metric)} (in the Past Week)`,
+          text: `New Confirmed ${metric === 'confirmed' ? 'Cases': 'Deaths'} (in the Past Week)`,
         },
       },
       title: {

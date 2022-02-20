@@ -6,11 +6,12 @@ import styled from "styled-components/macro";
 import useMetadata from "../../../hooks/useMetadata";
 import useRegionData from "../../../hooks/useRegionData";
 import ChartWrapper from "../ChartWrapper";
+import { DateRange, filterSeriesByDateRange } from "./utils";
 
 const METHOD = 6;
 const displayNumberFormatter = d3.format(",.2~f");
 
-function ReproductionChart({ regionId }: { regionId: string }) {
+function ReproductionChart({ regionId, dateRange }: { regionId: string, dateRange?: DateRange }) {
   const { data } = useRegionData([regionId]);
   const { data: metadata } = useMetadata();
 
@@ -38,10 +39,10 @@ function ReproductionChart({ regionId }: { regionId: string }) {
     return [
       {
         name: "Reproduction Number",
-        data: seriesData,
+        data: filterSeriesByDateRange(seriesData, dateRange)
       },
     ];
-  }, [data, metadata, regionId]);
+  }, [data, dateRange, metadata, regionId]);
 
   const options = useMemo(() => {
     return {

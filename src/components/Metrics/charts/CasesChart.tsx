@@ -7,17 +7,18 @@ import useMetadata from "../../../hooks/useMetadata";
 import useRegionData from "../../../hooks/useRegionData";
 import { average } from "../../../utils/math";
 import ChartWrapper from "../ChartWrapper";
+import { DateRange, filterByDateRange } from "./utils";
 
 const displayNumberFormatter = d3.format(",.2~f");
 
-function CasesChart({ regionId }: { regionId: string }) {
+function CasesChart({ regionId, dateRange }: { regionId: string,  dateRange?: DateRange }) {
   const { data } = useRegionData([regionId]);
   const { data: metadata } = useMetadata();
 
   const series = useMemo(() => {
     if (!data || !metadata) return null;
 
-    const timeseries = data[regionId].filter((row) => row.confirmed > 0);
+    const timeseries = filterByDateRange(data[regionId], dateRange).filter((row) => row.confirmed > 0);
 
     return [
       {
@@ -48,7 +49,7 @@ function CasesChart({ regionId }: { regionId: string }) {
         }),
       },
     ];
-  }, [data, metadata, regionId]);
+  }, [data, dateRange, metadata, regionId]);
 
   const options = useMemo(() => {
     return {

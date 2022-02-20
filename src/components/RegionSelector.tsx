@@ -168,7 +168,7 @@ export default function RegionSelector({ value, onChange, multiple = true, filte
               />
             </Header>
           </div>
-
+{/* 
           <div>
             <Header as="h4" color="grey">
               <Dropdown selectOnNavigation={false} style={{ zIndex: 13 }} text="Select region group" inline scrolling>
@@ -211,7 +211,7 @@ export default function RegionSelector({ value, onChange, multiple = true, filte
                 </Dropdown.Menu>
               </Dropdown>
             </Header>
-          </div>
+          </div> */}
         </div>
       )}
       <Dropdown
