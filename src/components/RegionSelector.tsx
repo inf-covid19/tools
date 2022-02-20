@@ -1,11 +1,10 @@
 import Fuse from "fuse.js";
-import { castArray, defaultTo, flatMap, groupBy, isEmpty, keyBy, sortBy, uniq } from "lodash";
+import { castArray, defaultTo, flatMap, groupBy, keyBy, sortBy } from "lodash";
 import debounce from "lodash/debounce";
 import first from "lodash/first";
-import React, { Fragment, useCallback, useMemo, useState } from "react";
-import { Dropdown, Flag, Header } from "semantic-ui-react";
-import { DEFAULT_COUNTRIES, PLACE_TYPE_LABEL_MAPPING } from "../constants";
-import useMetadata, {Location} from "../hooks/useMetadata";
+import React, { useCallback, useMemo, useState } from "react";
+import { Dropdown, Header } from "semantic-ui-react";
+import useMetadata, { Location } from "../hooks/useMetadata";
 import { getByRegionId, getDisplayNameFromLocation, getNameFromLocation } from "../utils/metadata";
 import "./RegionSelector.css";
 
@@ -22,7 +21,7 @@ export default function RegionSelector({ value, onChange, multiple = true, filte
   const selected = useMemo(() => Object.keys(value).filter((k) => value[k]), [value]);
   const { data: metadata, loading } = useMetadata();
 
-  const [regions, groups] = useMemo(() => {
+  const [regions] = useMemo(() => {
     if (!metadata) return [{}, {}];
 
     const groups: Record<string, Record<string, Array<{ value: string; name: string; parent: string; flag: string; text: string; country: string }>>> = {};
@@ -38,13 +37,13 @@ export default function RegionSelector({ value, onChange, multiple = true, filte
         text: getDisplayNameFromLocation(regionData),
         type: `administrative_area_level_${regionData.administrative_area_level}`,
         country,
-      })
+      });
 
       const regions = flatMap(countryData.children, (regionData) => {
         return [
           getOptionFromLocation(regionData, regionData.administrative_area_level_1, country),
-          ...regionData.children.map(x => getOptionFromLocation(x, regionData.administrative_area_level_2!, country))
-        ]
+          ...regionData.children.map((x) => getOptionFromLocation(x, regionData.administrative_area_level_2!, country)),
+        ];
       });
 
       groups[country] = groupBy(regions, (r) => `${r.parent}:${r.type}`)!;
@@ -75,19 +74,22 @@ export default function RegionSelector({ value, onChange, multiple = true, filte
 
     if (!metadata) return defaultFromOptions;
 
-    const fromOptions = sortBy(Object.entries(metadata).flatMap(([country, countryData]) => {
-      if (Object.keys(countryData.children).length === 0) return [];
+    const fromOptions = sortBy(
+      Object.entries(metadata).flatMap(([country, countryData]) => {
+        if (Object.keys(countryData.children).length === 0) return [];
 
-      const { displayName, flag } = getByRegionId(metadata, country);
+        const { displayName, flag } = getByRegionId(metadata, country);
 
-      return [
-        {
-          text: displayName,
-          value: country,
-          flag: flag,
-        },
-      ];
-    }), 'text');
+        return [
+          {
+            text: displayName,
+            value: country,
+            flag: flag,
+          },
+        ];
+      }),
+      "text"
+    );
 
     return [...defaultFromOptions, ...fromOptions];
   }, [metadata]);
@@ -168,7 +170,7 @@ export default function RegionSelector({ value, onChange, multiple = true, filte
               />
             </Header>
           </div>
-{/* 
+          {/* 
           <div>
             <Header as="h4" color="grey">
               <Dropdown selectOnNavigation={false} style={{ zIndex: 13 }} text="Select region group" inline scrolling>
@@ -215,7 +217,7 @@ export default function RegionSelector({ value, onChange, multiple = true, filte
         </div>
       )}
       <Dropdown
-        className={multiple ? undefined : 'large'}
+        className={multiple ? undefined : "large"}
         selectOnNavigation={false}
         style={{ zIndex: 12 }}
         placeholder={fromValue === "all" ? "Search for countries, states, provinces..." : `Choose regions from ${getByRegionId(metadata!, fromValue).displayName}...`}

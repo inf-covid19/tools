@@ -1,10 +1,7 @@
-import { csv } from "d3";
-import { groupBy } from "lodash";
 import sortBy from "lodash/sortBy";
 import { useCallback, useMemo, useRef } from "react";
 import { useQuery } from "react-query";
 import { AUTOCOVS_API } from "../constants";
-import { getByRegionId, getFileByRegionId } from "../utils/metadata";
 import { TimeseriesRow } from "../utils/normalizeTimeseries";
 import useMetadata from "./useMetadata";
 

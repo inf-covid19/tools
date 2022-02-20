@@ -1,42 +1,7 @@
-import { DSVRowArray, DSVRowString } from "d3";
-import { differenceInDays, eachDayOfInterval, isAfter, isBefore, parse, startOfDay, subDays } from "date-fns";
-import get from "lodash/get";
-import orderBy from "lodash/orderBy";
-import { getByRegionId } from "./metadata";
+import { eachDayOfInterval, isAfter, isBefore, subDays } from "date-fns";
 
-const PLACE_TYPE_COLUMN_MAPPING: Record<string, string> = {
-  state: "state",
-  city: "city",
-  county: "county",
-  territory: "state",
-  province: 'province',
-  country: 'country',
-};
 
-const REGION_CUSTOM_CONFIG = {
-  Brazil: {
-    columns: {
-      cases: "confirmed",
-    },
-  },
-  Canada: {
-    place_types: {
-      territory: "province",
-    },
-  },
-  Ecuador:{
-    place_types: {
-      unknown: 'province'
-    }
-  },
-};
 
-const parseDate = (row: DSVRowString, country: string, isCountry: boolean) => {
-  const dateColumn = get(REGION_CUSTOM_CONFIG, [country, "columns", "date"], isCountry ? "dateRep" : "date");
-  const dateFormat = get(REGION_CUSTOM_CONFIG, [country, "date", "format"], "yyyy-MM-dd");
-
-  return parse(row[dateColumn]!, dateFormat, startOfDay(new Date()));
-};
 
 export type TimeseriesRow = {
   date: Date;

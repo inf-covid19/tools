@@ -9,7 +9,6 @@ import ChartEditor from "./components/ChartEditor";
 import ListDescriptor from "./components/ListDescriptor";
 import Loader from "./components/Loader";
 import Metrics from "./components/Metrics/Metrics";
-import PredictionsEditor from "./components/PredictionsEditor";
 import SimilarityExplorer from "./components/Similarity/Explorer";
 import TrendEditor from "./components/TrendEditor";
 import { DATA_SOURCES } from "./constants";
