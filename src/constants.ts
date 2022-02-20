@@ -77,4 +77,4 @@ export const SIMILARITY_API = `${process.env.REACT_APP_SIMILARITY_API}`;
 
 export const PREDICTIONS_API = `${process.env.REACT_APP_PREDICTIONS_API}`;
 
-export const AUTOCOVS_API = `http://localhost:8000`;
+export const AUTOCOVS_API = `${process.env.REACT_APP_AUTOCOVS_API}`;
