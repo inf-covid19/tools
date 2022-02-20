@@ -39,7 +39,7 @@ function PredictionsChart(props: PredictionsChartProps, ref: React.Ref<any>) {
 
     return Object.entries(data).map(([key, data]) => {
       return {
-        name: getByRegionId(metadata, key).displayName,
+        name: getByRegionId(metadata, key)?.displayName || key,
         key,
         data,
       };
@@ -59,7 +59,7 @@ function PredictionsChart(props: PredictionsChartProps, ref: React.Ref<any>) {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          records: serie.data.filter((d) => d.cases > 0),
+          records: serie.data.filter((d) => d.confirmed > 0),
           days: predictionDays,
         }),
       });

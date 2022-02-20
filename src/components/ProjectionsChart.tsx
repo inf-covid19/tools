@@ -51,7 +51,7 @@ function ProjectionsChart(props: ProjectionsChartProps, ref: React.Ref<any>) {
     }
 
     return Object.entries(data).flatMap(([region, regionData]) => {
-      const { displayName } = getByRegionId(metadata, region);
+      const displayName = getByRegionId(metadata, region)?.displayName || region;
       const regionDataWithValues = regionData.filter((v) => v[metric] > 0);
 
       if (regionDataWithValues.length === 0) {
@@ -59,8 +59,8 @@ function ProjectionsChart(props: ProjectionsChartProps, ref: React.Ref<any>) {
       }
 
       const startDate = first(regionDataWithValues)!.date;
-      const { date: endDate, cases, deaths } = last(regionDataWithValues)!;
-      const avg = median(regionDataWithValues.map((v) => v[`${metric}_daily` as "cases_daily" | "deaths_daily"]));
+      const { date: endDate, confirmed, deaths } = last(regionDataWithValues)!;
+      const avg = median(regionDataWithValues.map((v) => v[`${metric}_daily` as "confirmed_daily" | "deaths_daily"]));
 
       const alignedIndex = regionData.findIndex((v) => v[metric] >= alignAt)
 
@@ -70,14 +70,14 @@ function ProjectionsChart(props: ProjectionsChartProps, ref: React.Ref<any>) {
           key: region,
           startDate,
           endDate,
-          cases,
+          confirmed,
           deaths,
           avg,
           data: regionData
             .slice(alignedIndex)
             .map((v, index) => ({
               x: index + 1,
-              y: isCumulative ? v[metric] : v[`${metric}_daily` as "cases_daily" | "deaths_daily"],
+              y: isCumulative ? v[metric] : v[`${metric}_daily` as "confirmed_daily" | "deaths_daily"],
             })),
         },
       ];

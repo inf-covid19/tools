@@ -9,7 +9,6 @@ import ChartEditor from "./components/ChartEditor";
 import ListDescriptor from "./components/ListDescriptor";
 import Loader from "./components/Loader";
 import Metrics from "./components/Metrics/Metrics";
-import PredictionsEditor from "./components/PredictionsEditor";
 import SimilarityExplorer from "./components/Similarity/Explorer";
 import TrendEditor from "./components/TrendEditor";
 import { DATA_SOURCES } from "./constants";
@@ -33,12 +32,12 @@ const MENU_ITEMS = [
     component: TrendEditor,
     icon: "chart line",
   },
-  {
-    name: "Prediction Visualizer",
-    path: "/predictions",
-    component: PredictionsEditor,
-    icon: "chart bar",
-  },
+  // {
+  //   name: "Prediction Visualizer",
+  //   path: "/predictions",
+  //   component: PredictionsEditor,
+  //   icon: "chart bar",
+  // },
   // {
   //   name: "Projection Visualizer",
   //   path: "/projections",

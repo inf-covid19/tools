@@ -1,11 +1,11 @@
 export type ScaleType = "linear" | "log";
 export type ChartType = "heatmap" | "bar" | "area" | "line" | "scatter";
-export type MetricType = "cases" | "deaths";
+export type MetricType = "confirmed" | "deaths";
 export type ProjectionType = "tsne" | "umap";
 
 export const DEFAULT_OPTIONS = {
   chartType: "heatmap",
-  metric: "cases",
+  metric: "confirmed",
   showDataLabels: false,
   isCumulative: true,
   title: "Timeline Plots of Coronavirus Data",
@@ -25,22 +25,13 @@ export const DEFAULT_OPTIONS = {
 };
 
 export const DEFAULT_COUNTRIES = [
-  "Brazil",
-  "United States",
-  "United Kingdom",
-  "China",
-  "Sweden",
-  "Spain",
-  "Germany",
-  "France",
-  "Canada",
-  "Portugal",
-  "Italy",
-  "South Korea",
-  "Iran",
-  "Israel",
-  "Netherlands",
-  "Peru",
+  '2f37bf69',
+  '3e2d4144',
+  '59a13ceb',
+  '59d3b85f',
+  '9164293b',
+  'c39bfe6c',
+  'f90dfca0',
 ];
 
 export const DATA_SOURCES = [
@@ -78,7 +69,12 @@ export const PLACE_TYPE_LABEL_MAPPING: Record<string, string> = {
   province: "Provinces",
   territory: "Territories",
   lower_tier_local_authority: "LTLAs",
+  administrative_area_level_2: "Administrative Area Level 2",
+  administrative_area_level_3: "Administrative Area Level 3",
 };
 
 export const SIMILARITY_API = `${process.env.REACT_APP_SIMILARITY_API}`;
+
 export const PREDICTIONS_API = `${process.env.REACT_APP_PREDICTIONS_API}`;
+
+export const AUTOCOVS_API = `${process.env.REACT_APP_AUTOCOVS_API}`;

@@ -6,28 +6,29 @@ import styled from "styled-components/macro";
 import useMetadata from "../../../hooks/useMetadata";
 import useRegionData from "../../../hooks/useRegionData";
 import ChartWrapper from "../ChartWrapper";
+import { DateRange, filterByDateRange } from "./utils";
 
 const displayNumberFormatter = d3.format(",.2~f");
 
-function CaseFatalityChart({ regionId }: { regionId: string }) {
+function CaseFatalityChart({ regionId, dateRange }: { regionId: string, dateRange?: DateRange }) {
   const { data } = useRegionData([regionId]);
   const { data: metadata } = useMetadata();
 
   const series = useMemo(() => {
     if (!data || !metadata) return null;
 
-    const timeseries = data[regionId].filter(row => row.deaths > 0);
+    const timeseries = filterByDateRange(data[regionId], dateRange).filter((row) => row.deaths > 0);
 
     return [
       {
         name: "Case Fatality Rate",
         data: timeseries.map((row) => ({
           x: row.date,
-          y: row.deaths/row.cases * 100,
+          y: (row.deaths / row.confirmed) * 100,
         })),
       },
     ];
-  }, [data, metadata, regionId]);
+  }, [data, dateRange, metadata, regionId]);
 
   const options = useMemo(() => {
     return {

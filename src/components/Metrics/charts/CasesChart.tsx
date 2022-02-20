@@ -7,24 +7,25 @@ import useMetadata from "../../../hooks/useMetadata";
 import useRegionData from "../../../hooks/useRegionData";
 import { average } from "../../../utils/math";
 import ChartWrapper from "../ChartWrapper";
+import { DateRange, filterByDateRange } from "./utils";
 
 const displayNumberFormatter = d3.format(",.2~f");
 
-function CasesChart({ regionId }: { regionId: string }) {
+function CasesChart({ regionId, dateRange }: { regionId: string,  dateRange?: DateRange }) {
   const { data } = useRegionData([regionId]);
   const { data: metadata } = useMetadata();
 
   const series = useMemo(() => {
     if (!data || !metadata) return null;
 
-    const timeseries = data[regionId].filter((row) => row.cases > 0);
+    const timeseries = filterByDateRange(data[regionId], dateRange).filter((row) => row.confirmed > 0);
 
     return [
       {
         name: "Total Confirmed Cases",
         data: timeseries.map((row) => ({
           x: row.date,
-          y: row.cases,
+          y: row.confirmed,
         })),
       },
       {
@@ -32,14 +33,14 @@ function CasesChart({ regionId }: { regionId: string }) {
         name: "Daily Confirmed Cases",
         data: timeseries.map((row) => ({
           x: row.date,
-          y: row.cases_daily,
+          y: row.confirmed_daily,
         })),
       },
       {
         type: "area",
         name: "7-day Avg. Confirmed Cases",
         data: timeseries.map((row, index) => {
-          const dailyValues = timeseries.slice(Math.max(0, index - 6), index + 1).map((r) => r.cases_daily);
+          const dailyValues = timeseries.slice(Math.max(0, index - 6), index + 1).map((r) => r.confirmed_daily);
 
           return {
             x: row.date,
@@ -48,7 +49,7 @@ function CasesChart({ regionId }: { regionId: string }) {
         }),
       },
     ];
-  }, [data, metadata, regionId]);
+  }, [data, dateRange, metadata, regionId]);
 
   const options = useMemo(() => {
     return {

@@ -55,10 +55,10 @@ function CustomizableChart(props: CustomizableChartProps, ref: React.Ref<any>) {
 
     const earliestDate = subDays(startOfDay(new Date()), dayInterval);
     return Object.entries(data).flatMap(([region, regionData]) => {
-      const { displayName } = getByRegionId(metadata, region);
+      const displayName = getByRegionId(metadata, region)?.displayName || region;
 
       const getValue = (row: TimeseriesRow) => {
-        const value = isCumulative ? (metric === "cases" ? row.cases : row.deaths) : metric === "cases" ? row.cases_daily : row.deaths_daily;
+        const value = isCumulative ? (metric === "confirmed" ? row.confirmed : row.deaths) : metric === "confirmed" ? row.confirmed_daily : row.deaths_daily;
 
         if (isIncidence && getPopulation) {
           const population = getPopulation(region);

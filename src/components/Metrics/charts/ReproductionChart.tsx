@@ -6,18 +6,19 @@ import styled from "styled-components/macro";
 import useMetadata from "../../../hooks/useMetadata";
 import useRegionData from "../../../hooks/useRegionData";
 import ChartWrapper from "../ChartWrapper";
+import { DateRange, filterSeriesByDateRange } from "./utils";
 
 const METHOD = 6;
 const displayNumberFormatter = d3.format(",.2~f");
 
-function ReproductionChart({ regionId }: { regionId: string }) {
+function ReproductionChart({ regionId, dateRange }: { regionId: string, dateRange?: DateRange }) {
   const { data } = useRegionData([regionId]);
   const { data: metadata } = useMetadata();
 
   const series = useMemo(() => {
     if (!data || !metadata) return null;
 
-    const timeseries = data[regionId].filter((row) => row.cases > 50);
+    const timeseries = data[regionId].filter((row) => row.confirmed > 50);
 
     const seriesData = [];
 
@@ -26,10 +27,10 @@ function ReproductionChart({ regionId }: { regionId: string }) {
       let generation2 = 0;
       for (let j = 0; j < METHOD; j++) {
         if (i - j >= 0) {
-          generation1 += timeseries[i - j].cases_daily;
+          generation1 += timeseries[i - j].confirmed_daily;
         }
         if (i - j - 4 >= 0) {
-          generation2 += timeseries[i - j - 4].cases_daily;
+          generation2 += timeseries[i - j - 4].confirmed_daily;
         }
       }
       seriesData.push({ x: timeseries[i].date.getTime(), y: generation2 === 0 ? 0 : generation1 / generation2 });
@@ -38,10 +39,10 @@ function ReproductionChart({ regionId }: { regionId: string }) {
     return [
       {
         name: "Reproduction Number",
-        data: seriesData,
+        data: filterSeriesByDateRange(seriesData, dateRange)
       },
     ];
-  }, [data, metadata, regionId]);
+  }, [data, dateRange, metadata, regionId]);
 
   const options = useMemo(() => {
     return {

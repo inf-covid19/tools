@@ -1,10 +1,8 @@
-import { csv } from "d3";
-import { groupBy } from "lodash";
 import sortBy from "lodash/sortBy";
 import { useCallback, useMemo, useRef } from "react";
 import { useQuery } from "react-query";
-import { getByRegionId, getFileByRegionId } from "../utils/metadata";
-import normalizeTimeseries, { TimeseriesRow } from "../utils/normalizeTimeseries";
+import { AUTOCOVS_API } from "../constants";
+import { TimeseriesRow } from "../utils/normalizeTimeseries";
 import useMetadata from "./useMetadata";
 
 export default function useRegionData(regionIds: string[]) {
@@ -23,16 +21,11 @@ export default function useRegionData(regionIds: string[]) {
         (!!cache.current[key] ? cachedKeys : uncachedKeys).push(key);
       });
 
-      const keysByFile = groupBy(uncachedKeys, (k: string) => getFileByRegionId(metadata, k));
-      const files = Object.keys(keysByFile);
-
       const dataByKey: Record<string, TimeseriesRow[]> = {};
 
-      const data = await Promise.all(files.map((file) => csv(`https://raw.githubusercontent.com/inf-covid19/covid19-data/master/${file}?v=2`)));
+      const data = await Promise.all(uncachedKeys.map((id) => fetch(`${AUTOCOVS_API}/location/${id}`).then((r) => r.json())));
       data.forEach((raw, index) => {
-        keysByFile[files[index]].forEach((key) => {
-          dataByKey[key] = normalizeTimeseries(key, raw, getByRegionId(metadata, key));
-        });
+        dataByKey[uncachedKeys[index]] = raw.map((x: any) => ({...x, date: new Date(x.date)}));
       });
 
       cachedKeys.forEach((key) => {

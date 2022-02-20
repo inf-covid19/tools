@@ -22,9 +22,9 @@ const displayNumberFormatter = format(",.2~f");
 const similarityOptions = [
   {
     key: "cases_distance",
-    text: "cases",
+    text: "confirmed",
     value: "cases_distance",
-    content: "Cases",
+    content: "confirmed",
   },
   {
     key: "deaths_distance",
@@ -101,7 +101,7 @@ const Explorer = () => {
         ...getByRegionId(metadata, item.key!),
       };
 
-      if (parsedItem.days <= 0 || !parsedItem.file) {
+      if (parsedItem.days <= 0) {
         return [];
       }
 
@@ -217,7 +217,7 @@ const Explorer = () => {
     }
 
     Object.entries(regionData).forEach(([key, timeline]) => {
-      const firstCase = timeline.find((row) => row.cases > 0);
+      const firstCase = timeline.find((row) => row.confirmed > 0);
       const firstDeath = timeline.find((row) => row.deaths > 0);
 
       const latestRow = last(timeline);
@@ -225,9 +225,9 @@ const Explorer = () => {
       stats[key] = {
         sinceFirstCase: firstCase ? differenceInDays(new Date(), firstCase.date) : 0,
         sinceFirstDeath: firstDeath ? differenceInDays(new Date(), firstDeath.date) : 0,
-        latestCases: latestRow?.cases ?? 0,
+        latestCases: latestRow?.confirmed ?? 0,
         latestDeaths: latestRow?.deaths ?? 0,
-        latestCasesPer100k: ((latestRow?.cases ?? 0) / dataByKey[key].population) * 100000,
+        latestCasesPer100k: ((latestRow?.confirmed ?? 0) / dataByKey[key].population) * 100000,
         latestDeathsPer100k: ((latestRow?.deaths ?? 0) / dataByKey[key].population) * 100000,
         latestDate: latestRow?.date ?? new Date(),
       };
@@ -525,7 +525,7 @@ const Explorer = () => {
                 chartType="bar"
                 isCumulative={true}
                 height={250}
-                metric={"cases"}
+                metric={"confirmed"}
                 title={`Total Cases - Comparison between ${currentRegion?.displayName} and ${secondaryRegion?.displayName}`}
                 timeserieSlice={-1}
                 isIncidence={isIncidence}
@@ -553,7 +553,7 @@ const Explorer = () => {
               </Header>
               <Grid columns={2} stackable>
                 <Grid.Column>
-                  <TrendChart {...DEFAULT_OPTIONS} selectedRegions={chartRegions} alignAt={1} height={250} metric={"cases"} title={``} />
+                  <TrendChart {...DEFAULT_OPTIONS} selectedRegions={chartRegions} alignAt={1} height={250} metric={"confirmed"} title={``} />
                 </Grid.Column>
                 <Grid.Column>
                   <TrendChart {...DEFAULT_OPTIONS} selectedRegions={chartRegions} alignAt={1} height={250} metric={"deaths"} title={``} />
