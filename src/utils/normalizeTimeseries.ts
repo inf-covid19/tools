@@ -9,6 +9,12 @@ export type TimeseriesRow = {
   confirmed_daily: number;
   deaths: number;
   deaths_daily: number;
+  vaccines?: number;
+  vaccines_daily?: number;
+  people_vaccinated?: number;
+  people_vaccinated_daily?: number;
+  people_fully_vaccinated?: number;
+  people_fully_vaccinated_daily?: number;
 };
 
 export function alignTimeseries(timeseries: TimeseriesRow[], earliestDate: Date) {

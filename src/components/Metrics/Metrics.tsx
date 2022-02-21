@@ -13,6 +13,8 @@ import CaseFatalityChart from "./charts/CaseFatalityChart";
 import { endOfToday, format, isBefore, parse } from "date-fns";
 import { startOfToday } from "date-fns/esm";
 import { DateRange } from "./charts/utils";
+import VaccinesChart from "./charts/VaccinesChart";
+import PeopleVaccinatedChart from "./charts/PeopleVaccinatedChart";
 
 function Metrics() {
   const history = useHistory();
@@ -26,7 +28,7 @@ function Metrics() {
   const setSelectedRegions = useCallback(
     (regions) => {
       history.push({
-        pathname: generatePath("/metrics/:region?", {
+        pathname: generatePath("/location-inspector/:region?", {
           region: first(Object.keys(regions)) || undefined,
         }),
       });
@@ -79,7 +81,7 @@ function Metrics() {
         <Segment placeholder>
           <Header icon>
             <Icon name="search" />
-            Search Region
+            Search for location
           </Header>
           {regionSelector}
         </Segment>
@@ -109,6 +111,8 @@ function Metrics() {
         <DeathsChart regionId={currentRegion.key} dateRange={dateRange} />
         <ReproductionChart regionId={currentRegion.key} dateRange={dateRange} />
         <CaseFatalityChart regionId={currentRegion.key} dateRange={dateRange} />
+        <VaccinesChart regionId={currentRegion.key} dateRange={dateRange} />
+        <PeopleVaccinatedChart regionId={currentRegion.key} dateRange={dateRange} />
       </ChartContainer>
     </Container>
   );
@@ -135,7 +139,7 @@ const Container = styled.div`
 
 const ChartContainer = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
   grid-gap: 30px;
   margin-top: 20px;
 

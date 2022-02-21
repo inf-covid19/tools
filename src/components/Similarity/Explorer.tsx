@@ -75,7 +75,7 @@ const Explorer = () => {
   const setSelectedRegions = useCallback(
     (regions) => {
       history.push({
-        pathname: generatePath("/similarity/:region?", {
+        pathname: generatePath("/similarity-explorer/:region?", {
           region: first(Object.keys(regions)) || undefined,
         }),
         search: `?aspect=${aspect}`,
@@ -247,7 +247,7 @@ const Explorer = () => {
   }
 
   const regionSelector = (
-    <div style={{ width: "100%", maxWidth: "350px", margin: "0 auto" }}>
+    <div style={{ width: "100%", maxWidth: "450px", margin: "0 auto" }}>
       <RegionSelector value={region} onChange={setSelectedRegions} multiple={false} filter={regionFilter} />
     </div>
   );
@@ -258,7 +258,7 @@ const Explorer = () => {
         <Segment placeholder>
           <Header icon>
             <Icon name="search" />
-            Search Region
+            Search for location
           </Header>
           {regionSelector}
         </Segment>

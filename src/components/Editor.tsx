@@ -274,7 +274,7 @@ function Editor(props: EditorProps) {
 
                 {availableOptions.includes("alignAt") && (
                   <Form.Field>
-                    <label>Minimum number of {metric} to align timeline</label>
+                    <label>Minimum number of {metric ==='confirmed' ? 'cases' : 'deaths'} to align timeline</label>
                     <input type="number" placeholder="Enter a number" min="0" defaultValue={alignAt} onBlur={setAlignAt} onChange={setAlignAt} />
                   </Form.Field>
                 )}

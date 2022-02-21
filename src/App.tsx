@@ -21,14 +21,14 @@ const LAST_TAB_KEY = "covid19-tools.api.lastTab";
 
 const MENU_ITEMS = [
   {
-    name: "Chart Editor",
-    path: "/editor",
+    name: "Data Explorer",
+    path: "/data-explorer",
     component: ChartEditor,
     icon: "pie chart",
   },
   {
     name: "Trend Visualizer",
-    path: "/trends",
+    path: "/trend-visualizer",
     component: TrendEditor,
     icon: "chart line",
   },
@@ -47,28 +47,29 @@ const MENU_ITEMS = [
   // },
   {
     name: "Similarity Explorer",
-    path: "/similarity/:region?",
+    path: "/similarity-explorer/:region?",
     component: SimilarityExplorer,
     icon: "searchengin",
   },
   {
-    name: "Region Metrics",
-    path: "/metrics/:region?",
+    name: "Location Inspector",
+    path: "/location-inspector/:region?",
     component: Metrics,
     icon: "dashboard",
+    external: false,
   },
-  {
-    name: "COVID-19 Literature",
-    path: "/literature",
-    external: "http://coronavis-text-analytics-tool.herokuapp.com",
-    icon: "quote left",
-  },
-  {
-    name: "Brazil Dashboard",
-    path: "/brazil",
-    external: "https://covid19.ufrgs.dev/dashboard/",
-    icon: "window restore outline",
-  },
+  // {
+  //   name: "COVID-19 Literature",
+  //   path: "/literature",
+  //   external: "http://coronavis-text-analytics-tool.herokuapp.com",
+  //   icon: "quote left",
+  // },
+  // {
+  //   name: "Brazil Dashboard",
+  //   path: "/brazil",
+  //   external: "https://covid19.ufrgs.dev/dashboard/",
+  //   icon: "window restore outline",
+  // },
 ];
 
 function App() {

@@ -10,21 +10,34 @@ import { DateRange, filterByDateRange } from "./utils";
 
 const displayNumberFormatter = d3.format(",.2~f");
 
-function CaseFatalityChart({ regionId, dateRange }: { regionId: string, dateRange?: DateRange }) {
+function PeopleVaccinatedChart({ regionId, dateRange }: { regionId: string; dateRange?: DateRange }) {
   const { data } = useRegionData([regionId]);
   const { data: metadata } = useMetadata();
 
   const series = useMemo(() => {
     if (!data || !metadata) return null;
 
-    const timeseries = filterByDateRange(data[regionId], dateRange).filter((row) => row.deaths > 0);
+    const timeseries = filterByDateRange(data[regionId], dateRange);
+
+    const hasVaccines = timeseries.some((x) => x.people_vaccinated && x.people_vaccinated > 0 && x.people_fully_vaccinated && x.people_fully_vaccinated > 0);
+
+    if (!hasVaccines) {
+      return [];
+    }
 
     return [
       {
-        name: "Case Fatality Rate",
+        name: "Fully vaccinated",
         data: timeseries.map((row) => ({
           x: row.date,
-          y: (row.deaths / row.confirmed) * 100,
+          y: row.people_vaccinated || 0,
+        })),
+      },
+      {
+        name: "Partial vaccinated",
+        data: timeseries.map((row) => ({
+          x: row.date,
+          y: row.people_fully_vaccinated || 0,
         })),
       },
     ];
@@ -67,27 +80,42 @@ function CaseFatalityChart({ regionId, dateRange }: { regionId: string, dateRang
           },
           labels: {
             offsetX: 5,
-            formatter: (n: number) => `${displayNumberFormatter(n)}%`,
+            formatter: displayNumberFormatter,
           },
           title: {
             offsetX: 5,
-            text: "Case Fatality Rate",
+            text: "Number of People",
           },
         },
       ],
       dataLabels: {
         enabled: false,
       },
+      fill: {
+        type: "gradient",
+        gradient: {
+          inverseColors: false,
+          shade: "light",
+          type: "vertical",
+          opacityFrom: 0.85,
+          opacityTo: 0.55,
+          stops: [0, 100, 100, 100],
+        },
+      },
     };
   }, []);
 
+  if (series?.length === 0) {
+    return null;
+  }
+
   return (
     <ChartWrapper
-      title="Case Fatality Rate"
-      subtitle="The Case Fatality Rate (CFR) is the ratio between confirmed deaths and confirmed cases. During an outbreak of a pandemic the CFR is a poor measure of the mortality risk of the disease."
+      title="People Vaccinated"
+      subtitle="Show the breakdown of people vaccinated, between those who have received only their first vaccine dose, and those who have completed the initial vaccination protocol (2 doses for most vaccines, 1 or 3 for a few manufacturers)."
     >
       {series ? (
-        <ReactApexChart series={series} type="line" height="300" options={options} />
+        <ReactApexChart series={series} type="area" height="300" options={options} />
       ) : (
         <LoaderWrapper>
           <Loader active inline />
@@ -97,7 +125,7 @@ function CaseFatalityChart({ regionId, dateRange }: { regionId: string, dateRang
   );
 }
 
-export default CaseFatalityChart;
+export default PeopleVaccinatedChart;
 
 const LoaderWrapper = styled.div`
   height: 300px;

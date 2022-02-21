@@ -49,6 +49,7 @@ function ReproductionChart({ regionId, dateRange }: { regionId: string, dateRang
       chart: {
         fontFamily: "Lato, 'Helvetica Neue', Arial, Helvetica, sans-serif",
         animations: {
+          enabled: false,
           animateGradually: { enabled: false },
         },
         toolbar: {
