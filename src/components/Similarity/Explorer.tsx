@@ -6,14 +6,14 @@ import React, { useCallback, useEffect, useMemo } from "react";
 import { queryCache, useQuery } from "react-query";
 import { generatePath, useHistory, useParams } from "react-router-dom";
 import { Divider, Dropdown, Flag, Grid, Header, Icon, Label, List, Loader, Popup, Segment, SemanticICONS, Statistic } from "semantic-ui-react";
-import { DEFAULT_OPTIONS, SIMILARITY_API } from "../../constants";
-import useMetadata from "../../hooks/useMetadata";
-import useQueryString from "../../hooks/useQueryString";
-import useRegionData from "../../hooks/useRegionData";
-import { getByRegionId } from "../../utils/metadata";
-import CustomizableChart from "../CustomizableChart";
-import RegionSelector from "../RegionSelector";
-import TrendChart from "../TrendChart";
+import { DEFAULT_OPTIONS, SIMILARITY_API } from "./constants";
+import useMetadata from "./hooks/useMetadata";
+import useQueryString from "./hooks/useQueryString";
+import useRegionData from "./hooks/useRegionData";
+import { getByRegionId } from "./utils/metadata";
+import CustomizableChart from "./components/CustomizableChart";
+import RegionSelector from "./components/RegionSelector";
+import TrendChart from "./components/TrendChart";
 import "./Explorer.css";
 import styled from "styled-components";
 
@@ -217,7 +217,7 @@ const Explorer = () => {
     }
 
     Object.entries(regionData).forEach(([key, timeline]) => {
-      const firstCase = timeline.find((row) => row.confirmed > 0);
+      const firstCase = timeline.find((row) => row.cases > 0);
       const firstDeath = timeline.find((row) => row.deaths > 0);
 
       const latestRow = last(timeline);
@@ -225,9 +225,9 @@ const Explorer = () => {
       stats[key] = {
         sinceFirstCase: firstCase ? differenceInDays(new Date(), firstCase.date) : 0,
         sinceFirstDeath: firstDeath ? differenceInDays(new Date(), firstDeath.date) : 0,
-        latestCases: latestRow?.confirmed ?? 0,
+        latestCases: latestRow?.cases ?? 0,
         latestDeaths: latestRow?.deaths ?? 0,
-        latestCasesPer100k: ((latestRow?.confirmed ?? 0) / dataByKey[key].population) * 100000,
+        latestCasesPer100k: ((latestRow?.cases ?? 0) / dataByKey[key].population) * 100000,
         latestDeathsPer100k: ((latestRow?.deaths ?? 0) / dataByKey[key].population) * 100000,
         latestDate: latestRow?.date ?? new Date(),
       };
@@ -522,10 +522,10 @@ const Explorer = () => {
                 {...DEFAULT_OPTIONS}
                 selectedRegions={chartRegions}
                 alignAt={1}
-                chartType="bar"
+                chartType="area"
                 isCumulative={true}
                 height={250}
-                metric={"confirmed"}
+                metric={"cases"}
                 title={`Total Cases - Comparison between ${currentRegion?.displayName} and ${secondaryRegion?.displayName}`}
                 timeserieSlice={-1}
                 isIncidence={isIncidence}
@@ -537,7 +537,7 @@ const Explorer = () => {
                 {...DEFAULT_OPTIONS}
                 selectedRegions={chartRegions}
                 alignAt={1}
-                chartType="bar"
+                chartType="area"
                 isCumulative={true}
                 height={250}
                 metric={"deaths"}
@@ -553,7 +553,7 @@ const Explorer = () => {
               </Header>
               <Grid columns={2} stackable>
                 <Grid.Column>
-                  <TrendChart {...DEFAULT_OPTIONS} selectedRegions={chartRegions} alignAt={1} height={250} metric={"confirmed"} title={``} />
+                  <TrendChart {...DEFAULT_OPTIONS} selectedRegions={chartRegions} alignAt={1} height={250} metric={"cases"} title={``} />
                 </Grid.Column>
                 <Grid.Column>
                   <TrendChart {...DEFAULT_OPTIONS} selectedRegions={chartRegions} alignAt={1} height={250} metric={"deaths"} title={``} />
