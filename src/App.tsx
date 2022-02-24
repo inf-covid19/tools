@@ -95,7 +95,7 @@ function App() {
         <img src={LogoUFRGS} height="100" alt="Universidade Federal do Rio Grande do Sul (UFRGS)" />{" "}
         <div>
           <Header as="h1">
-            COVID-19 Analysis Tools
+            COVID-19 Visual Analytics Tools
             <Header.Subheader>A set of configurable tools around COVID-19 data.</Header.Subheader>
           </Header>
         </div>
