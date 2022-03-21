@@ -156,7 +156,7 @@ async function fetchFeaturedPeriods(region, options) {
   const qa = new URLSearchParams();
 
   Object.entries(options).forEach(([key, value]) => {
-    qa.append(key, value);
+    qa.append(key, typeof value === "object" ? JSON.stringify(value) : value);
   });
 
   const response = await fetch(`${API_URL}/featured_periods/${region}?${qa.toString()}`);

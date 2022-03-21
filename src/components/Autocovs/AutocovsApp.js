@@ -201,15 +201,17 @@ function App() {
                       <label>{paramConfig.label}</label>
                       <input
                         value={config.smooth_params?.[paramId]}
-                        onChange={({ target }) =>
-                          setConfig({
+                        onChange={({ target }) => {
+                          const isNumber = Number.isFinite(paramConfig.default);
+
+                          return setConfig({
                             ...config,
                             smooth_params: {
                               ...config.smooth_params,
-                              [paramId]: target.value,
+                              [paramId]: isNumber ? Number(target.value) || paramConfig.default : target.value,
                             },
-                          })
-                        }
+                          });
+                        }}
                         defaultValue={paramConfig.default}
                         placeholder={paramConfig.default}
                       />
