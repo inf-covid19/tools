@@ -14,12 +14,13 @@ import { transparentize } from "polished";
 more(Highcharts);
 xrange(Highcharts);
 
+const COLOR_3_SCALE = ["#FFFFB2", "#FD8D3C", "#B10026"];
 
-const COLOR_3_SCALE = ['#ffeda0','#feb24c','#f03b20']
-const COLOR_4_SCALE = ['#ffffb2','#fecc5c','#fd8d3c','#e31a1c']
-const COLOR_5_SCALE = ['#ffffb2','#fecc5c','#fd8d3c','#f03b20','#bd0026']
+const COLOR_4_SCALE = ["#FFFFB2", "#FEB24C", "#FC4E2A", "#B10026"];
+
+const COLOR_5_SCALE = ["#FFFFB2", "#FECC5C",  "#FD8D3C", "#F03B20", "#B10026"]
+
 // const COLOR_6_SCALE = ["#ffffb2", "#fed976", "#feb24c", "#fd8d3c", "#f03b20", "#bd0026"];
-
 
 const PeriodColors = ["#8dd3c7", "#ffffb3", "#bebada", "#fb8072", "#80b1d3", "#fdb462", "#b3de69", "#fccde5", "#d9d9d9", "#bc80bd", "#ccebc5", "#ffed6f"];
 
@@ -49,7 +50,7 @@ const MeasuresColors = {
   information_campaigns: COLOR_3_SCALE,
   testing_policy: COLOR_4_SCALE,
   contact_tracing: COLOR_3_SCALE,
-}
+};
 
 async function fetchRecords(region) {
   const response = await fetch(`${API_URL}/records/${region}`);
