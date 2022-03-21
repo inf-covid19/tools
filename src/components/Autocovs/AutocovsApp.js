@@ -125,6 +125,8 @@ function App() {
     [history]
   );
 
+  const [secondRegion, setSecondRegion] = useState({});
+
   const [config, setConfig] = useState({});
 
   const [effectiveConfig, setEffectiveConfig] = useState(config);
@@ -140,10 +142,23 @@ function App() {
     return getByRegionId(metadata, regionId);
   }, [metadata, region]);
 
+  const secondRegionData = useMemo(() => {
+    const [regionId] = Object.keys(secondRegion);
+
+    if (!regionId) {
+      return null;
+    }
+
+    return getByRegionId(metadata, regionId);
+  }, [metadata, secondRegion]);
+
   return (
     <>
-      <Container>
+      <Container style={{ marginBottom: 20 }}>
+        <h5>Select a location</h5>
         <RegionSelector value={region} onChange={setRegion} multiple={false} />
+        <h5>Compare with...</h5>
+        <RegionSelector value={secondRegion} onChange={setSecondRegion} multiple={false} />
       </Container>
       <Container fluid>
         <Grid padded stackable>
@@ -217,6 +232,8 @@ function App() {
                       key={regionData.key}
                       regionData={regionData}
                       region={regionData.key}
+                      secondRegionData={secondRegionData}
+                      secondRegion={secondRegionData?.key}
                       attribute={"confirmed_daily_21d"}
                       title="Daily Confirmed (21d)"
                       config={effectiveConfig}
@@ -228,6 +245,8 @@ function App() {
                       key={regionData.key}
                       regionData={regionData}
                       region={regionData.key}
+                      secondRegionData={secondRegionData}
+                      secondRegion={secondRegionData?.key}
                       attribute={"deaths_daily_21d"}
                       title="Daily Deaths (21d)"
                       config={effectiveConfig}

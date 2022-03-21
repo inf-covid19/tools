@@ -64,7 +64,7 @@ const MENU_ITEMS = [
     name: "Waves & Measurements",
     path: "/waves-and-measurements/:region?",
     component: AutocovsApp,
-    icon: "dashboard",
+    icon: "law",
     external: false,
   },
   // {
