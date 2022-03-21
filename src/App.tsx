@@ -17,6 +17,8 @@ import useMetadata from "./hooks/useMetadata";
 import styled from "styled-components";
 import first from "lodash/first";
 
+import AutocovsApp from "./components/Autocovs/AutocovsApp";
+
 const LAST_TAB_KEY = "covid19-tools.api.lastTab";
 
 const MENU_ITEMS = [
@@ -55,6 +57,13 @@ const MENU_ITEMS = [
     name: "Location Inspector",
     path: "/location-inspector/:region?",
     component: Metrics,
+    icon: "dashboard",
+    external: false,
+  },
+  {
+    name: "Waves & Measurements",
+    path: "/waves-and-measurements/:region?",
+    component: AutocovsApp,
     icon: "dashboard",
     external: false,
   },
