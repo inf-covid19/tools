@@ -13,6 +13,8 @@ import xrange from "highcharts/modules/xrange";
 import { transparentize } from "polished";
 import { sortBy } from "lodash";
 
+import RegionInsights from "./RegionInsights";
+
 more(Highcharts);
 xrange(Highcharts);
 
@@ -311,6 +313,7 @@ function useChartOptions({ attribute, title, records, featuredPeriods, regionDat
         type: "datetime",
         plotBands: featuredPeriods?.featured_periods.map(({ start, end, id }, index) => {
           return {
+            label: { text: `#${index+1}` },
             color: transparentize(0.5, PeriodColors[index % PeriodColors.length]), // Color value
             from: start, // Start of the plot band
             to: end, // End of the plot band
@@ -370,7 +373,7 @@ function useChartOptions({ attribute, title, records, featuredPeriods, regionDat
   return chartOptions;
 }
 
-function RegionChart({ region, regionData, secondRegion, secondRegionData, attribute, title, config = {} }) {
+function RegionChart({ region, regionData, secondRegion, secondRegionData, attribute, title, config = {}, withInsights = false }) {
   const { data: records, status: recordsStatus } = useQuery(region && ["records", region], () => fetchRecords(region));
   const { data: secondRecords, status: secondRecordsStatus } = useQuery(secondRegion && ["records", secondRegion], () => fetchRecords(secondRegion));
 
@@ -407,6 +410,12 @@ function RegionChart({ region, regionData, secondRegion, secondRegionData, attri
 
   return (
     <div>
+      {withInsights && (
+        <Container>
+          <RegionInsights regionData={regionData} featuredPeriods={featuredPeriods} attribute={attribute} />
+        </Container>
+      )}
+
       <Container>
         <HighchartsReact highcharts={Highcharts} options={chartOptions} />
         {secondRegion && <HighchartsReact highcharts={Highcharts} options={secondChartOptions} />}

@@ -13,9 +13,10 @@ type Props = {
   multiple?: boolean;
   onChange: (value: Record<string, boolean>) => void;
   filter?: (key: string) => boolean;
+  zIndex?: number;
 };
 
-export default function RegionSelector({ value, onChange, multiple = true, filter = () => true }: Props) {
+export default function RegionSelector({ value, onChange, multiple = true, filter = () => true, zIndex = 13 }: Props) {
   const [search, setSearch] = useState("");
   const [fromValue, setFromValue] = useState("all");
   const selected = useMemo(() => Object.keys(value).filter((k) => value[k]), [value]);
@@ -160,7 +161,7 @@ export default function RegionSelector({ value, onChange, multiple = true, filte
               Select regions from{" "}
               <Dropdown
                 selectOnNavigation={false}
-                style={{ zIndex: 13 }}
+                style={{ zIndex }}
                 header="Adjust scope"
                 inline
                 options={fromOptions}

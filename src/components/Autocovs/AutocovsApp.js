@@ -156,7 +156,7 @@ function App() {
     <>
       <Container style={{ marginBottom: 20 }}>
         <h5>Select a location</h5>
-        <RegionSelector value={region} onChange={setRegion} multiple={false} />
+        <RegionSelector value={region} onChange={setRegion} multiple={false} zIndex={15} />
         <h5>Compare with...</h5>
         <RegionSelector value={secondRegion} onChange={setSecondRegion} multiple={false} />
       </Container>
@@ -239,6 +239,7 @@ function App() {
                       attribute={"confirmed_daily_21d"}
                       title="Daily Confirmed (21d)"
                       config={effectiveConfig}
+                      withInsights
                     />
                   </Grid.Column>
                   <Grid.Column md={12}>
