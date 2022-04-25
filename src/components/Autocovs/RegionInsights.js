@@ -49,8 +49,6 @@ function RegionInsights({ regionData, featuredPeriods, attribute }) {
     );
   }, [periodList]);
 
-  console.log("---periodList---", periodList, attribute);
-
   return (
     <div style={{ marginBottom: 20 }}>
       <h2>Insights</h2>
@@ -62,25 +60,25 @@ function RegionInsights({ regionData, featuredPeriods, attribute }) {
         </Statistic>
         <Statistic>
           <Statistic.Value>
-            <Icon name="arrows alternate vertical" /> #{highestPeekWave.index + 1}
+            <Icon name="arrows alternate vertical" /> #{highestPeekWave?.index + 1}
           </Statistic.Value>
           <Statistic.Label>Highest peak</Statistic.Label>
         </Statistic>
         <Statistic>
           <Statistic.Value>
-            <Icon name="arrows alternate horizontal" /> #{largestWidthWave.index + 1}
+            <Icon name="arrows alternate horizontal" /> #{largestWidthWave?.index + 1}
           </Statistic.Value>
           <Statistic.Label>Largest width</Statistic.Label>
         </Statistic>
         <Statistic>
           <Statistic.Value>
-            <Icon name="level up" /> #{steepestAscendWave.index + 1}
+            <Icon name="level up" /> #{steepestAscendWave?.index + 1}
           </Statistic.Value>
           <Statistic.Label>Steepest ascend</Statistic.Label>
         </Statistic>
         <Statistic>
           <Statistic.Value>
-            <Icon name="level down" /> #{steepestDescendWave.index + 1}
+            <Icon name="level down" /> #{steepestDescendWave?.index + 1}
           </Statistic.Value>
           <Statistic.Label>Steepest descend</Statistic.Label>
         </Statistic>

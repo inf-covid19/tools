@@ -220,7 +220,7 @@ export default function RegionSelector({ value, onChange, multiple = true, filte
       <Dropdown
         className={multiple ? undefined : "large"}
         selectOnNavigation={false}
-        style={{ zIndex: 12 }}
+        style={{ zIndex: zIndex - 1 }}
         placeholder={fromValue === "all" ? "Search for countries, states, provinces..." : `Choose regions from ${getByRegionId(metadata!, fromValue).displayName}...`}
         clearable
         fluid

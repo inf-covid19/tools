@@ -1,5 +1,6 @@
 import { Container, Form, Button, Grid } from "semantic-ui-react";
-import React, { useCallback, useState, useMemo } from "react";
+import React, { useCallback, useState, useMemo, useEffect } from "react";
+import styled from "styled-components";
 import RegionSelector from "../RegionSelector";
 import first from "lodash/first";
 import { generatePath, useHistory, useParams } from "react-router-dom";
@@ -8,7 +9,12 @@ import RegionChart from "./RegionChart";
 import useMetadata from "../../hooks/useMetadata";
 import { getByRegionId } from "../../utils/metadata";
 
-const Config = {
+const MethodOptions = {
+  linear: "Linear",
+  otsu: "Otsu's Thresholding",
+};
+
+const LinearConfig = {
   sign_window: {
     label: "Sign Window",
     help: "Used to soft the sign series.",
@@ -39,6 +45,11 @@ const Config = {
     help: "Minimum number of days required to be have a period restart.",
     default: 7,
   },
+};
+
+const Config = {
+  linear: LinearConfig,
+  otsu: {},
 };
 
 const SmoothOptions = {
@@ -108,6 +119,29 @@ const SmoothParamsByFunction = {
   },
 };
 
+function useStorageState(key, initialState) {
+  const effectiveKey = useMemo(() => `tools.storageState.${key}`, [key]);
+
+  const [state, setState] = useState(() => {
+    try {
+      const data = localStorage.getItem(effectiveKey);
+      return JSON.parse(data) || initialState;
+    } catch {
+      return initialState;
+    }
+  });
+
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      localStorage.setItem(effectiveKey, JSON.stringify(state));
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [effectiveKey, state]);
+
+  return [state, setState];
+}
+
 function App() {
   const { region: regionKey } = useParams();
   const history = useHistory();
@@ -127,7 +161,7 @@ function App() {
 
   const [secondRegion, setSecondRegion] = useState({});
 
-  const [config, setConfig] = useState({});
+  const [config, setConfig] = useStorageState("autocovsConfig", {});
 
   const [effectiveConfig, setEffectiveConfig] = useState(config);
   const { data: metadata } = useMetadata();
@@ -172,7 +206,18 @@ function App() {
                     setEffectiveConfig(config);
                   }}
                 >
-                  {Object.entries(Config).map(([fieldId, fieldConfig]) => (
+                  <Form.Field className="mb-3">
+                    <label>Method</label>
+                    <select defaultValue="linear" value={config.method} onChange={({ target }) => setConfig({ ...config, method: target.value })}>
+                      {Object.entries(MethodOptions).map(([value, label]) => (
+                        <option key={value} value={value}>
+                          {label}
+                        </option>
+                      ))}
+                    </select>
+                  </Form.Field>
+
+                  {Object.entries(Config[config.method ?? "linear"]).map(([fieldId, fieldConfig]) => (
                     <Form.Field key={fieldId} className="mb-3">
                       <label>{fieldConfig.label}</label>
                       <input
@@ -181,7 +226,7 @@ function App() {
                         defaultValue={fieldConfig.default}
                         placeholder={fieldConfig.default}
                       />
-                      {/* <p className="text-muted">{fieldConfig.help}</p> */}
+                      <HelpText>{fieldConfig.help}</HelpText>
                     </Form.Field>
                   ))}
 
@@ -215,7 +260,7 @@ function App() {
                         defaultValue={paramConfig.default}
                         placeholder={paramConfig.default}
                       />
-                      {/* <p className="text-muted">{paramConfig.help}</p> */}
+                      <HelpText>{paramConfig.help}</HelpText>
                     </Form.Field>
                   ))}
 
@@ -266,3 +311,7 @@ function App() {
 }
 
 export default App;
+
+const HelpText = styled.p`
+  color: rgba(0, 0, 0, 0.6);
+`;
