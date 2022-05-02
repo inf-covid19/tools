@@ -1,12 +1,12 @@
-import React, { useMemo } from "react";
-
+import * as d3 from "d3";
 import Highcharts from "highcharts";
 import HighchartsReact from "highcharts-react-official";
 import more from "highcharts/highcharts-more";
-import xrange from "highcharts/modules/xrange";
 import annotations from "highcharts/modules/annotations";
+import xrange from "highcharts/modules/xrange";
 import { get } from "lodash";
-import * as d3 from "d3";
+import React, { useMemo } from "react";
+
 
 more(Highcharts);
 xrange(Highcharts);
@@ -119,7 +119,7 @@ function LocationChart({ records, featuredConfirmedPeriods, featuredDeathsPeriod
         },
       ],
     };
-  }, [records, featuredConfirmedPeriods, featuredDeathsPeriods, location, covidVariants]);
+  }, [records, location, covidVariants]);
 
   return (
     <div>

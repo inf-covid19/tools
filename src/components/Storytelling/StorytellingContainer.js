@@ -1,7 +1,7 @@
 import { first } from "lodash";
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useMemo } from "react";
 import { generatePath, useHistory, useParams } from "react-router-dom";
-import { Header, Icon, Loader, Segment, Form } from "semantic-ui-react";
+import { Header, Icon, Loader, Segment } from "semantic-ui-react";
 import styled from "styled-components";
 import useMetadata from "../../hooks/useMetadata";
 import { getByRegionId } from "../../utils/metadata";

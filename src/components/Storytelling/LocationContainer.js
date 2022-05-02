@@ -1,10 +1,10 @@
 import React from "react";
 import { useQuery } from "react-query";
+import { Loader } from "semantic-ui-react";
 import styled from "styled-components";
-import { Header, Icon, Loader, Segment, Form } from "semantic-ui-react";
 import { AUTOCOVS_API as API_URL } from "../../constants";
-
 import LocationChart from "./LocationChart";
+
 
 const get = async (url, searchParams = {}) => {
   const qs = new URLSearchParams();
