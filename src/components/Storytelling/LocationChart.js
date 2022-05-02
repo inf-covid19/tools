@@ -39,7 +39,7 @@ function LocationChart({ records, featuredConfirmedPeriods, featuredDeathsPeriod
 
     const restrictionsPoints = getRestrictionPoints(records);
 
-    console.log("--restrictionsPoints--", { restrictionsPoints });
+    console.log("--restrictionsPoints--", { restrictionsPoints, location });
 
     return {
       ...baseOptions,
@@ -77,7 +77,7 @@ function LocationChart({ records, featuredConfirmedPeriods, featuredDeathsPeriod
               textOutline: "1px white",
             },
           },
-          labels: Object.entries(get(covidVariants, location.country, {})).map(([label, date]) => {
+          labels: Object.entries(get(covidVariants, location.isCountry ? location.name :location.country, {})).map(([label, date]) => {
             return {
               point: { xAxis: 0, yAxis: 0, x: new Date(recordByDate[date].date).getTime(), y: recordByDate[date].confirmed_by_100k_daily_7d },
               text: `${label} detected`,
