@@ -301,7 +301,7 @@ function useChartOptions({ attribute, title, records, featuredPeriods, regionDat
         zoomType: "x",
         height: 300,
         width: 920,
-        spacingLeft: 150,
+        spacingLeft: 165,
       },
       title: {
         text: null,

@@ -18,6 +18,7 @@ import styled from "styled-components";
 import first from "lodash/first";
 
 import AutocovsApp from "./components/Autocovs/AutocovsApp";
+import StorytellingContainer from "./components/Storytelling/StorytellingContainer";
 
 const LAST_TAB_KEY = "covid19-tools.api.lastTab";
 
@@ -61,10 +62,17 @@ const MENU_ITEMS = [
     external: false,
   },
   {
-    name: "Waves & Measurements",
+    name: "Insights Visualizer",
+    path: "/insights-visualizer/:region?",
+    component: StorytellingContainer,
+    icon: "map outline",
+    external: false,
+  },
+  {
+    name: "Waves Debugger",
     path: "/waves-and-measurements/:region?",
     component: AutocovsApp,
-    icon: "law",
+    icon: "sliders horizontal",
     external: false,
   },
   // {
