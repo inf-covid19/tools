@@ -7,53 +7,14 @@ import xrange from "highcharts/modules/xrange";
 import { get, merge } from "lodash";
 import React, { useMemo } from "react";
 
+import { getRestrictionPoints, getVacinationMilestones } from "./utils/functions";
 import Legend from "./Legend";
 
 more(Highcharts);
 xrange(Highcharts);
 annotations(Highcharts);
 
-const DEFAULT_RESTRICTION = "school_closing";
 const colorSchema = d3.interpolateYlOrRd;
-
-function getRestrictionPoints(records, { restriction = DEFAULT_RESTRICTION } = {}) {
-  const points = [];
-
-  let previousValue = 0;
-  records.forEach((x) => {
-    const value = x[restriction];
-    if (Math.abs(value) !== Math.abs(previousValue)) {
-      points.push({ ...x, previousValue });
-      previousValue = value;
-    }
-  });
-
-  return points;
-}
-
-function getVacinationMilestones(records) {
-  let dateWhenStarted = null;
-  let dateWhenReach75 = null;
-
-  for (const x of records) {
-    if (dateWhenStarted === null && x.people_vaccinated > 0) {
-      dateWhenStarted = x.date;
-    }
-
-    if (dateWhenReach75 === null && x.people_vaccinated / x.population >= 0.75) {
-      dateWhenReach75 = x.date;
-    }
-
-    if (![dateWhenStarted, dateWhenReach75].includes(null)) {
-      break;
-    }
-  }
-
-  return [
-    { date: dateWhenStarted && new Date(dateWhenStarted).toISOString().slice(0, 10), label: "Vacination started" },
-    { date: dateWhenReach75 && new Date(dateWhenReach75).toISOString().slice(0, 10), label: "75% of population with a least one shot" },
-  ].filter((x) => !!x.date);
-}
 
 function LocationChart({ records, featuredConfirmedPeriods, featuredDeathsPeriods, location, covidVariants }) {
   const chartOptions = useMemo(() => {
@@ -143,7 +104,9 @@ function LocationChart({ records, featuredConfirmedPeriods, featuredDeathsPeriod
         },
         {
           draggable: "",
-          labels: vacinationMilestones.map(({ date, label }) => {
+          labels: vacinationMilestones.map(({ date: rawDate, label }) => {
+            const date = new Date(rawDate).toISOString().slice(0, 10);
+
             return {
               allowOverlap: true,
               point: { xAxis: 0, yAxis: 0, x: new Date(recordByDate[date].date).getTime(), y: recordByDate[date].confirmed_by_100k_daily_7d },
@@ -161,10 +124,11 @@ function LocationChart({ records, featuredConfirmedPeriods, featuredDeathsPeriod
             y: x.confirmed_by_100k_daily_7d,
             total: x.confirmed,
             daily: x.confirmed_daily_7d,
+            per100k: x.confirmed_by_100k,
           })),
           tooltip: {
             pointFormat:
-              "{series.name}: <br/>\tTotal: <b>{point.total}</b><br/>\t7-day moving average: <b>{point.daily}</b><br/>\tPer 100k inhabitants: <b>{point.y}</b><br/><br/>",
+              "{series.name}: <br/>\tTotal: <b>{point.total}</b><br/>\t7-day moving average: <b>{point.daily}</b><br/>\tPer 100k inhabitants: <b>{point.per100k}</b><br/><br/>",
           },
         },
         {
@@ -177,11 +141,12 @@ function LocationChart({ records, featuredConfirmedPeriods, featuredDeathsPeriod
             x: new Date(x.date).getTime(),
             y: x.deaths_by_100k_daily_7d,
             total: x.deaths,
+            per100k: x.deaths_by_100k,
             daily: x.deaths_daily_7d,
           })),
           tooltip: {
             pointFormat:
-              "{series.name}: <br/>\tTotal: <b>{point.total}</b><br/>\t7-day moving average: <b>{point.daily}</b><br/>\tPer 100k inhabitants: <b>{point.y}</b><br/><br/>",
+              "{series.name}: <br/>\tTotal: <b>{point.total}</b><br/>\t7-day moving average: <b>{point.daily}</b><br/>\tPer 100k inhabitants: <b>{point.per100k}</b><br/><br/>",
           },
         },
       ],

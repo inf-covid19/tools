@@ -4,7 +4,7 @@ import { Loader } from "semantic-ui-react";
 import styled from "styled-components";
 import { AUTOCOVS_API as API_URL } from "../../constants";
 import LocationChart from "./LocationChart";
-
+import LocationStory from "./LocationStory";
 
 const get = async (url, searchParams = {}) => {
   const qs = new URLSearchParams();
@@ -53,6 +53,7 @@ function LocationContainer({ location }) {
   return (
     <div>
       <LocationChart location={location} {...data} />
+      <LocationStory location={location} {...data} />
     </div>
   );
 }
