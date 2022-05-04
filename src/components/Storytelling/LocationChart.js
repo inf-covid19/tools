@@ -4,15 +4,16 @@ import HighchartsReact from "highcharts-react-official";
 import more from "highcharts/highcharts-more";
 import annotations from "highcharts/modules/annotations";
 import xrange from "highcharts/modules/xrange";
-import { get } from "lodash";
+import { get, merge } from "lodash";
 import React, { useMemo } from "react";
 
+import Legend from "./Legend";
 
 more(Highcharts);
 xrange(Highcharts);
 annotations(Highcharts);
 
-const DEFAULT_RESTRICTION = "stay_home_restrictions";
+const DEFAULT_RESTRICTION = "school_closing";
 const colorSchema = d3.interpolateYlOrRd;
 
 function getRestrictionPoints(records, { restriction = DEFAULT_RESTRICTION } = {}) {
@@ -30,22 +31,46 @@ function getRestrictionPoints(records, { restriction = DEFAULT_RESTRICTION } = {
   return points;
 }
 
+function getVacinationMilestones(records) {
+  let dateWhenStarted = null;
+  let dateWhenReach75 = null;
+
+  for (const x of records) {
+    if (dateWhenStarted === null && x.people_vaccinated > 0) {
+      dateWhenStarted = x.date;
+    }
+
+    if (dateWhenReach75 === null && x.people_vaccinated / x.population >= 0.75) {
+      dateWhenReach75 = x.date;
+    }
+
+    if (![dateWhenStarted, dateWhenReach75].includes(null)) {
+      break;
+    }
+  }
+
+  return [
+    { date: dateWhenStarted && new Date(dateWhenStarted).toISOString().slice(0, 10), label: "Vacination started" },
+    { date: dateWhenReach75 && new Date(dateWhenReach75).toISOString().slice(0, 10), label: "75% of population with a least one shot" },
+  ].filter((x) => !!x.date);
+}
+
 function LocationChart({ records, featuredConfirmedPeriods, featuredDeathsPeriods, location, covidVariants }) {
   const chartOptions = useMemo(() => {
     const recordByDate = records.reduce((mapping, x) => {
       mapping[new Date(x.date).toISOString().slice(0, 10)] = x;
       return mapping;
     }, {});
+    const stay_home_restrictions_points = getRestrictionPoints(records, { restriction: "stay_home_restrictions" });
+    const workplace_closing_points = getRestrictionPoints(records, { restriction: "workplace_closing" });
+    const school_closing_points = getRestrictionPoints(records, { restriction: "school_closing" });
 
-    const restrictionsPoints = getRestrictionPoints(records);
+    const vacinationMilestones = getVacinationMilestones(records);
 
-    console.log("--restrictionsPoints--", { restrictionsPoints, location });
-
-    return {
-      ...baseOptions,
-      annotations: [
-        {
-          shapes: restrictionsPoints.map((x) => ({
+    const mapPoints = (restrictionsPoints, restriction, extra = {}, { getColor = colorSchema } = {}) => {
+      return restrictionsPoints.map((x) =>
+        merge(
+          {
             point: {
               xAxis: 0,
               yAxis: 0,
@@ -53,23 +78,55 @@ function LocationChart({ records, featuredConfirmedPeriods, featuredDeathsPeriod
               y: x.confirmed_by_100k_daily_7d,
             },
             type: "circle",
-            r: 10,
+            r: 5,
             fill: {
               linearGradient: { x1: 0, x2: 1, y1: 0, y2: 0 },
               stops: [
-                [0, colorSchema(Math.abs(x.previousValue) / 3)], // start
-                [0.49, colorSchema(Math.abs(x.previousValue) / 3)], // start
-                [0.51, colorSchema(Math.abs(x[DEFAULT_RESTRICTION]) / 3)],
-                [1, colorSchema(Math.abs(x[DEFAULT_RESTRICTION]) / 3)], // end
+                [0, getColor(Math.abs(x.previousValue) / 3)], // start
+                [0.49, getColor(Math.abs(x.previousValue) / 3)], // start
+                [0.51, getColor(Math.abs(x[restriction]) / 3)],
+                [1, getColor(Math.abs(x[restriction]) / 3)], // end
               ],
             },
-          })),
+          },
+          extra
+        )
+      );
+    };
+
+    return merge(baseOptions, {
+      xAxis: {
+        plotLines: featuredConfirmedPeriods.featured_periods.map(({ start, end }, index, arr) => {
+          return {
+            label: {
+              text: `Wave #${index + 1} started`,
+            },
+            color: d3.interpolateWarm((index + 1) / arr.length),
+            width: 2,
+            value: start,
+            zIndex: 6,
+          };
+        }),
+      },
+      annotations: [
+        {
+          draggable: "",
+          shapes: mapPoints(stay_home_restrictions_points, "stay_home_restrictions", {}, { getColor: d3.interpolateBuPu }),
+        },
+        {
+          draggable: "",
+          shapes: mapPoints(workplace_closing_points, "workplace_closing", { type: "rect", width: 10, height: 10 }, { getColor: d3.interpolateOrRd }),
+        },
+        {
+          draggable: "",
+          shapes: mapPoints(school_closing_points, "school_closing", {}, { getColor: d3.interpolateYlGn }),
         },
         {
           draggable: "",
           labelOptions: {
             shape: "connector",
             align: "right",
+            y: -40,
             justify: false,
             crop: true,
             style: {
@@ -77,10 +134,20 @@ function LocationChart({ records, featuredConfirmedPeriods, featuredDeathsPeriod
               textOutline: "1px white",
             },
           },
-          labels: Object.entries(get(covidVariants, location.isCountry ? location.name :location.country, {})).map(([label, date]) => {
+          labels: Object.entries(get(covidVariants, location.isCountry ? location.name : location.country, {})).map(([label, date]) => {
             return {
               point: { xAxis: 0, yAxis: 0, x: new Date(recordByDate[date].date).getTime(), y: recordByDate[date].confirmed_by_100k_daily_7d },
               text: `${label} detected`,
+            };
+          }),
+        },
+        {
+          draggable: "",
+          labels: vacinationMilestones.map(({ date, label }) => {
+            return {
+              allowOverlap: true,
+              point: { xAxis: 0, yAxis: 0, x: new Date(recordByDate[date].date).getTime(), y: recordByDate[date].confirmed_by_100k_daily_7d },
+              text: label,
             };
           }),
         },
@@ -118,12 +185,32 @@ function LocationChart({ records, featuredConfirmedPeriods, featuredDeathsPeriod
           },
         },
       ],
-    };
-  }, [records, location, covidVariants]);
+    });
+  }, [records, featuredConfirmedPeriods, covidVariants, location]);
 
   return (
     <div>
       <HighchartsReact highcharts={Highcharts} options={chartOptions} />
+
+      <Legend
+        legends={[
+          {
+            title: "Stay Home Restrictions",
+            possibleValues: [0, 1, 2, 3],
+            colorSchema: d3.interpolateBuPu,
+          },
+          {
+            title: "Workplace Closing",
+            possibleValues: [0, 1, 2, 3],
+            colorSchema: d3.interpolateOrRd,
+          },
+          {
+            title: "School Closing",
+            possibleValues: [0, 1, 2, 3],
+            colorSchema: d3.interpolateYlGn,
+          },
+        ]}
+      />
     </div>
   );
 }
@@ -137,12 +224,10 @@ const baseOptions = {
   title: {
     text: null,
   },
-  xAxis: [
-    {
-      type: "datetime",
-      crosshair: true,
-    },
-  ],
+  xAxis: {
+    type: "datetime",
+    crosshair: true,
+  },
   yAxis: [
     {
       // Primary yAxis
@@ -183,9 +268,9 @@ const baseOptions = {
   legend: {
     layout: "vertical",
     align: "left",
-    x: 80,
+    x: 100,
     verticalAlign: "top",
-    y: 25,
+    y: 15,
     floating: true,
     backgroundColor:
       Highcharts.defaultOptions.legend.backgroundColor || // theme

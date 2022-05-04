@@ -281,7 +281,7 @@ function App() {
                       region={regionData.key}
                       secondRegionData={secondRegionData}
                       secondRegion={secondRegionData?.key}
-                      attribute={"confirmed_daily_21d"}
+                      attribute={"confirmed_by_100k_daily_7d"}
                       title="Daily Confirmed (21d)"
                       config={effectiveConfig}
                       withInsights
