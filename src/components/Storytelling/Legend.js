@@ -5,13 +5,13 @@ import { first, last } from "lodash";
 function Legend({ legends }) {
   return (
     <Container>
-      {legends.map(({ title, possibleValues, colorSchema }) => {
+      {legends.map(({ name, possibleValues, colorSchema }) => {
         return (
-          <Item key={title}>
-            <Title>{title}</Title>
+          <Item key={name}>
+            <Title>{name}</Title>
             <Value>{first(possibleValues)}</Value>
             {possibleValues.map((value) => (
-              <Square key={value} color={colorSchema(value / last(possibleValues))}></Square>
+              <Square key={value} color={colorSchema(value)}></Square>
             ))}
             <Value>{last(possibleValues)}</Value>
           </Item>
@@ -53,6 +53,6 @@ const Square = styled.div`
   margin-right: 5px;
 
   & + & {
-      margin-left: -5px;
+    margin-left: -5px;
   }
 `;

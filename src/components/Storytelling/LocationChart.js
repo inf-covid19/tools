@@ -1,63 +1,32 @@
 import * as d3 from "d3";
-import Highcharts from "highcharts";
 import HighchartsReact from "highcharts-react-official";
-import more from "highcharts/highcharts-more";
-import annotations from "highcharts/modules/annotations";
-import xrange from "highcharts/modules/xrange";
-import { get, merge } from "lodash";
+import { get, merge, startCase } from "lodash";
 import React, { useMemo } from "react";
+import Highcharts from "../../utils/highcharts";
+import { getVacinationMilestones } from "./utils/functions";
 
-import { getRestrictionPoints, getVacinationMilestones } from "./utils/functions";
-import Legend from "./Legend";
+function LocationChart({ records, featuredConfirmedPeriods, featuredDeathsPeriods, location, covidVariants, attribute }) {
+  const attrY = `${attribute}_by_100k_daily_7d`;
+  const attrTotal = attribute;
+  const attrMovingAvg = `${attribute}_daily_7d`;
+  const attrPer100k = `${attribute}_by_100k`;
 
-more(Highcharts);
-xrange(Highcharts);
-annotations(Highcharts);
+  const featuredPeriods = attribute === "confirmed" ? featuredConfirmedPeriods : featuredDeathsPeriods;
 
-const colorSchema = d3.interpolateYlOrRd;
-
-function LocationChart({ records, featuredConfirmedPeriods, featuredDeathsPeriods, location, covidVariants }) {
   const chartOptions = useMemo(() => {
     const recordByDate = records.reduce((mapping, x) => {
       mapping[new Date(x.date).toISOString().slice(0, 10)] = x;
       return mapping;
     }, {});
-    const stay_home_restrictions_points = getRestrictionPoints(records, { restriction: "stay_home_restrictions" });
-    const workplace_closing_points = getRestrictionPoints(records, { restriction: "workplace_closing" });
-    const school_closing_points = getRestrictionPoints(records, { restriction: "school_closing" });
 
     const vacinationMilestones = getVacinationMilestones(records);
 
-    const mapPoints = (restrictionsPoints, restriction, extra = {}, { getColor = colorSchema } = {}) => {
-      return restrictionsPoints.map((x) =>
-        merge(
-          {
-            point: {
-              xAxis: 0,
-              yAxis: 0,
-              x: new Date(x.date).getTime(),
-              y: x.confirmed_by_100k_daily_7d,
-            },
-            type: "circle",
-            r: 5,
-            fill: {
-              linearGradient: { x1: 0, x2: 1, y1: 0, y2: 0 },
-              stops: [
-                [0, getColor(Math.abs(x.previousValue) / 3)], // start
-                [0.49, getColor(Math.abs(x.previousValue) / 3)], // start
-                [0.51, getColor(Math.abs(x[restriction]) / 3)],
-                [1, getColor(Math.abs(x[restriction]) / 3)], // end
-              ],
-            },
-          },
-          extra
-        )
-      );
-    };
-
-    return merge(baseOptions, {
+    return merge({}, baseOptions, {
+      chart: {
+        marginLeft: 100,
+      },
       xAxis: {
-        plotLines: featuredConfirmedPeriods.featured_periods.map(({ start, end }, index, arr) => {
+        plotLines: featuredPeriods.featured_periods.map(({ start, end }, index, arr) => {
           return {
             label: {
               text: `Wave #${index + 1} started`,
@@ -70,18 +39,18 @@ function LocationChart({ records, featuredConfirmedPeriods, featuredDeathsPeriod
         }),
       },
       annotations: [
-        {
-          draggable: "",
-          shapes: mapPoints(stay_home_restrictions_points, "stay_home_restrictions", {}, { getColor: d3.interpolateBuPu }),
-        },
-        {
-          draggable: "",
-          shapes: mapPoints(workplace_closing_points, "workplace_closing", { type: "rect", width: 10, height: 10 }, { getColor: d3.interpolateOrRd }),
-        },
-        {
-          draggable: "",
-          shapes: mapPoints(school_closing_points, "school_closing", {}, { getColor: d3.interpolateYlGn }),
-        },
+        // {
+        //   draggable: "",
+        //   shapes: mapPoints(stay_home_restrictions_points, "stay_home_restrictions", {}, { getColor: d3.interpolateBuPu }),
+        // },
+        // {
+        //   draggable: "",
+        //   shapes: mapPoints(workplace_closing_points, "workplace_closing", { type: "rect", width: 10, height: 10 }, { getColor: d3.interpolateOrRd }),
+        // },
+        // {
+        //   draggable: "",
+        //   shapes: mapPoints(school_closing_points, "school_closing", {}, { getColor: d3.interpolateYlGn }),
+        // },
         {
           draggable: "",
           labelOptions: {
@@ -97,7 +66,7 @@ function LocationChart({ records, featuredConfirmedPeriods, featuredDeathsPeriod
           },
           labels: Object.entries(get(covidVariants, location.isCountry ? location.name : location.country, {})).map(([label, date]) => {
             return {
-              point: { xAxis: 0, yAxis: 0, x: new Date(recordByDate[date].date).getTime(), y: recordByDate[date].confirmed_by_100k_daily_7d },
+              point: { xAxis: 0, yAxis: 0, x: new Date(recordByDate[date].date).getTime(), y: recordByDate[date][attrY] },
               text: `${label} detected`,
             };
           }),
@@ -109,7 +78,7 @@ function LocationChart({ records, featuredConfirmedPeriods, featuredDeathsPeriod
 
             return {
               allowOverlap: true,
-              point: { xAxis: 0, yAxis: 0, x: new Date(recordByDate[date].date).getTime(), y: recordByDate[date].confirmed_by_100k_daily_7d },
+              point: { xAxis: 0, yAxis: 0, x: new Date(recordByDate[date].date).getTime(), y: recordByDate[date][attrY] },
               text: label,
             };
           }),
@@ -117,65 +86,45 @@ function LocationChart({ records, featuredConfirmedPeriods, featuredDeathsPeriod
       ],
       series: [
         {
-          name: "Confirmed Cases",
+          name: attribute === "confirmed" ? "Confirmed Cases" : startCase(attribute),
           type: "spline",
           data: records.map((x) => ({
             x: new Date(x.date).getTime(),
-            y: x.confirmed_by_100k_daily_7d,
-            total: x.confirmed,
-            daily: x.confirmed_daily_7d,
-            per100k: x.confirmed_by_100k,
+            y: x[attrY],
+            total: x[attrTotal],
+            daily: x[attrMovingAvg],
+            per100k: x[attrPer100k],
           })),
           tooltip: {
             pointFormat:
-              "{series.name}: <br/>\tTotal: <b>{point.total}</b><br/>\t7-day moving average: <b>{point.daily}</b><br/>\tPer 100k inhabitants: <b>{point.per100k}</b><br/><br/>",
+              "{series.name}: <br/>\tTotal: <b>{point.total}</b><br/>\tPer 100k inhabitants: <b>{point.per100k}</b><br/>\t7-day moving average: <b>{point.daily}</b><br/><br/>",
           },
         },
-        {
-          name: "Confirmed Deaths",
-          type: "spline",
-          dashStyle: "shortdot",
-          yAxis: 1,
-          color: "#DEB6AB",
-          data: records.map((x) => ({
-            x: new Date(x.date).getTime(),
-            y: x.deaths_by_100k_daily_7d,
-            total: x.deaths,
-            per100k: x.deaths_by_100k,
-            daily: x.deaths_daily_7d,
-          })),
-          tooltip: {
-            pointFormat:
-              "{series.name}: <br/>\tTotal: <b>{point.total}</b><br/>\t7-day moving average: <b>{point.daily}</b><br/>\tPer 100k inhabitants: <b>{point.per100k}</b><br/><br/>",
-          },
-        },
+        // {
+        //   name: "Confirmed Deaths",
+        //   type: "spline",
+        //   // dashStyle: "shortdot",
+        //   yAxis: 1,
+        //   color: "#DEB6AB",
+        //   data: records.map((x) => ({
+        //     x: new Date(x.date).getTime(),
+        //     y: x.deaths_by_100k_daily_7d,
+        //     total: x.deaths,
+        //     per100k: x.deaths_by_100k,
+        //     daily: x.deaths_daily_7d,
+        //   })),
+        //   tooltip: {
+        //     pointFormat:
+        //       "{series.name}: <br/>\tTotal: <b>{point.total}</b><br/>\t7-day moving average: <b>{point.daily}</b><br/>\tPer 100k inhabitants: <b>{point.per100k}</b><br/><br/>",
+        //   },
+        // },
       ],
     });
-  }, [records, featuredConfirmedPeriods, covidVariants, location]);
+  }, [records, featuredPeriods, covidVariants, location, attribute, attrY, attrTotal, attrMovingAvg, attrPer100k]);
 
   return (
     <div>
-      <HighchartsReact highcharts={Highcharts} options={chartOptions} />
-
-      <Legend
-        legends={[
-          {
-            title: "Stay Home Restrictions",
-            possibleValues: [0, 1, 2, 3],
-            colorSchema: d3.interpolateBuPu,
-          },
-          {
-            title: "Workplace Closing",
-            possibleValues: [0, 1, 2, 3],
-            colorSchema: d3.interpolateOrRd,
-          },
-          {
-            title: "School Closing",
-            possibleValues: [0, 1, 2, 3],
-            colorSchema: d3.interpolateYlGn,
-          },
-        ]}
-      />
+      <HighchartsReact key={`${location.id}:${attribute}`} highcharts={Highcharts} options={chartOptions} />
     </div>
   );
 }
@@ -184,7 +133,7 @@ export default LocationChart;
 
 const baseOptions = {
   chart: {
-    zoomType: "xy",
+    zoomType: "x",
   },
   title: {
     text: null,
@@ -193,44 +142,43 @@ const baseOptions = {
     type: "datetime",
     crosshair: true,
   },
-  yAxis: [
-    {
-      // Primary yAxis
-      labels: {
-        // format: "{value}°C",
-        // style: {
-        //   color: Highcharts.getOptions().colors[2],
-        // },
-      },
-      title: {
-        text: "Daily Confirmed Cases (per 100k inhabitants)",
-        // style: {
-        //   color: Highcharts.getOptions().colors[2],
-        // },
-      },
+  yAxis: {
+    // Primary yAxis
+    labels: {
+      // format: "{value}°C",
+      // style: {
+      //   color: Highcharts.getOptions().colors[2],
+      // },
     },
-    {
-      // Secondary yAxis
-      //   gridLineWidth: 0,
-      title: {
-        text: "Daily Confirmed Deaths (per 100k inhabitants)",
-        // style: {
-        //   color: Highcharts.getOptions().colors[0],
-        // },
-      },
-      labels: {
-        // format: "{value} mm",
-        // style: {
-        //   color: Highcharts.getOptions().colors[0],
-        // },
-      },
-      opposite: true,
+    title: {
+      text: "Daily Confirmed Cases (per 100k inhabitants)",
+      // style: {
+      //   color: Highcharts.getOptions().colors[2],
+      // },
     },
-  ],
+  },
+  // {
+  //   // Secondary yAxis
+  //   //   gridLineWidth: 0,
+  //   title: {
+  //     text: "Daily Confirmed Deaths (per 100k inhabitants)",
+  //     // style: {
+  //     //   color: Highcharts.getOptions().colors[0],
+  //     // },
+  //   },
+  //   labels: {
+  //     // format: "{value} mm",
+  //     // style: {
+  //     //   color: Highcharts.getOptions().colors[0],
+  //     // },
+  //   },
+  //   opposite: true,
+  // },
   tooltip: {
     shared: true,
   },
   legend: {
+    enabled: false,
     layout: "vertical",
     align: "left",
     x: 100,

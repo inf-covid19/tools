@@ -6,17 +6,12 @@ import * as d3 from "d3";
 
 import { AUTOCOVS_API as API_URL } from "../../constants";
 
-import Highcharts from "highcharts";
+import Highcharts from "../../utils/highcharts";
 import HighchartsReact from "highcharts-react-official";
-import more from "highcharts/highcharts-more";
-import xrange from "highcharts/modules/xrange";
 import { transparentize } from "polished";
 import { sortBy } from "lodash";
 
 import RegionInsights from "./RegionInsights";
-
-more(Highcharts);
-xrange(Highcharts);
 
 const PeriodColors = ["#8dd3c7", "#ffffb3", "#bebada", "#fb8072", "#80b1d3", "#fdb462", "#b3de69", "#fccde5", "#d9d9d9", "#bc80bd", "#ccebc5", "#ffed6f"];
 

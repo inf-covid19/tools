@@ -1,10 +1,16 @@
+import { sortBy } from "lodash";
 import React from "react";
 import { useQuery } from "react-query";
 import { Loader } from "semantic-ui-react";
 import styled from "styled-components";
 import { AUTOCOVS_API as API_URL } from "../../constants";
+import Legend from "./Legend";
 import LocationChart from "./LocationChart";
+import LocationRestrictions from "./LocationRestrictions";
 import LocationStory from "./LocationStory";
+import { MeasuresConfig } from "./utils/constants";
+
+const defaultPolicies = ["stay_home_restrictions", "workplace_closing", "school_closing"];
 
 const get = async (url, searchParams = {}) => {
   const qs = new URLSearchParams();
@@ -52,7 +58,18 @@ function LocationContainer({ location }) {
 
   return (
     <div>
-      <LocationChart location={location} {...data} />
+      <LocationChart key={`${location.id}:confirmed`} location={location} attribute="confirmed" {...data} />
+      <LocationRestrictions key={`${location.id}:restrictions`} location={location} policies={defaultPolicies} {...data} />
+      <LocationChart key={`${location.id}:deaths`} location={location} attribute="deaths" {...data} />
+      <Legend
+        legends={defaultPolicies.map((x) => {
+          const config = MeasuresConfig[x];
+          return {
+            ...config,
+            possibleValues: sortBy(Object.keys(config.indicators)),
+          };
+        })}
+      />
       <LocationStory location={location} {...data} />
     </div>
   );

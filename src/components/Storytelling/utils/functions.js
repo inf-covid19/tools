@@ -1,7 +1,9 @@
+import { first } from "lodash";
+
 export function getRestrictionPoints(records, { restriction }) {
   const points = [];
 
-  let previousValue = 0;
+  let previousValue = first(records)[restriction];
   records.forEach((x) => {
     const value = x[restriction];
     if (Math.abs(value) !== Math.abs(previousValue)) {
