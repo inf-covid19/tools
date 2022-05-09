@@ -38,6 +38,11 @@ function LocationChart({ records, featuredConfirmedPeriods, featuredDeathsPeriod
           };
         }),
       },
+      yAxis: {
+        title: {
+          text: attribute === 'confirmed' ? "Confirmed Cases per 100k inhab.<br>(7-day moving average)" : `${startCase(attribute)} per 100k inhab.<br>(7-day moving average)`
+        }
+      },
       annotations: [
         // {
         //   draggable: "",
@@ -97,7 +102,13 @@ function LocationChart({ records, featuredConfirmedPeriods, featuredDeathsPeriod
           })),
           tooltip: {
             pointFormat:
-              "{series.name}: <br/>\tTotal: <b>{point.total}</b><br/>\tPer 100k inhabitants: <b>{point.per100k}</b><br/>\t7-day moving average: <b>{point.daily}</b><br/><br/>",
+              `{series.name}: <br/>
+              \tTotal: <b>{point.total:.2f}</b><br/>
+              \t↪️7-day moving avg.: <b>{point.daily:.2f}</b><br/>
+              <br/>
+              \tTotal per 100k inhab.: <b>{point.per100k:.2f}</b><br/>
+              \t↪️7-day moving avg. per 100k inhab.: <b>{point.y:.2f}</b><br/><br/>
+              `,
           },
         },
         // {

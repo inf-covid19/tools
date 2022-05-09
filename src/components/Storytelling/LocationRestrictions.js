@@ -45,8 +45,6 @@ function LocationRestrictions({ records, featuredConfirmedPeriods, featuredDeath
       return dataPoints;
     });
 
-    console.log("---data---", data);
-
     return merge({}, baseOptions, {
       chart: {
         height: 100 + policies.length * 30,
