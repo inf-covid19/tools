@@ -64,7 +64,7 @@ async function fetchFn(currentLocation, otherLocations) {
             const output = { date: record.date }
 
             columns.forEach(col => {
-                output[col] = Math.abs(get(record, col, 0) - get(locationRecord, col, 0))
+                output[col] = get(record, col, 0) - get(locationRecord, col, 0)
             })
 
             return output
@@ -93,13 +93,15 @@ function LocationComparisonChart({ currentLocation, otherLocations }) {
 
     return (
         <div>
-            <h4>7-day moving average</h4>
+            <h4>Deaths | 7-day moving average</h4>
             <ChartContainer attribute="deaths_daily_7d" locationById={locationById} dataByLocationId={data} />
-            <ChartContainer attribute="confirmed_daily_7d" locationById={locationById} dataByLocationId={data} reversed />
-
-            <h4>7-day moving average per 100k inhab.</h4>
+            <h4>Deaths | 7-day moving average per 100k inhab.</h4>
             <ChartContainer attribute="deaths_by_100k_daily_7d" locationById={locationById} dataByLocationId={data} />
-            <ChartContainer attribute="confirmed_by_100k_daily_7d" locationById={locationById} dataByLocationId={data} reversed />
+
+            <h4>Confirmed | 7-day moving average</h4>
+            <ChartContainer attribute="confirmed_daily_7d" locationById={locationById} dataByLocationId={data} />
+            <h4>Confirmed | 7-day moving average per 100k inhab.</h4>
+            <ChartContainer attribute="confirmed_by_100k_daily_7d" locationById={locationById} dataByLocationId={data} />
         </div>
     )
 }
