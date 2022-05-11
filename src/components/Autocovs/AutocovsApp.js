@@ -1,5 +1,5 @@
 import { Container, Form, Button, Grid } from "semantic-ui-react";
-import React, { useCallback, useState, useMemo, useEffect } from "react";
+import React, { useCallback, useState, useMemo } from "react";
 import styled from "styled-components";
 import RegionSelector from "../RegionSelector";
 import first from "lodash/first";
@@ -8,6 +8,8 @@ import { generatePath, useHistory, useParams } from "react-router-dom";
 import RegionChart from "./RegionChart";
 import useMetadata from "../../hooks/useMetadata";
 import { getByRegionId } from "../../utils/metadata";
+
+import useStorageState  from '../../hooks/useStorageState';
 
 const MethodOptions = {
   linear: "Linear",
@@ -118,29 +120,6 @@ const SmoothParamsByFunction = {
     },
   },
 };
-
-function useStorageState(key, initialState) {
-  const effectiveKey = useMemo(() => `tools.storageState.${key}`, [key]);
-
-  const [state, setState] = useState(() => {
-    try {
-      const data = localStorage.getItem(effectiveKey);
-      return JSON.parse(data) || initialState;
-    } catch {
-      return initialState;
-    }
-  });
-
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      localStorage.setItem(effectiveKey, JSON.stringify(state));
-    }, 500);
-
-    return () => clearTimeout(timeoutId);
-  }, [effectiveKey, state]);
-
-  return [state, setState];
-}
 
 function App() {
   const { region: regionKey } = useParams();

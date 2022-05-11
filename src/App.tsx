@@ -19,6 +19,7 @@ import first from "lodash/first";
 
 import AutocovsApp from "./components/Autocovs/AutocovsApp";
 import StorytellingContainer from "./components/Storytelling/StorytellingContainer";
+import SimilarityDebuggerContainer from "./components/SimilarityDebugger/SimilarityDebuggerContainer";
 
 const LAST_TAB_KEY = "covid19-tools.api.lastTab";
 
@@ -72,6 +73,13 @@ const MENU_ITEMS = [
     name: "Waves Debugger",
     path: "/waves-and-measurements/:region?",
     component: AutocovsApp,
+    icon: "sliders horizontal",
+    external: false,
+  },
+  {
+    name: "Similarity Debugger",
+    path: "/similarity-debugger/:region?",
+    component: SimilarityDebuggerContainer,
     icon: "sliders horizontal",
     external: false,
   },

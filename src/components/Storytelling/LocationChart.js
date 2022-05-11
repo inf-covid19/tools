@@ -23,7 +23,7 @@ function LocationChart({ records, featuredConfirmedPeriods, featuredDeathsPeriod
 
     return merge({}, baseOptions, {
       chart: {
-        marginLeft: 100,
+        marginLeft: 150,
       },
       xAxis: {
         plotLines: featuredPeriods.featured_periods.map(({ start, end }, index, arr) => {

@@ -32,13 +32,13 @@ async function fetchLocationDataset(locationId) {
   const featuredPeriodConfig = {
     method: "otsu",
     smooth_fn: "savgol_filter",
-    smooth_params: { polyorder: 1, window_length: 7, closed: "right", alpha: 0.075 },
+    smooth_params: { polyorder: 2, window_length: 7 },
   };
 
   const [records, featuredConfirmedPeriods, featuredDeathsPeriods, covidVariants] = await Promise.all([
     get(`/records/${locationId}`),
-    get(`/featured_periods/${locationId}`, { ...featuredPeriodConfig, target_column: "confirmed_daily" }),
-    get(`/featured_periods/${locationId}`, { ...featuredPeriodConfig, target_column: "deaths_daily" }),
+    get(`/featured_periods/${locationId}`, { ...featuredPeriodConfig, target_column: "confirmed_daily_21d" }),
+    get(`/featured_periods/${locationId}`, { ...featuredPeriodConfig, target_column: "deaths_daily_21d" }),
     get(`/covid_variants`),
   ]);
 
@@ -58,9 +58,9 @@ function LocationContainer({ location }) {
 
   return (
     <div>
-      <LocationChart key={`${location.id}:confirmed`} location={location} attribute="confirmed" {...data} />
-      <LocationRestrictions key={`${location.id}:restrictions`} location={location} policies={defaultPolicies} {...data} />
       <LocationChart key={`${location.id}:deaths`} location={location} attribute="deaths" {...data} />
+      <LocationRestrictions key={`${location.id}:restrictions`} location={location} policies={defaultPolicies} {...data} />
+      <LocationChart key={`${location.id}:confirmed`} location={location} attribute="confirmed" {...data} />
       <Legend
         legends={defaultPolicies.map((x) => {
           const config = MeasuresConfig[x];

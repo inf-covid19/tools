@@ -48,12 +48,14 @@ function LocationRestrictions({ records, featuredConfirmedPeriods, featuredDeath
     return merge({}, baseOptions, {
       chart: {
         height: 100 + policies.length * 30,
-        spacingLeft: 100,
+        marginLeft: 150,
       },
       yAxis: {
         categories: policies,
         labels: {
-          enabled: false,
+          formatter() {
+            return MeasuresConfig[this.value].name;
+          }
         },
       },
       // annotations: [

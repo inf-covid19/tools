@@ -16,7 +16,11 @@ type Props = {
   zIndex?: number;
 };
 
-export default function RegionSelector({ value, onChange, multiple = true, filter = () => true, zIndex = 13 }: Props) {
+function defaultFilter() {
+  return true;
+}
+
+export default function RegionSelector({ value, onChange, multiple = true, filter = defaultFilter, zIndex = 13 }: Props) {
   const [search, setSearch] = useState("");
   const [fromValue, setFromValue] = useState("all");
   const selected = useMemo(() => Object.keys(value).filter((k) => value[k]), [value]);
