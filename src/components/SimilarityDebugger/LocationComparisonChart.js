@@ -26,15 +26,25 @@ const apiGet = async (url, searchParams = {}) => {
 
 const columns = [
     'deaths',
+    'deaths_by_100k',
     'deaths_daily',
+    'deaths_by_100k_daily',
     'deaths_daily_7d',
+    'deaths_by_100k_daily_7d',
     'deaths_daily_14d',
+    'deaths_by_100k_daily_14d',
     'deaths_daily_21d',
+    'deaths_by_100k_daily_21d',
     'confirmed',
+    'confirmed_by_100k',
     'confirmed_daily',
+    'confirmed_by_100k_daily',
     'confirmed_daily_7d',
+    'confirmed_by_100k_daily_7d',
     'confirmed_daily_14d',
+    'confirmed_by_100k_daily_14d',
     'confirmed_daily_21d',
+    'confirmed_by_100k_daily_21d',
 ]
 
 async function fetchFn(currentLocation, otherLocations) {
@@ -83,9 +93,13 @@ function LocationComparisonChart({ currentLocation, otherLocations }) {
 
     return (
         <div>
+            <h4>7-day moving average</h4>
             <ChartContainer attribute="deaths_daily_7d" locationById={locationById} dataByLocationId={data} />
             <ChartContainer attribute="confirmed_daily_7d" locationById={locationById} dataByLocationId={data} reversed />
 
+            <h4>7-day moving average per 100k inhab.</h4>
+            <ChartContainer attribute="deaths_by_100k_daily_7d" locationById={locationById} dataByLocationId={data} />
+            <ChartContainer attribute="confirmed_by_100k_daily_7d" locationById={locationById} dataByLocationId={data} reversed />
         </div>
     )
 }
