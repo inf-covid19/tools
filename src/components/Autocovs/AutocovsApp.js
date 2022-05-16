@@ -1,15 +1,12 @@
-import { Container, Form, Button, Grid } from "semantic-ui-react";
-import React, { useCallback, useState, useMemo } from "react";
+import React, { useMemo, useState } from "react";
+import { Button, Container, Form, Grid } from "semantic-ui-react";
 import styled from "styled-components";
-import RegionSelector from "../RegionSelector";
-import first from "lodash/first";
-import { generatePath, useHistory, useParams } from "react-router-dom";
-
-import RegionChart from "./RegionChart";
+import useLocationFromURL from "../../hooks/useLocationFromURL";
 import useMetadata from "../../hooks/useMetadata";
+import useStorageState from "../../hooks/useStorageState";
 import { getByRegionId } from "../../utils/metadata";
-
-import useStorageState  from '../../hooks/useStorageState';
+import RegionSelector from "../RegionSelector";
+import RegionChart from "./RegionChart";
 
 const MethodOptions = {
   linear: "Linear",
@@ -122,21 +119,9 @@ const SmoothParamsByFunction = {
 };
 
 function App() {
-  const { region: regionKey } = useParams();
-  const history = useHistory();
-
-  const region = useMemo(() => (regionKey ? { [regionKey]: true } : {}), [regionKey]);
-
-  const setRegion = useCallback(
-    (regions) => {
-      history.push({
-        pathname: generatePath("/waves-and-measurements/:region?", {
-          region: first(Object.keys(regions)) || undefined,
-        }),
-      });
-    },
-    [history]
-  );
+  const [, region, setRegion] = useLocationFromURL({
+    path: "/waves-and-measurements/:region?",
+  });
 
   const [secondRegion, setSecondRegion] = useState({});
 

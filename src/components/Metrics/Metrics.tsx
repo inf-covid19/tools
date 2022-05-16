@@ -1,40 +1,25 @@
-import { first } from "lodash";
-import React, { useCallback, useMemo, useState } from "react";
-import { generatePath, useHistory, useParams } from "react-router-dom";
-import { Header, Icon, Loader, Segment, Form } from "semantic-ui-react";
+import { endOfToday, format, isBefore, parse } from "date-fns";
+import { startOfToday } from "date-fns/esm";
+import React, { useMemo, useState } from "react";
+import { Form, Header, Icon, Loader, Segment } from "semantic-ui-react";
 import styled from "styled-components/macro";
+import useLocationFromURL from "../../hooks/useLocationFromURL";
 import useMetadata from "../../hooks/useMetadata";
 import { getByRegionId } from "../../utils/metadata";
 import RegionSelector from "../RegionSelector";
-import ReproductionChart from "./charts/ReproductionChart";
+import CaseFatalityChart from "./charts/CaseFatalityChart";
 import CasesChart from "./charts/CasesChart";
 import DeathsChart from "./charts/DeathsChart";
-import CaseFatalityChart from "./charts/CaseFatalityChart";
-import { endOfToday, format, isBefore, parse } from "date-fns";
-import { startOfToday } from "date-fns/esm";
+import PeopleVaccinatedChart from "./charts/PeopleVaccinatedChart";
+import ReproductionChart from "./charts/ReproductionChart";
 import { DateRange } from "./charts/utils";
 import VaccinesChart from "./charts/VaccinesChart";
-import PeopleVaccinatedChart from "./charts/PeopleVaccinatedChart";
 
 function Metrics() {
-  const history = useHistory();
+  const [regionKey, selectedRegions, setSelectedRegions] = useLocationFromURL({ path: "/location-inspector/:region?" });
 
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
-
-  const { region: regionKey } = useParams<{ region?: string }>();
-  const selectedRegions = useMemo(() => (regionKey ? { [regionKey]: true } : {}), [regionKey]);
-
-  const setSelectedRegions = useCallback(
-    (regions) => {
-      history.push({
-        pathname: generatePath("/location-inspector/:region?", {
-          region: first(Object.keys(regions)) || undefined,
-        }),
-      });
-    },
-    [history]
-  );
 
   const { data: metadata } = useMetadata();
 

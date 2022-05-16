@@ -1,26 +1,15 @@
-import { first } from "lodash";
-import React, { useCallback, useMemo } from "react";
-import { generatePath, useHistory, useParams } from "react-router-dom";
+import React, { useMemo } from "react";
 import { Header, Icon, Loader, Segment } from "semantic-ui-react";
 import styled from "styled-components";
+import useLocationFromURL from "../../hooks/useLocationFromURL";
 import useMetadata from "../../hooks/useMetadata";
 import { getByRegionId } from "../../utils/metadata";
 import RegionSelector from "../RegionSelector";
 
 function SingleLocationContainer({ route, children }) {
-  const history = useHistory();
-  const { region: regionKey } = useParams();
-  const selectedRegions = useMemo(() => (regionKey ? { [regionKey]: true } : {}), [regionKey]);
-  const setSelectedRegions = useCallback(
-    (regions) => {
-      history.push({
-        pathname: generatePath(`${route}/:region?`, {
-          region: first(Object.keys(regions)) || undefined,
-        }),
-      });
-    },
-    [history, route]
-  );
+  const [regionKey, selectedRegions, setSelectedRegions] = useLocationFromURL({
+    path: `${route}/:region?`,
+  });
 
   const { data: metadata } = useMetadata();
 
@@ -62,9 +51,7 @@ function SingleLocationContainer({ route, children }) {
     <Container>
       {regionSelector}
 
-      <Content>
-        {children({ currentLocation: currentRegion })}
-      </Content>
+      <Content>{children({ currentLocation: currentRegion })}</Content>
     </Container>
   );
 }

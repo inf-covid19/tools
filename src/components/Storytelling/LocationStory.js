@@ -18,18 +18,36 @@ function LocationStory({ records, featuredConfirmedPeriods, featuredDeathsPeriod
     return mapping;
   }, [records]);
 
+  const variantDates = useMemo(() => {
+    const dateByVariant = covidVariants[location.country];
+
+    if (!dateByVariant) {
+      return [];
+    }
+
+    return orderBy(
+      Object.entries(dateByVariant).map(([variant, date]) => {
+        return {
+          date,
+          variant,
+        };
+      }),
+      (x) => new Date(x.date)
+    );
+  }, [covidVariants, location]);
+
   return (
     <div class="ui container">
       <p>
         In {location.displayName}, the pandemic began with the first case reported on {formatDate(first(records).date, "PPP")}. Below are some news reported in that period:
         <ul>
-          <li>TDB</li>
+          <li>TBD</li>
 
-          <li>TDB</li>
+          <li>TBD</li>
 
-          <li>TDB</li>
+          <li>TBD</li>
 
-          <li>TDB</li>
+          <li>TBD</li>
         </ul>
       </p>
 
@@ -46,6 +64,8 @@ function LocationStory({ records, featuredConfirmedPeriods, featuredDeathsPeriod
 
         const sortedConfirmedRecords = orderBy(records.filter(filterFn), "confirmed_daily");
         const sortedDeathsRecords = orderBy(records.filter(filterFn), "deaths_daily");
+
+        const variantDatesForThisPeriod = variantDates.filter(filterFn);
 
         const waveName = (() => {
           const n = `${index + 1}`;
@@ -74,7 +94,7 @@ function LocationStory({ records, featuredConfirmedPeriods, featuredDeathsPeriod
                 ).map((point) => {
                   return (
                     <li key={point.date}>
-                      On {formatDate(point.date, "PPP")}, the <b>{point.restrictionName}</b> policy changed to <code>{point.restrictionIndicator}</code>.
+                      On {formatDate(point.date, "PPP")}, the <b>{point.restrictionName}</b> policy changed to <i>{point.restrictionIndicator}</i>.
                     </li>
                   );
                 })}
@@ -86,15 +106,28 @@ function LocationStory({ records, featuredConfirmedPeriods, featuredDeathsPeriod
               {formatDate(last(sortedDeathsRecords).date, "PPP")} with {last(sortedDeathsRecords).deaths_daily} deaths being confirmed on that day. Below are some news reported in
               that period:{" "}
               <ul>
-                <li>TDB</li>
+                <li>TBD</li>
 
-                <li>TDB</li>
+                <li>TBD</li>
 
-                <li>TDB</li>
+                <li>TBD</li>
 
-                <li>TDB</li>
+                <li>TBD</li>
               </ul>
             </p>
+
+            {variantDatesForThisPeriod.length > 0 && (
+              <p>
+                During this period, the following variants were first identified in the country:
+                <ul>
+                  {variantDatesForThisPeriod.map(({ date, variant }) => (
+                    <li>
+                      <b>{variant}</b> on {formatDate(new Date(date), "PPP")}
+                    </li>
+                  ))}
+                </ul>
+              </p>
+            )}
 
             {/* <caso haja surgimento de uma variante em uma data nesse intervalo>: No dia <dia de surgimento da variante> foram identificados os primeiros casos da variante <nome da variante> neste local. Abaixo são listadas algumas notícias daquele período <lista de notícias buscadas na quinzena deste evento>. */}
           </>
