@@ -28,13 +28,29 @@ function LocationChart({ records, featuredConfirmedPeriods, featuredDeathsPeriod
       xAxis: {
         plotLines: featuredPeriods.featured_periods.map(({ start, end }, index, arr) => {
           return {
-            label: {
-              text: `Wave #${index + 1} started`,
-            },
             color: d3.interpolateWarm((index + 1) / arr.length),
             width: 2,
             value: start,
             zIndex: 6,
+          };
+        }),
+        plotBands: featuredPeriods.featured_periods.map(({ start, end }, index, arr) => {
+          return {
+            label: {
+              text: `Wave #${index + 1}`,
+            },
+            color: {
+              linearGradient: { x1: 0, x2: 0, y1: 0, y2: 1 },
+              stops: [
+                [0, d3.interpolateWarm((index + 1) / arr.length)], // start
+                [0.069, d3.interpolateWarm((index + 1) / arr.length)], // start
+                [0.07, "rgba(0,0,0,0)"], // middle
+                [1, "rgba(0,0,0,0)"], // end
+              ],
+            },
+            from: start,
+            to: end,
+            // zIndex: 6,
           };
         }),
       },
