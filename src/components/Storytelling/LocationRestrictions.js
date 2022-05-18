@@ -2,10 +2,8 @@ import HighchartsReact from "highcharts-react-official";
 import { first, last, merge } from "lodash";
 import React, { useMemo } from "react";
 import Highcharts from "../../utils/highcharts";
-import { MeasuresConfig } from "./utils/constants";
+import { MeasuresConfig, defaultPolicies } from "./utils/constants";
 import { getRestrictionPoints } from "./utils/functions";
-
-const defaultPolicies = ["stay_home_restrictions", "workplace_closing", "school_closing"];
 
 function LocationRestrictions({ records, featuredConfirmedPeriods, featuredDeathsPeriods, location, covidVariants, policies = defaultPolicies }) {
   const chartOptions = useMemo(() => {

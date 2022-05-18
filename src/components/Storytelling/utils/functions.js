@@ -1,4 +1,18 @@
-import { first } from "lodash";
+import { first, sum } from "lodash";
+import { defaultPolicies } from "./constants";
+
+export function getUnifiedRestrictionPoints(records, { restrictions = defaultPolicies } = {}) {
+  const series = records.map((x) => {
+    return {
+      ...x,
+      unified_restriction: sum(defaultPolicies.map((attr) => Math.abs(x[attr]))),
+    };
+  });
+
+  console.log('--- unified series ---', series)
+
+  return getRestrictionPoints(series, { restriction: "unified_restriction" });
+}
 
 export function getRestrictionPoints(records, { restriction }) {
   const points = [];

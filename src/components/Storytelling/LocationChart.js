@@ -3,7 +3,36 @@ import HighchartsReact from "highcharts-react-official";
 import { get, merge, startCase } from "lodash";
 import React, { useMemo } from "react";
 import Highcharts from "../../utils/highcharts";
-import { getVacinationMilestones } from "./utils/functions";
+import { getUnifiedRestrictionPoints, getVacinationMilestones } from "./utils/functions";
+
+const colorSchema = d3.interpolateYlOrRd;
+
+const mapPoints = (restrictionsPoints, restriction, extra = {}, { getColor = colorSchema, yAttribute, maxValue = 9 } = {}) => {
+  return restrictionsPoints.map((x) =>
+    merge(
+      {
+        point: {
+          xAxis: 0,
+          yAxis: 0,
+          x: new Date(x.date).getTime(),
+          y: x[yAttribute],
+        },
+        type: "circle",
+        r: 5,
+        fill: {
+          linearGradient: { x1: 0, x2: 1, y1: 0, y2: 0 },
+          stops: [
+            [0, getColor(Math.abs(x.previousValue) / maxValue)], // start
+            [0.49, getColor(Math.abs(x.previousValue) / maxValue)], // start
+            [0.5, getColor(Math.abs(x[restriction]) / maxValue)],
+            [1, getColor(Math.abs(x[restriction]) / maxValue)], // end
+          ],
+        },
+      },
+      extra
+    )
+  );
+};
 
 function LocationChart({ records, featuredConfirmedPeriods, featuredDeathsPeriods, location, covidVariants, attribute }) {
   const attrY = `${attribute}_by_100k_daily_7d`;
@@ -20,6 +49,8 @@ function LocationChart({ records, featuredConfirmedPeriods, featuredDeathsPeriod
     }, {});
 
     const vacinationMilestones = getVacinationMilestones(records);
+
+    const unifiedRestrictionPoints = getUnifiedRestrictionPoints(records);
 
     return merge({}, baseOptions, {
       chart: {
@@ -60,10 +91,10 @@ function LocationChart({ records, featuredConfirmedPeriods, featuredDeathsPeriod
         },
       },
       annotations: [
-        // {
-        //   draggable: "",
-        //   shapes: mapPoints(stay_home_restrictions_points, "stay_home_restrictions", {}, { getColor: d3.interpolateBuPu }),
-        // },
+        {
+          draggable: "",
+          shapes: mapPoints(unifiedRestrictionPoints, "unified_restriction", {}, { yAttribute: attrY }),
+        },
         // {
         //   draggable: "",
         //   shapes: mapPoints(workplace_closing_points, "workplace_closing", { type: "rect", width: 10, height: 10 }, { getColor: d3.interpolateOrRd }),
@@ -120,6 +151,25 @@ function LocationChart({ records, featuredConfirmedPeriods, featuredDeathsPeriod
             daily: x[attrMovingAvg],
             per100k: x[attrPer100k],
           })),
+          color: colorSchema(0),
+          zoneAxis: "x",
+          zones: unifiedRestrictionPoints.flatMap((x, index, array) => {
+            const zone = {
+              value: new Date(x.date).getTime(),
+              color: colorSchema(x.previousValue / 9),
+            };
+
+            if (index === array.length - 1) {
+              return [
+                zone,
+                {
+                  color: colorSchema(x.unified_restriction / 9),
+                },
+              ];
+            }
+
+            return zone;
+          }),
           tooltip: {
             pointFormat: `{series.name}: <br/>
               \tTotal: <b>{point.total:.2f}</b><br/>

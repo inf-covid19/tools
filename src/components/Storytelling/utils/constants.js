@@ -1,5 +1,5 @@
 import * as d3 from "d3";
-
+export const defaultPolicies = ["stay_home_restrictions", "workplace_closing", "school_closing"];
 export const MeasuresConfig = {
   school_closing: {
     id: "school_closing",
