@@ -46,7 +46,7 @@ const columns = [
   "confirmed_by_100k_daily_21d",
 ];
 
-async function fetchFn(currentLocation, otherLocations) {
+async function getByDate(currentLocation, otherLocations) {
   const [currentLocationRecords, ...otherLocationRecords] = await Promise.all([
     apiGet(`/records/${currentLocation.id}`),
     ...otherLocations.map(({ id }) => apiGet(`/records/${id}`).then((data) => keyBy(data, "date"))),
@@ -87,8 +87,54 @@ async function fetchFn(currentLocation, otherLocations) {
   );
 }
 
-function LocationComparisonChart({ currentLocation, otherLocations }) {
-  const { data, status } = useQuery(["location-comparison-data", { currentLocation, otherLocations }], () => fetchFn(currentLocation, otherLocations));
+async function getByFirstCase(currentLocation, otherLocations) {
+  const [currentLocationRecords, ...otherLocationRecords] = await Promise.all([
+    apiGet(`/records/${currentLocation.id}`),
+    ...otherLocations.map(({ id }) => apiGet(`/records/${id}`)),
+  ]);
+
+  return Object.fromEntries(
+    [
+      [
+        currentLocation.id,
+        currentLocationRecords.map((record, index) => {
+          const output = { date: record.date, index, source: record };
+
+          columns.forEach((col) => {
+            output[col] = 0;
+          });
+
+          return output;
+        }),
+      ],
+    ].concat(
+      otherLocations.map(({ id: locationId }, index) => {
+        const locationRecordsByIndex = otherLocationRecords[index];
+
+        const data = currentLocationRecords.map((record, recordIndex) => {
+          const locationRecord = locationRecordsByIndex[recordIndex];
+          const output = { date: record.date, index: recordIndex, source: locationRecord };
+
+          columns.forEach((col) => {
+            output[col] = get(record, col, 0) - get(locationRecord, col, 0);
+          });
+
+          return output;
+        });
+
+        return [locationId, data];
+      })
+    )
+  );
+}
+
+function LocationComparisonChart({ compareType, currentLocation, otherLocations }) {
+  const { data, status } = useQuery(["location-comparison-data", { currentLocation, otherLocations, compareType }], () => {
+    if (compareType === "since_first_case") {
+      return getByFirstCase(currentLocation, otherLocations);
+    }
+    return getByDate(currentLocation, otherLocations);
+  });
 
   const locationById = useMemo(() => keyBy(otherLocations.concat([currentLocation]), "id"), [currentLocation, otherLocations]);
 
@@ -103,14 +149,19 @@ function LocationComparisonChart({ currentLocation, otherLocations }) {
   return (
     <div>
       <h4>Deaths | 7-day moving average</h4>
-      <ChartContainer attribute="deaths_daily_7d" locationById={locationById} dataByLocationId={data} />
+      <ChartContainer attribute="deaths_daily_7d" byAttribute={compareType === "since_first_case" ? "index" : "date"} locationById={locationById} dataByLocationId={data} />
       <h4>Deaths | 7-day moving average per 100k inhab.</h4>
-      <ChartContainer attribute="deaths_by_100k_daily_7d" locationById={locationById} dataByLocationId={data} />
+      <ChartContainer attribute="deaths_by_100k_daily_7d" byAttribute={compareType === "since_first_case" ? "index" : "date"} locationById={locationById} dataByLocationId={data} />
 
       <h4>Confirmed | 7-day moving average</h4>
-      <ChartContainer attribute="confirmed_daily_7d" locationById={locationById} dataByLocationId={data} />
+      <ChartContainer attribute="confirmed_daily_7d" byAttribute={compareType === "since_first_case" ? "index" : "date"} locationById={locationById} dataByLocationId={data} />
       <h4>Confirmed | 7-day moving average per 100k inhab.</h4>
-      <ChartContainer attribute="confirmed_by_100k_daily_7d" locationById={locationById} dataByLocationId={data} />
+      <ChartContainer
+        attribute="confirmed_by_100k_daily_7d"
+        byAttribute={compareType === "since_first_case" ? "index" : "date"}
+        locationById={locationById}
+        dataByLocationId={data}
+      />
     </div>
   );
 }

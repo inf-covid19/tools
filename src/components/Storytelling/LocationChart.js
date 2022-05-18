@@ -28,7 +28,7 @@ function LocationChart({ records, featuredConfirmedPeriods, featuredDeathsPeriod
       xAxis: {
         plotLines: featuredPeriods.featured_periods.map(({ start, end }, index, arr) => {
           return {
-            color: d3.schemePaired[(index + 1) %2],
+            color: d3.schemePaired[(index + 1) % 2],
             width: 2,
             value: start,
             zIndex: 6,
@@ -42,8 +42,8 @@ function LocationChart({ records, featuredConfirmedPeriods, featuredDeathsPeriod
             color: {
               linearGradient: { x1: 0, x2: 0, y1: 0, y2: 1 },
               stops: [
-                [0, d3.schemePaired[(index + 1) %2]], // start
-                [0.069, d3.schemePaired[(index + 1) %2]], // start
+                [0, d3.schemePaired[(index + 1) % 2]], // start
+                [0.069, d3.schemePaired[(index + 1) % 2]], // start
                 [0.07, "rgba(0,0,0,0)"], // middle
                 [1, "rgba(0,0,0,0)"], // end
               ],
@@ -56,8 +56,8 @@ function LocationChart({ records, featuredConfirmedPeriods, featuredDeathsPeriod
       },
       yAxis: {
         title: {
-          text: attribute === 'confirmed' ? "Confirmed Cases per 100k inhab.<br>(7-day moving average)" : `${startCase(attribute)} per 100k inhab.<br>(7-day moving average)`
-        }
+          text: attribute === "confirmed" ? "Confirmed Cases per 100k inhab.<br>(7-day moving average)" : `${startCase(attribute)} per 100k inhab.<br>(7-day moving average)`,
+        },
       },
       annotations: [
         // {
@@ -85,7 +85,11 @@ function LocationChart({ records, featuredConfirmedPeriods, featuredDeathsPeriod
               textOutline: "1px white",
             },
           },
-          labels: Object.entries(get(covidVariants, location.isCountry ? location.name : location.country, {})).map(([label, date]) => {
+          labels: Object.entries(get(covidVariants, location.isCountry ? location.name : location.country, {})).flatMap(([label, date]) => {
+            if (label.includes(".")) {
+              return [];
+            }
+
             return {
               point: { xAxis: 0, yAxis: 0, x: new Date(recordByDate[date].date).getTime(), y: recordByDate[date][attrY] },
               text: `${label} detected`,
@@ -117,8 +121,7 @@ function LocationChart({ records, featuredConfirmedPeriods, featuredDeathsPeriod
             per100k: x[attrPer100k],
           })),
           tooltip: {
-            pointFormat:
-              `{series.name}: <br/>
+            pointFormat: `{series.name}: <br/>
               \tTotal: <b>{point.total:.2f}</b><br/>
               \t↪️7-day moving avg.: <b>{point.daily:.2f}</b><br/>
               <br/>
