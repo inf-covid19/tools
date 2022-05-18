@@ -3,6 +3,7 @@ import { format as formatDate } from "date-fns";
 import { first, keyBy, last, orderBy } from "lodash";
 import { getRestrictionPoints, getVacinationMilestones } from "./utils/functions";
 import { MeasuresConfig } from "./utils/constants";
+import { Accordion } from "semantic-ui-react";
 
 function LocationStory({ records, featuredConfirmedPeriods, featuredDeathsPeriods, location, covidVariants }) {
   const vacinationMilestones = useMemo(() => {
@@ -77,28 +78,40 @@ function LocationStory({ records, featuredConfirmedPeriods, featuredDeathsPeriod
           return `${n}th`;
         })();
 
+        const accordionConfig = Object.entries(pointsByRestrictions).flatMap(([restriction, points]) => {
+          const config = MeasuresConfig[restriction];
+          const filteredPoints = points.filter(filterFn);
+
+          if (filteredPoints.length === 0) {
+            return [];
+          }
+
+          return {
+            key: restriction,
+            title: {
+              content: config.name,
+            },
+            content: {
+              content: (
+                <ul>
+                  {filteredPoints.map((point) => {
+                    return (
+                      <li key={point.date}>
+                        On {formatDate(point.date, "PPP")}, the <b>{config.name}</b> policy changed to <i>{config.indicators[Math.abs(point[restriction])]}</i>.
+                      </li>
+                    );
+                  })}
+                </ul>
+              ),
+            },
+          };
+        });
+
         return (
           <>
             <p>
               At the {waveName} wave, which happened between {formatDate(start, "PPP")} and {formatDate(end, "PPP")}, the following actions were taken:
-              <ul>
-                {orderBy(
-                  Object.entries(pointsByRestrictions).flatMap(([restriction, points]) => {
-                    return points.filter(filterFn).map((x) => ({
-                      ...x,
-                      restrictionName: MeasuresConfig[restriction].name,
-                      restrictionIndicator: MeasuresConfig[restriction].indicators[Math.abs(x[restriction])],
-                    }));
-                  }),
-                  (x) => new Date(x.date)
-                ).map((point) => {
-                  return (
-                    <li key={point.date}>
-                      On {formatDate(point.date, "PPP")}, the <b>{point.restrictionName}</b> policy changed to <i>{point.restrictionIndicator}</i>.
-                    </li>
-                  );
-                })}
-              </ul>
+              <Accordion panels={accordionConfig} />
             </p>
             <p>
               The peak of confirmed cases on the {waveName} wave happened on {formatDate(last(sortedConfirmedRecords).date, "PPP")} when{" "}
@@ -120,11 +133,17 @@ function LocationStory({ records, featuredConfirmedPeriods, featuredDeathsPeriod
               <p>
                 During this period, the following variants were first identified in the country:
                 <ul>
-                  {variantDatesForThisPeriod.map(({ date, variant }) => (
-                    <li>
-                      <b>{variant}</b> on {formatDate(new Date(date), "PPP")}
-                    </li>
-                  ))}
+                  {variantDatesForThisPeriod.flatMap(({ date, variant }) => {
+                    if (variant.includes(".")) {
+                      return [];
+                    }
+
+                    return (
+                      <li>
+                        <b>{variant}</b> on {formatDate(new Date(date), "PPP")}
+                      </li>
+                    );
+                  })}
                 </ul>
               </p>
             )}
