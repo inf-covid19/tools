@@ -22,10 +22,10 @@ const mapPoints = (restrictionsPoints, restriction, extra = {}, { getColor = col
         fill: {
           linearGradient: { x1: 0, x2: 1, y1: 0, y2: 0 },
           stops: [
-            [0, getColor(Math.abs(x.previousValue) / maxValue)], // start
-            [0.49, getColor(Math.abs(x.previousValue) / maxValue)], // start
-            [0.5, getColor(Math.abs(x[restriction]) / maxValue)],
-            [1, getColor(Math.abs(x[restriction]) / maxValue)], // end
+            [0, getColor((2+Math.abs(x.previousValue)) / (maxValue+2))], // start
+            [0.49, getColor((2+Math.abs(x.previousValue)) / (maxValue+2))], // start
+            [0.5, getColor((2+Math.abs(x[restriction])) / (maxValue+2))],
+            [1, getColor((2+Math.abs(x[restriction])) / (maxValue+2))], // end
           ],
         },
       },
@@ -163,7 +163,7 @@ function LocationChart({ records, featuredConfirmedPeriods, featuredDeathsPeriod
               return [
                 zone,
                 {
-                  color: colorSchema(x.unified_restriction / 9),
+                  color: colorSchema((2 + x.unified_restriction) / 11),
                 },
               ];
             }

@@ -85,14 +85,14 @@ const baseOptions = {
         chart.myLowerRect = chart.renderer
           .rect(left, zero, width, lowerHeight)
           .attr({
-            fill: "rgba(240, 52, 52, 0.2)",
+            fill:  "rgba(0, 177, 106, 0.2)",
           })
           .add();
 
         chart.myUpperRect = chart.renderer
           .rect(left, top, width, upperHeight)
           .attr({
-            fill: "rgba(0, 177, 106, 0.2)",
+            fill: "rgba(240, 52, 52, 0.2)",
           })
           .add();
       },

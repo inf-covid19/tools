@@ -161,7 +161,7 @@ function App() {
       <Container fluid>
         <Grid padded stackable>
           <Grid.Row>
-            <Grid.Column width={4}>
+            <Grid.Column width={2}>
               <div>
                 <h3>Configuration</h3>
                 <Form

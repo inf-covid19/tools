@@ -227,7 +227,7 @@ function useTimelineOptions({ records, region, regionData }, { records: secondRe
     return {
       chart: {
         type: "xrange",
-        width: 920,
+        marginLeft: 165,
         height: hasSecondRegion ? 850 : 400,
       },
       title: {
@@ -295,8 +295,8 @@ function useChartOptions({ attribute, title, records, featuredPeriods, regionDat
       chart: {
         zoomType: "x",
         height: 300,
-        width: 920,
-        spacingLeft: 165,
+        // width: 920,
+        marginLeft: 165,
       },
       title: {
         text: null,

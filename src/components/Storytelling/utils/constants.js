@@ -10,7 +10,7 @@ export const MeasuresConfig = {
       2: "require closing (only some levels or categories, eg just high school, or just public schools)",
       3: "require closing all levels",
     },
-    colorSchema: (n) => d3.interpolateBuPu(Math.abs(n) / 3),
+    colorSchema: (n) => d3.interpolateYlOrRd(Math.abs(n) / 3),
   },
   workplace_closing: {
     id: "workplace_closing",
@@ -21,7 +21,7 @@ export const MeasuresConfig = {
       2: "require closing (or work from home) for some sectors or categories of workers",
       3: "require closing (or work from home) for all-but-essential workplaces (eg grocery stores, doctors)",
     },
-    colorSchema: (n) => d3.interpolateOrRd(Math.abs(n) / 3),
+    colorSchema: (n) => d3.interpolateYlOrRd(Math.abs(n) / 3),
   },
   cancel_events: {
     id: "cancel_events",
@@ -61,7 +61,7 @@ export const MeasuresConfig = {
       2: "require not leaving house with exceptions for daily exercise, grocery shopping, and ‘essential’ trips",
       3: "require not leaving house with minimal exceptions (eg allowed to leave once a week, or only one person can leave at a time, etc)",
     },
-    colorSchema: (n) => d3.interpolateYlGn(Math.abs(n) / 3),
+    colorSchema: (n) => d3.interpolateYlOrRd(Math.abs(n) / 3),
   },
   internal_movement_restrictions: {
     id: "internal_movement_restrictions",

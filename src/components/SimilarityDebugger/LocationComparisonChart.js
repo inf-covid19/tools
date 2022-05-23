@@ -75,7 +75,7 @@ async function getByDate(currentLocation, otherLocations) {
           const output = { date: record.date, source: locationRecord };
 
           columns.forEach((col) => {
-            output[col] = get(record, col, 0) - get(locationRecord, col, 0);
+            output[col] = get(locationRecord, col, 0) - get(record, col, 0);
           });
 
           return output;
@@ -116,7 +116,7 @@ async function getByFirstCase(currentLocation, otherLocations) {
           const output = { date: record.date, index: recordIndex, source: locationRecord };
 
           columns.forEach((col) => {
-            output[col] = get(record, col, 0) - get(locationRecord, col, 0);
+            output[col] = get(locationRecord, col, 0) - get(record, col, 0);
           });
 
           return output;
