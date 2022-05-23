@@ -9,8 +9,6 @@ export function getUnifiedRestrictionPoints(records, { restrictions = defaultPol
     };
   });
 
-  console.log('--- unified series ---', series)
-
   return getRestrictionPoints(series, { restriction: "unified_restriction" });
 }
 

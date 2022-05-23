@@ -3,30 +3,14 @@ import React from "react";
 import { useQuery } from "react-query";
 import { Loader } from "semantic-ui-react";
 import styled from "styled-components";
-import { AUTOCOVS_API as API_URL } from "../../constants";
 import Legend from "./Legend";
 import LocationChart from "./LocationChart";
 import LocationRestrictions from "./LocationRestrictions";
 import LocationStory from "./LocationStory";
+import { makeGet } from "./utils/api";
 import { MeasuresConfig } from "./utils/constants";
 
 const defaultPolicies = ["stay_home_restrictions", "workplace_closing", "school_closing"];
-
-const get = async (url, searchParams = {}) => {
-  const qs = new URLSearchParams();
-
-  Object.entries(searchParams).forEach(([key, value]) => {
-    qs.append(key, typeof value === "object" ? JSON.stringify(value) : value);
-  });
-
-  const effectiveUrl = `${API_URL}${url}?${qs.toString()}`;
-
-  const response = await fetch(effectiveUrl);
-  if (!response.ok) {
-    throw new Error("Network response was not ok");
-  }
-  return response.json();
-};
 
 async function fetchLocationDataset(locationId) {
   const featuredPeriodConfig = {
@@ -36,10 +20,10 @@ async function fetchLocationDataset(locationId) {
   };
 
   const [records, featuredConfirmedPeriods, featuredDeathsPeriods, covidVariants] = await Promise.all([
-    get(`/records/${locationId}`),
-    get(`/featured_periods/${locationId}`, { ...featuredPeriodConfig, target_column: "confirmed_daily_21d" }),
-    get(`/featured_periods/${locationId}`, { ...featuredPeriodConfig, target_column: "deaths_daily_21d" }),
-    get(`/covid_variants`),
+    makeGet(`/records/${locationId}`),
+    makeGet(`/featured_periods/${locationId}`, { ...featuredPeriodConfig, target_column: "confirmed_daily_21d" }),
+    makeGet(`/featured_periods/${locationId}`, { ...featuredPeriodConfig, target_column: "deaths_daily_21d" }),
+    makeGet(`/covid_variants`),
   ]);
 
   return { records, featuredConfirmedPeriods, featuredDeathsPeriods, covidVariants };

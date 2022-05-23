@@ -234,10 +234,10 @@ function App() {
                 </Form>
               </div>
             </Grid.Column>
-            <Grid.Column width={12}>
+            <Grid.Column width={14}>
               {regionData && (
                 <Grid.Row>
-                  <Grid.Column md={12}>
+                  <Grid.Column md={14}>
                     <h5>{regionData.displayName} - Daily Confirmed (21d)</h5>
                     <RegionChart
                       key={regionData.key}
@@ -251,7 +251,7 @@ function App() {
                       withInsights
                     />
                   </Grid.Column>
-                  <Grid.Column md={12}>
+                  <Grid.Column md={14}>
                     <h5>{regionData.displayName} - Daily Deaths (21d)</h5>
                     <RegionChart
                       key={regionData.key}

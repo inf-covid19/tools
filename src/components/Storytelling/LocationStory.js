@@ -1,9 +1,14 @@
-import React, { useMemo } from "react";
-import { format as formatDate } from "date-fns";
+import styled from "styled-components";
+import { addDays, format as formatDate, subDays } from "date-fns";
 import { first, keyBy, last, orderBy } from "lodash";
-import { getRestrictionPoints, getVacinationMilestones } from "./utils/functions";
-import { MeasuresConfig } from "./utils/constants";
+import React, { useMemo } from "react";
+import { useQuery } from "react-query";
 import { Accordion } from "semantic-ui-react";
+import DataLoader from "../DataLoader";
+import { makeGet } from "./utils/api";
+import { MeasuresConfig } from "./utils/constants";
+import { getRestrictionPoints, getVacinationMilestones } from "./utils/functions";
+import concat from "lodash/concat";
 
 function LocationStory({ records, featuredConfirmedPeriods, featuredDeathsPeriods, location, covidVariants }) {
   const vacinationMilestones = useMemo(() => {
@@ -37,18 +42,129 @@ function LocationStory({ records, featuredConfirmedPeriods, featuredDeathsPeriod
     );
   }, [covidVariants, location]);
 
+  const wavesList = useMemo(() => {
+    return featuredConfirmedPeriods.featured_periods.map(({ start, end }, index) => {
+      const filterFn = (x) => {
+        const date = new Date(x.date).getTime();
+        return date >= start && date < end;
+      };
+
+      const sortedConfirmedRecords = orderBy(records.filter(filterFn), "confirmed_daily");
+      const sortedDeathsRecords = orderBy(records.filter(filterFn), "deaths_daily");
+
+      const variantDatesForThisPeriod = variantDates.filter(filterFn);
+
+      const waveName = (() => {
+        const n = `${index + 1}`;
+
+        if (n.endsWith("1")) return `${n}st`;
+        if (n.endsWith("2")) return `${n}nd`;
+        if (n.endsWith("3")) return `${n}rd`;
+
+        return `${n}th`;
+      })();
+
+      const accordionConfig = Object.entries(pointsByRestrictions).flatMap(([restriction, points]) => {
+        const config = MeasuresConfig[restriction];
+        const filteredPoints = points.filter(filterFn);
+
+        if (filteredPoints.length === 0) {
+          return [];
+        }
+
+        return {
+          key: restriction,
+          title: {
+            content: config.name,
+          },
+          content: {
+            content: (
+              <ul>
+                {filteredPoints.map((point) => {
+                  return (
+                    <li key={point.date}>
+                      On {formatDate(point.date, "PPP")}, the <b>{config.name}</b> policy changed to <i>{config.indicators[Math.abs(point[restriction])]}</i>.
+                    </li>
+                  );
+                })}
+              </ul>
+            ),
+          },
+        };
+      });
+
+      return {
+        start,
+        end,
+        waveName,
+        accordionConfig,
+        variantDatesForThisPeriod,
+        sortedConfirmedRecords,
+        sortedDeathsRecords,
+        confirmedPeek: last(sortedConfirmedRecords),
+        deathsPeek: last(sortedDeathsRecords),
+      };
+    });
+  }, [featuredConfirmedPeriods.featured_periods, pointsByRestrictions, records, variantDates]);
+
+  const firstDate = first(records).date;
+
+  const { data: newsData, status } = useQuery(["initials-news", { location, firstDate, vacinationMilestones, waves: featuredConfirmedPeriods?.featured_periods }], async () => {
+    const { news_list: initialNews } = await makeGet("/news/initial", {
+      location: location.name,
+      start_date: subDays(firstDate, 7).toISOString(),
+      end_date: addDays(firstDate, 7).toISOString(),
+    });
+
+    const [vacinationStartNews, vacination70News] = await Promise.all([
+      vacinationMilestones.vacination_start
+        ? makeGet("/news/vaccination", {
+            location: location.name,
+            start_date: subDays(vacinationMilestones.vacination_start.date, 7).toISOString(),
+            end_date: addDays(vacinationMilestones.vacination_start.date, 7).toISOString(),
+          })
+        : Promise.resolve({}),
+      vacinationMilestones.vacination_70
+        ? makeGet("/news/vaccination", {
+            location: location.name,
+            start_date: subDays(vacinationMilestones.vacination_70.date, 7).toISOString(),
+            end_date: addDays(vacinationMilestones.vacination_70.date, 7).toISOString(),
+          })
+        : Promise.resolve({}),
+    ]);
+
+    const newsBasedOnPeek = await Promise.all(
+      wavesList
+        .flatMap((wave) => [wave.confirmedPeek.date, wave.deathsPeek.date])
+        .map((date) =>
+          makeGet("/news/peak", {
+            location: location.name,
+            start_date: subDays(date, 7).toISOString(),
+            end_date: addDays(date, 7).toISOString(),
+          }).then((x) => [date, x.news_list])
+        )
+    );
+
+    return { initialNews, vacinationStartNews: vacinationStartNews.news_list, vacination70News: vacination70News.news_list, newsByWavePeek: Object.fromEntries(newsBasedOnPeek) };
+  });
+
+  if (status === "loading") {
+    return <DataLoader />;
+  }
+
   return (
     <div class="ui container">
       <p>
-        In {location.displayName}, the pandemic began with the first case reported on {formatDate(first(records).date, "PPP")}. Below are some news reported in that period:
+        In {location.displayName}, the pandemic began with the first case reported on {formatDate(firstDate, "PPP")}. Below are some news reported in that period:
         <ul>
-          <li>TBD</li>
-
-          <li>TBD</li>
-
-          <li>TBD</li>
-
-          <li>TBD</li>
+          {newsData?.initialNews.map(({ title, url, published_at }) => (
+            <li>
+              <a href={url} rel="noopener noreferrer" target="_blank">
+                {title}
+              </a>{" "}
+              on {formatDate(published_at, "PPP")}
+            </li>
+          ))}
         </ul>
       </p>
 
@@ -57,75 +173,44 @@ function LocationStory({ records, featuredConfirmedPeriods, featuredDeathsPeriod
         waves of confirmed deaths.
       </p>
 
-      {featuredConfirmedPeriods.featured_periods.map(({ start, end }, index) => {
-        const filterFn = (x) => {
-          const date = new Date(x.date).getTime();
-          return date >= start && date < end;
-        };
+      {wavesList.map((waveConfig) => {
+        const { variantDatesForThisPeriod, waveName, accordionConfig, deathsPeek, confirmedPeek, start, end } = waveConfig;
 
-        const sortedConfirmedRecords = orderBy(records.filter(filterFn), "confirmed_daily");
-        const sortedDeathsRecords = orderBy(records.filter(filterFn), "deaths_daily");
-
-        const variantDatesForThisPeriod = variantDates.filter(filterFn);
-
-        const waveName = (() => {
-          const n = `${index + 1}`;
-
-          if (n.endsWith("1")) return `${n}st`;
-          if (n.endsWith("2")) return `${n}nd`;
-          if (n.endsWith("3")) return `${n}rd`;
-
-          return `${n}th`;
-        })();
-
-        const accordionConfig = Object.entries(pointsByRestrictions).flatMap(([restriction, points]) => {
-          const config = MeasuresConfig[restriction];
-          const filteredPoints = points.filter(filterFn);
-
-          if (filteredPoints.length === 0) {
-            return [];
-          }
-
-          return {
-            key: restriction,
-            title: {
-              content: config.name,
-            },
-            content: {
-              content: (
-                <ul>
-                  {filteredPoints.map((point) => {
-                    return (
-                      <li key={point.date}>
-                        On {formatDate(point.date, "PPP")}, the <b>{config.name}</b> policy changed to <i>{config.indicators[Math.abs(point[restriction])]}</i>.
-                      </li>
-                    );
-                  })}
-                </ul>
-              ),
-            },
-          };
-        });
+        const newsList = concat(newsData.newsByWavePeek[confirmedPeek.date]?.slice(0, 3), newsData.newsByWavePeek[deathsPeek.date]?.slice(0, 3));
 
         return (
           <>
             <p>
-              At the {waveName} wave, which happened between {formatDate(start, "PPP")} and {formatDate(end, "PPP")}, the following actions were taken:
-              <Accordion panels={accordionConfig} />
+              The <b>{waveName} wave</b> happened between {formatDate(start, "PPP")} and {formatDate(end, "PPP")}.
+              <Accordion
+                panels={[
+                  {
+                    key: waveName,
+                    title: "The following actions were taken:",
+                    content: {
+                      content: (
+                        <SubAccordionWrapper>
+                          <Accordion.Accordion panels={accordionConfig} />
+                        </SubAccordionWrapper>
+                      ),
+                    },
+                  },
+                ]}
+              />
             </p>
             <p>
-              The peak of confirmed cases on the {waveName} wave happened on {formatDate(last(sortedConfirmedRecords).date, "PPP")} when{" "}
-              {last(sortedConfirmedRecords).confirmed_daily} cases were confirmed. In this wave, the peak of confirmed deaths happened on{" "}
-              {formatDate(last(sortedDeathsRecords).date, "PPP")} with {last(sortedDeathsRecords).deaths_daily} deaths being confirmed on that day. Below are some news reported in
-              that period:{" "}
+              The peak of confirmed cases on the {waveName} wave happened on {formatDate(confirmedPeek.date, "PPP")} when {confirmedPeek.confirmed_daily} cases were confirmed. In
+              this wave, the peak of confirmed deaths happened on {formatDate(deathsPeek.date, "PPP")} with {deathsPeek.deaths_daily} deaths being confirmed on that day. Below are
+              some news reported in that period:{" "}
               <ul>
-                <li>TBD</li>
-
-                <li>TBD</li>
-
-                <li>TBD</li>
-
-                <li>TBD</li>
+                {newsList.map(({ title, url, published_at }) => (
+                  <li>
+                    <a href={url} rel="noopener noreferrer" target="_blank">
+                      {title}
+                    </a>{" "}
+                    on {formatDate(published_at, "PPP")}
+                  </li>
+                ))}
               </ul>
             </p>
 
@@ -156,9 +241,28 @@ function LocationStory({ records, featuredConfirmedPeriods, featuredDeathsPeriod
       <p>
         In this location, vaccination started on {formatDate(vacinationMilestones.vacination_start.date, "PPP")}
         {vacinationMilestones.vacination_70 ? <> and reaches 70% of the vaccinated population on {formatDate(vacinationMilestones.vacination_70.date, "PPP")}.</> : <>.</>}
+        Below are some news reported in that period:
+        <ul>
+          {concat(newsData?.vacinationStartNews?.slice(0, 3), newsData?.vacination70News?.slice(0, 3)).map(({ title, url, published_at }) => (
+            <li>
+              <a href={url} rel="noopener noreferrer" target="_blank">
+                {title}
+              </a>{" "}
+              on {formatDate(published_at, "PPP")}
+            </li>
+          ))}
+        </ul>
       </p>
     </div>
   );
 }
 
 export default LocationStory;
+
+const SubAccordionWrapper = styled.div`
+  margin-left: 20px;
+
+  > .accordion {
+    margin: 0!important;
+  }
+`;
