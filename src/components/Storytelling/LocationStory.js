@@ -76,6 +76,7 @@ function LocationStory({ records, featuredConfirmedPeriods, featuredDeathsPeriod
           key: restriction,
           title: {
             content: config.name,
+            icon: "plus",
           },
           content: {
             content: (
@@ -156,16 +157,28 @@ function LocationStory({ records, featuredConfirmedPeriods, featuredDeathsPeriod
     <div class="ui container">
       <p>
         In {location.displayName}, the pandemic began with the first case reported on {formatDate(firstDate, "PPP")}. Below are some news reported in that period:
-        <ul>
-          {newsData?.initialNews.map(({ title, url, published_at }) => (
-            <li>
-              <a href={url} rel="noopener noreferrer" target="_blank">
-                {title}
-              </a>{" "}
-              on {formatDate(published_at, "PPP")}
-            </li>
-          ))}
-        </ul>
+        <Accordion
+          panels={[
+            {
+              key: "news",
+              title: "Click here to see the news",
+              content: {
+                content: (
+                  <ul>
+                    {newsData?.initialNews.map(({ title, url, published_at }) => (
+                      <li>
+                        <a href={url} rel="noopener noreferrer" target="_blank">
+                          {title}
+                        </a>{" "}
+                        on {formatDate(published_at, "PPP")}
+                      </li>
+                    ))}
+                  </ul>
+                ),
+              },
+            },
+          ]}
+        />
       </p>
 
       <p>
@@ -186,7 +199,7 @@ function LocationStory({ records, featuredConfirmedPeriods, featuredDeathsPeriod
                 panels={[
                   {
                     key: waveName,
-                    title: "The following actions were taken:",
+                    title: "Click the to see the actions that were taken",
                     content: {
                       content: (
                         <SubAccordionWrapper>
@@ -202,16 +215,28 @@ function LocationStory({ records, featuredConfirmedPeriods, featuredDeathsPeriod
               The peak of confirmed cases on the {waveName} wave happened on {formatDate(confirmedPeek.date, "PPP")} when {confirmedPeek.confirmed_daily} cases were confirmed. In
               this wave, the peak of confirmed deaths happened on {formatDate(deathsPeek.date, "PPP")} with {deathsPeek.deaths_daily} deaths being confirmed on that day. Below are
               some news reported in that period:{" "}
-              <ul>
-                {newsList.map(({ title, url, published_at }) => (
-                  <li>
-                    <a href={url} rel="noopener noreferrer" target="_blank">
-                      {title}
-                    </a>{" "}
-                    on {formatDate(published_at, "PPP")}
-                  </li>
-                ))}
-              </ul>
+              <Accordion
+                panels={[
+                  {
+                    key: "news",
+                    title: "Click here to see the news",
+                    content: {
+                      content: (
+                        <ul>
+                          {newsList.map(({ title, url, published_at }) => (
+                            <li>
+                              <a href={url} rel="noopener noreferrer" target="_blank">
+                                {title}
+                              </a>{" "}
+                              on {formatDate(published_at, "PPP")}
+                            </li>
+                          ))}
+                        </ul>
+                      ),
+                    },
+                  },
+                ]}
+              />
             </p>
 
             {variantDatesForThisPeriod.length > 0 && (
@@ -242,16 +267,28 @@ function LocationStory({ records, featuredConfirmedPeriods, featuredDeathsPeriod
         In this location, vaccination started on {formatDate(vacinationMilestones.vacination_start.date, "PPP")}
         {vacinationMilestones.vacination_70 ? <> and reaches 70% of the vaccinated population on {formatDate(vacinationMilestones.vacination_70.date, "PPP")}.</> : <>.</>}
         Below are some news reported in that period:
-        <ul>
-          {concat(newsData?.vacinationStartNews?.slice(0, 3), newsData?.vacination70News?.slice(0, 3)).map(({ title, url, published_at }) => (
-            <li>
-              <a href={url} rel="noopener noreferrer" target="_blank">
-                {title}
-              </a>{" "}
-              on {formatDate(published_at, "PPP")}
-            </li>
-          ))}
-        </ul>
+        <Accordion
+          panels={[
+            {
+              key: "news",
+              title: "Click here to see the news",
+              content: {
+                content: (
+                  <ul>
+                    {concat(newsData?.vacinationStartNews?.slice(0, 3), newsData?.vacination70News?.slice(0, 3)).map(({ title, url, published_at }) => (
+                      <li>
+                        <a href={url} rel="noopener noreferrer" target="_blank">
+                          {title}
+                        </a>{" "}
+                        on {formatDate(published_at, "PPP")}
+                      </li>
+                    ))}
+                  </ul>
+                ),
+              },
+            },
+          ]}
+        />
       </p>
     </div>
   );
@@ -263,6 +300,6 @@ const SubAccordionWrapper = styled.div`
   margin-left: 20px;
 
   > .accordion {
-    margin: 0!important;
+    margin: 0 !important;
   }
 `;

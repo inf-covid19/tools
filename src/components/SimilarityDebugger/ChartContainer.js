@@ -7,7 +7,7 @@ import Highcharts from "../../utils/highcharts";
 
 const ordinalFormattter = (n) => numeral(n).format("Oo");
 
-function ChartContainer({ attribute, byAttribute, reversed = false, locationById, dataByLocationId }) {
+function ChartContainer({ currentLocation, attribute, byAttribute, reversed = false, locationById, dataByLocationId }) {
   const chartOptions = useMemo(() => {
     return merge({}, baseOptions, {
       xAxis: {
@@ -26,6 +26,38 @@ function ChartContainer({ attribute, byAttribute, reversed = false, locationById
           text: startCase(attribute),
         },
         reversed,
+        plotBands: [
+          {
+            from: 0,
+            to: Number.POSITIVE_INFINITY,
+            color: "rgba(240, 52, 52, 0.2)",
+            label: {
+              text: `Worst than ${currentLocation.name}`,
+              align: 'right',
+              verticalAlign: 'top',
+              x: -30,
+              y: 30,
+              style: {
+                color: "#606060",
+              },
+            },
+          },
+          {
+            from: 0,
+            to: Number.NEGATIVE_INFINITY,
+            color: "rgba(0, 177, 106, 0.2)",
+            label: {
+              text: `Better than ${currentLocation.name}`,
+              align: 'right',
+              verticalAlign: 'bottom',
+              x: -30,
+              y: -30,
+              style: {
+                color: "#606060",
+              },
+            },
+          },
+        ],
       },
       tooltip: {
         x: {
@@ -49,7 +81,7 @@ function ChartContainer({ attribute, byAttribute, reversed = false, locationById
         };
       }),
     });
-  }, [attribute, byAttribute, dataByLocationId, locationById, reversed]);
+  }, [attribute, currentLocation, byAttribute, dataByLocationId, locationById, reversed]);
 
   return (
     <div>
@@ -64,39 +96,39 @@ const baseOptions = {
   colors: d3.schemeTableau10,
   chart: {
     zoomType: "x",
-    events: {
-      render() {
-        const chart = this;
+    // events: {
+    //   render() {
+    //     const chart = this;
 
-        const yAxis = chart.yAxis[0];
-        const top = yAxis.top;
-        const left = yAxis.left;
-        const zero = yAxis.toPixels(0);
-        const height = yAxis.height;
-        const width = yAxis.width;
-        const lowerHeight = height - (zero - top);
-        const upperHeight = height - lowerHeight;
+    //     const yAxis = chart.yAxis[0];
+    //     const top = yAxis.top;
+    //     const left = yAxis.left;
+    //     const zero = yAxis.toPixels(0);
+    //     const height = yAxis.height;
+    //     const width = yAxis.width;
+    //     const lowerHeight = height - (zero - top);
+    //     const upperHeight = height - lowerHeight;
 
-        if (chart.myLowerRect || chart.myUpperRect) {
-          chart.myLowerRect.destroy();
-          chart.myUpperRect.destroy();
-        }
+    //     if (chart.myLowerRect || chart.myUpperRect) {
+    //       chart.myLowerRect.destroy();
+    //       chart.myUpperRect.destroy();
+    //     }
 
-        chart.myLowerRect = chart.renderer
-          .rect(left, zero, width, lowerHeight)
-          .attr({
-            fill:  "rgba(0, 177, 106, 0.2)",
-          })
-          .add();
+    //     chart.myLowerRect = chart.renderer
+    //       .rect(left, zero, width, lowerHeight)
+    //       .attr({
+    //         fill:  "rgba(0, 177, 106, 0.2)",
+    //       })
+    //       .add();
 
-        chart.myUpperRect = chart.renderer
-          .rect(left, top, width, upperHeight)
-          .attr({
-            fill: "rgba(240, 52, 52, 0.2)",
-          })
-          .add();
-      },
-    },
+    //     chart.myUpperRect = chart.renderer
+    //       .rect(left, top, width, upperHeight)
+    //       .attr({
+    //         fill: "rgba(240, 52, 52, 0.2)",
+    //       })
+    //       .add();
+    //   },
+    // },
   },
   title: {
     text: null,

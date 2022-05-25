@@ -16,6 +16,7 @@ import RegionSelector from "./components/RegionSelector";
 import TrendChart from "./components/TrendChart";
 import "./Explorer.css";
 import styled from "styled-components";
+import MaintenanceBanner from "./MaintenanceBanner";
 
 const displayNumberFormatter = format(",.2~f");
 
@@ -235,6 +236,11 @@ const Explorer = () => {
 
     return stats;
   }, [dataByKey, regionData]);
+
+  const isMaintenanceMode = true;
+  if (isMaintenanceMode) {
+    return <MaintenanceBanner />;
+  }
 
   if (isEmpty(data) || !metadata) {
     return (

@@ -149,14 +149,33 @@ function LocationComparisonChart({ compareType, currentLocation, otherLocations 
   return (
     <div>
       <h4>Deaths | 7-day moving average</h4>
-      <ChartContainer attribute="deaths_daily_7d" byAttribute={compareType === "since_first_case" ? "index" : "date"} locationById={locationById} dataByLocationId={data} />
+      <ChartContainer
+        currentLocation={currentLocation}
+        attribute="deaths_daily_7d"
+        byAttribute={compareType === "since_first_case" ? "index" : "date"}
+        locationById={locationById}
+        dataByLocationId={data}
+      />
       <h4>Deaths | 7-day moving average per 100k inhab.</h4>
-      <ChartContainer attribute="deaths_by_100k_daily_7d" byAttribute={compareType === "since_first_case" ? "index" : "date"} locationById={locationById} dataByLocationId={data} />
+      <ChartContainer
+        currentLocation={currentLocation}
+        attribute="deaths_by_100k_daily_7d"
+        byAttribute={compareType === "since_first_case" ? "index" : "date"}
+        locationById={locationById}
+        dataByLocationId={data}
+      />
 
       <h4>Confirmed | 7-day moving average</h4>
-      <ChartContainer attribute="confirmed_daily_7d" byAttribute={compareType === "since_first_case" ? "index" : "date"} locationById={locationById} dataByLocationId={data} />
+      <ChartContainer
+        currentLocation={currentLocation}
+        attribute="confirmed_daily_7d"
+        byAttribute={compareType === "since_first_case" ? "index" : "date"}
+        locationById={locationById}
+        dataByLocationId={data}
+      />
       <h4>Confirmed | 7-day moving average per 100k inhab.</h4>
       <ChartContainer
+        currentLocation={currentLocation}
         attribute="confirmed_by_100k_daily_7d"
         byAttribute={compareType === "since_first_case" ? "index" : "date"}
         locationById={locationById}

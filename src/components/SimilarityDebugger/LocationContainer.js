@@ -8,7 +8,7 @@ import { Dropdown } from "semantic-ui-react";
 
 const comparisonTypeOptions = [
   { key: "by calendar date", text: "by calendar date", value: "by_calendar_date" },
-  { key: "since first case", text: "since first case", value: "since_first_case" },
+  { key: "since first case", text: "since date of the first case", value: "since_first_case" },
 ];
 
 function LocationContainer({ currentLocation }) {
