@@ -4,8 +4,10 @@ import { merge, startCase } from "lodash";
 import React, { useMemo } from "react";
 import numeral from "numeral";
 import Highcharts from "../../utils/highcharts";
+import { format } from "date-fns";
 
 const ordinalFormattter = (n) => numeral(n).format("Oo");
+const formatNumber = d3.format(",.2f");
 
 function ChartContainer({ currentLocation, attribute, byAttribute, reversed = false, locationById, dataByLocationId }) {
   const chartOptions = useMemo(() => {
@@ -33,8 +35,8 @@ function ChartContainer({ currentLocation, attribute, byAttribute, reversed = fa
             color: "rgba(240, 52, 52, 0.2)",
             label: {
               text: `Worst than ${currentLocation.name}`,
-              align: 'right',
-              verticalAlign: 'top',
+              align: "right",
+              verticalAlign: "top",
               x: -30,
               y: 30,
               style: {
@@ -48,8 +50,8 @@ function ChartContainer({ currentLocation, attribute, byAttribute, reversed = fa
             color: "rgba(0, 177, 106, 0.2)",
             label: {
               text: `Better than ${currentLocation.name}`,
-              align: 'right',
-              verticalAlign: 'bottom',
+              align: "right",
+              verticalAlign: "bottom",
               x: -30,
               y: -30,
               style: {
@@ -60,8 +62,48 @@ function ChartContainer({ currentLocation, attribute, byAttribute, reversed = fa
         ],
       },
       tooltip: {
-        x: {
-          formatter: byAttribute === "index" ? (value) => `${ordinalFormattter(value)} day since first case` : undefined,
+        formatter() {
+          let currentLocationPoint = null;
+          let samePoints = [];
+          let betterPoints = [];
+          let worstPoints = [];
+
+          for (const x of this.points) {
+            if (x.series.name === currentLocation.name) {
+              currentLocationPoint = x;
+              continue;
+            }
+
+            if (x.y === 0) {
+              samePoints.push(x);
+              continue;
+            }
+
+            if (x.y > 0) {
+              worstPoints.push(x);
+              continue;
+            }
+            if (x.y < 0) {
+              betterPoints.push(x);
+              continue;
+            }
+          }
+
+          const formatPoints = (points) =>
+            points
+              .map(({ point }) => {
+                return `\t${point.series.name}: <b>${formatNumber(point.source[attribute])} (${formatNumber(point.y)})</b>`;
+              })
+              .join("<br>");
+
+          return `<div>
+            <b>${byAttribute === "index" ? `${ordinalFormattter(this.x)} day since the first case in ${currentLocation.name}` : format(this.x, "PPP")}</b>
+            <br>
+            🔵 Reference scenario: <br>${formatPoints([currentLocationPoint])}<br><br>
+            ${samePoints.length > 0 ? `🟡 Same scenario: <br>${formatPoints(samePoints)}<br><br>` : ``}
+            ${worstPoints.length > 0 ? `🔴 Worst scenario: <br>${formatPoints(worstPoints)}<br><br>` : ``}
+            ${betterPoints.length > 0 ? `🟢 Better scenario: <br>${formatPoints(betterPoints)}<br><br>` : ``}
+          </div>`;
         },
       },
       series: Object.entries(dataByLocationId).map(([locationId, rawData]) => {
@@ -75,9 +117,6 @@ function ChartContainer({ currentLocation, attribute, byAttribute, reversed = fa
               source: x.source,
             };
           }),
-          tooltip: {
-            pointFormat: `{series.name}: <b>{point.source.${attribute}:,.2f} ({point.y:.2f})</b><br/>`,
-          },
         };
       }),
     });
@@ -96,39 +135,6 @@ const baseOptions = {
   colors: d3.schemeTableau10,
   chart: {
     zoomType: "x",
-    // events: {
-    //   render() {
-    //     const chart = this;
-
-    //     const yAxis = chart.yAxis[0];
-    //     const top = yAxis.top;
-    //     const left = yAxis.left;
-    //     const zero = yAxis.toPixels(0);
-    //     const height = yAxis.height;
-    //     const width = yAxis.width;
-    //     const lowerHeight = height - (zero - top);
-    //     const upperHeight = height - lowerHeight;
-
-    //     if (chart.myLowerRect || chart.myUpperRect) {
-    //       chart.myLowerRect.destroy();
-    //       chart.myUpperRect.destroy();
-    //     }
-
-    //     chart.myLowerRect = chart.renderer
-    //       .rect(left, zero, width, lowerHeight)
-    //       .attr({
-    //         fill:  "rgba(0, 177, 106, 0.2)",
-    //       })
-    //       .add();
-
-    //     chart.myUpperRect = chart.renderer
-    //       .rect(left, top, width, upperHeight)
-    //       .attr({
-    //         fill: "rgba(240, 52, 52, 0.2)",
-    //       })
-    //       .add();
-    //   },
-    // },
   },
   title: {
     text: null,
