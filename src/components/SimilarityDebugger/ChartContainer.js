@@ -91,7 +91,9 @@ function ChartContainer({ currentLocation, attribute, byAttribute, reversed = fa
 
           const formatPoints = (points) =>
             points
-              .map(({ point }) => {
+              .flatMap(({ point }) => {
+                if (!point.source) return [];
+
                 return `\t${point.series.name}: <b>${formatNumber(point.source[attribute])} (${formatNumber(point.y)})</b>`;
               })
               .join("<br>");
