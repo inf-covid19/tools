@@ -111,8 +111,10 @@ function LocationStory({ records, featuredConfirmedPeriods, featuredDeathsPeriod
   const firstDate = first(records).date;
 
   const { data: newsData, status } = useQuery(["initials-news", { location, firstDate, vacinationMilestones, waves: featuredConfirmedPeriods?.featured_periods }], async () => {
+    const locationName = location.isCountry ? location.name : `${location.name} + ${location.country}`;
+
     const { news_list: initialNews } = await makeGet("/news/initial", {
-      location: location.name,
+      location: locationName,
       start_date: subDays(firstDate, 7).toISOString(),
       end_date: addDays(firstDate, 7).toISOString(),
     });
@@ -120,14 +122,14 @@ function LocationStory({ records, featuredConfirmedPeriods, featuredDeathsPeriod
     const [vacinationStartNews, vacination70News] = await Promise.all([
       vacinationMilestones.vacination_start
         ? makeGet("/news/vaccination", {
-            location: location.name,
+            location: locationName,
             start_date: subDays(vacinationMilestones.vacination_start.date, 7).toISOString(),
             end_date: addDays(vacinationMilestones.vacination_start.date, 7).toISOString(),
           })
         : Promise.resolve({}),
       vacinationMilestones.vacination_70
         ? makeGet("/news/vaccination", {
-            location: location.name,
+            location: locationName,
             start_date: subDays(vacinationMilestones.vacination_70.date, 7).toISOString(),
             end_date: addDays(vacinationMilestones.vacination_70.date, 7).toISOString(),
           })
@@ -139,7 +141,7 @@ function LocationStory({ records, featuredConfirmedPeriods, featuredDeathsPeriod
         .flatMap((wave) => [wave.confirmedPeek.date, wave.deathsPeek.date])
         .map((date) =>
           makeGet("/news/peak", {
-            location: location.name,
+            location: locationName,
             start_date: subDays(date, 7).toISOString(),
             end_date: addDays(date, 7).toISOString(),
           }).then((x) => [date, x.news_list])
@@ -156,29 +158,34 @@ function LocationStory({ records, featuredConfirmedPeriods, featuredDeathsPeriod
   return (
     <div class="ui container">
       <p>
-        In {location.displayName}, the pandemic began with the first case reported on {formatDate(firstDate, "PPP")}. Below are some news reported in that period:
-        <Accordion
-          panels={[
-            {
-              key: "news",
-              title: "Click here to see the news",
-              content: {
-                content: (
-                  <ul>
-                    {newsData?.initialNews.map(({ title, url, published_at }) => (
-                      <li>
-                        <a href={url} rel="noopener noreferrer" target="_blank">
-                          {title}
-                        </a>{" "}
-                        on {formatDate(published_at, "PPP")}
-                      </li>
-                    ))}
-                  </ul>
-                ),
-              },
-            },
-          ]}
-        />
+        In {location.displayName}, the pandemic began with the first case reported on {formatDate(firstDate, "PPP")}.
+        {newsData?.initialNews?.length > 0 && (
+          <>
+            {" "}Below are some news reported in that period:
+            <Accordion
+              panels={[
+                {
+                  key: "news",
+                  title: "Click here to see the news",
+                  content: {
+                    content: (
+                      <ul>
+                        {newsData?.initialNews.map(({ title, url, published_at }) => (
+                          <li>
+                            <a href={url} rel="noopener noreferrer" target="_blank">
+                              {title}
+                            </a>{" "}
+                            on {formatDate(published_at, "PPP")}
+                          </li>
+                        ))}
+                      </ul>
+                    ),
+                  },
+                },
+              ]}
+            />
+          </>
+        )}
       </p>
 
       <p>
@@ -188,55 +195,63 @@ function LocationStory({ records, featuredConfirmedPeriods, featuredDeathsPeriod
 
       {wavesList.map((waveConfig) => {
         const { variantDatesForThisPeriod, waveName, accordionConfig, deathsPeek, confirmedPeek, start, end } = waveConfig;
+        const confirmedPeekNews = newsData.newsByWavePeek[confirmedPeek.date]?.slice(0, 3);
+        const deathsPeekNews = newsData.newsByWavePeek[deathsPeek.date]?.filter((x) => !confirmedPeekNews.some((y) => x.title === y.title)).slice(0, 3);
 
-        const newsList = concat(newsData.newsByWavePeek[confirmedPeek.date]?.slice(0, 3), newsData.newsByWavePeek[deathsPeek.date]?.slice(0, 3));
+        const newsList = concat(confirmedPeekNews, deathsPeekNews);
 
         return (
           <>
             <p>
               The <b>{waveName} wave</b> happened between {formatDate(start, "PPP")} and {formatDate(end, "PPP")}.
-              <Accordion
-                panels={[
-                  {
-                    key: waveName,
-                    title: "Click the to see the actions that were taken",
-                    content: {
-                      content: (
-                        <SubAccordionWrapper>
-                          <Accordion.Accordion panels={accordionConfig} />
-                        </SubAccordionWrapper>
-                      ),
+              {accordionConfig?.lenght > 0 && (
+                <Accordion
+                  panels={[
+                    {
+                      key: waveName,
+                      title: "Click the to see the actions that were taken",
+                      content: {
+                        content: (
+                          <SubAccordionWrapper>
+                            <Accordion.Accordion panels={accordionConfig} />
+                          </SubAccordionWrapper>
+                        ),
+                      },
                     },
-                  },
-                ]}
-              />
+                  ]}
+                />
+              )}
             </p>
             <p>
               The peak of confirmed cases on the {waveName} wave happened on {formatDate(confirmedPeek.date, "PPP")} when {confirmedPeek.confirmed_daily} cases were confirmed. In
-              this wave, the peak of confirmed deaths happened on {formatDate(deathsPeek.date, "PPP")} with {deathsPeek.deaths_daily} deaths being confirmed on that day. Below are
-              some news reported in that period:{" "}
-              <Accordion
-                panels={[
-                  {
-                    key: "news",
-                    title: "Click here to see the news",
-                    content: {
-                      content: (
-                        <ul>
-                          {newsList.map(({ title, url, published_at }) => (
-                            <li>
-                              <a href={url} rel="noopener noreferrer" target="_blank">
-                                {title}
-                              </a>{" "}
-                              on {formatDate(published_at, "PPP")}
-                            </li>
-                          ))}
-                        </ul>
-                      ),
-                    },
-                  },
-                ]}
-              />
+              this wave, the peak of confirmed deaths happened on {formatDate(deathsPeek.date, "PPP")} with {deathsPeek.deaths_daily} deaths being confirmed on that day.
+              {newsList.length > 0 && (
+                <>
+                  {" "}Below are some news reported in that period:{" "}
+                  <Accordion
+                    panels={[
+                      {
+                        key: "news",
+                        title: "Click here to see the news",
+                        content: {
+                          content: (
+                            <ul>
+                              {newsList.map(({ title, url, published_at }) => (
+                                <li>
+                                  <a href={url} rel="noopener noreferrer" target="_blank">
+                                    {title}
+                                  </a>{" "}
+                                  on {formatDate(published_at, "PPP")}
+                                </li>
+                              ))}
+                            </ul>
+                          ),
+                        },
+                      },
+                    ]}
+                  />
+                </>
+              )}
             </p>
 
             {variantDatesForThisPeriod.length > 0 && (
@@ -266,29 +281,33 @@ function LocationStory({ records, featuredConfirmedPeriods, featuredDeathsPeriod
       <p>
         In this location, vaccination started on {formatDate(vacinationMilestones.vacination_start.date, "PPP")}
         {vacinationMilestones.vacination_70 ? <> and reaches 70% of the vaccinated population on {formatDate(vacinationMilestones.vacination_70.date, "PPP")}.</> : <>.</>}
-        Below are some news reported in that period:
-        <Accordion
-          panels={[
-            {
-              key: "news",
-              title: "Click here to see the news",
-              content: {
-                content: (
-                  <ul>
-                    {concat(newsData?.vacinationStartNews?.slice(0, 3), newsData?.vacination70News?.slice(0, 3)).map(({ title, url, published_at }) => (
-                      <li>
-                        <a href={url} rel="noopener noreferrer" target="_blank">
-                          {title}
-                        </a>{" "}
-                        on {formatDate(published_at, "PPP")}
-                      </li>
-                    ))}
-                  </ul>
-                ),
-              },
-            },
-          ]}
-        />
+        {[newsData?.vacinationStartNews?.length, newsData?.vacination70News?.length].some((x) => x > 0) && (
+          <>
+            {" "}Below are some news reported in that period:
+            <Accordion
+              panels={[
+                {
+                  key: "news",
+                  title: "Click here to see the news",
+                  content: {
+                    content: (
+                      <ul>
+                        {concat(newsData?.vacinationStartNews?.slice(0, 3), newsData?.vacination70News?.slice(0, 3)).map(({ title, url, published_at }) => (
+                          <li>
+                            <a href={url} rel="noopener noreferrer" target="_blank">
+                              {title}
+                            </a>{" "}
+                            on {formatDate(published_at, "PPP")}
+                          </li>
+                        ))}
+                      </ul>
+                    ),
+                  },
+                },
+              ]}
+            />
+          </>
+        )}
       </p>
     </div>
   );
