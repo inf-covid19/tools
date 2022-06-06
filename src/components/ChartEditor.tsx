@@ -1,9 +1,19 @@
 import React from "react";
 import Editor, { ChartOptions } from "./Editor";
 import CustomizableChart from "./CustomizableChart";
-import pick from 'lodash/pick';
+import pick from "lodash/pick";
 
-const AVAILABLE_OPTIONS: Array<keyof ChartOptions> = ["chartType", "metric", "isCumulative", "alignAt", "showDataLabels", "title", "dayInterval", "selectedRegions"]
+const AVAILABLE_OPTIONS: Array<keyof ChartOptions> = [
+  "chartType",
+  "metric",
+  "metricSuffix",
+  "isCumulative",
+  "alignAt",
+  "showDataLabels",
+  "title",
+  "dayInterval",
+  "selectedRegions",
+];
 
 export default function ChartEditor() {
   return (

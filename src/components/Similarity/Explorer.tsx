@@ -1,48 +1,50 @@
-import { csv, format } from "d3";
+import { format } from "d3";
 import { differenceInDays } from "date-fns";
-import { castArray, defaultTo, groupBy, isEmpty, keyBy, last, orderBy } from "lodash";
+import { castArray, defaultTo, last } from "lodash";
 import first from "lodash/first";
-import React, { useCallback, useEffect, useMemo } from "react";
-import { queryCache, useQuery } from "react-query";
+import React, { useCallback, useMemo } from "react";
+import { useQuery } from "react-query";
 import { generatePath, useHistory, useParams } from "react-router-dom";
-import { Divider, Dropdown, Flag, Grid, Header, Icon, Label, List, Loader, Popup, Segment, SemanticICONS, Statistic } from "semantic-ui-react";
-import { DEFAULT_OPTIONS, SIMILARITY_API } from "./constants";
-import useMetadata from "./hooks/useMetadata";
-import useQueryString from "./hooks/useQueryString";
-import useRegionData from "./hooks/useRegionData";
-import { getByRegionId } from "./utils/metadata";
-import CustomizableChart from "./components/CustomizableChart";
-import RegionSelector from "./components/RegionSelector";
-import TrendChart from "./components/TrendChart";
-import "./Explorer.css";
+import { Divider, Dropdown, Flag, Grid, Header, Icon, List, Loader, Segment, SemanticICONS, Statistic } from "semantic-ui-react";
 import styled from "styled-components";
+import CustomizableChart from "../../components/CustomizableChart";
+import RegionSelector from "../../components/RegionSelector";
+import TrendChart from "../../components/TrendChart";
+import { DEFAULT_OPTIONS } from "../../constants";
+import useMetadata from "../../hooks/useMetadata";
+import useQueryString from "../../hooks/useQueryString";
+import useRegionData from "../../hooks/useRegionData";
+import { getByRegionId } from "../../utils/metadata";
+import { makeGet } from "../Storytelling/utils/api";
+import "./Explorer.css";
 import MaintenanceBanner from "./MaintenanceBanner";
+
 
 const displayNumberFormatter = format(",.2~f");
 
 const similarityOptions = [
   {
-    key: "cases_distance",
+    key: "confirmed_daily_21d",
     text: "confirmed",
-    value: "cases_distance",
-    content: "confirmed",
+    value: "confirmed_daily_21d",
+    content: "Confirmed",
   },
   {
-    key: "deaths_distance",
+    key: "deaths_daily_21d",
     text: "deaths",
-    value: "deaths_distance",
+    value: "deaths_daily_21d",
     content: "Deaths",
   },
   {
-    key: "cases_per_100k_distance",
+    key: "confirmed_by_100k_daily_21d",
     text: "cases per 100k inhab.",
-    value: "cases_per_100k_distance",
+    value: "confirmed_by_100k_daily_21d",
     content: "Cases per 100k inhab.",
   },
   {
-    key: "deaths_per_100k_distance",
+    key: "deaths_by_100k_daily_21d",
     text: "deaths per 100k inhab.",
-    value: "deaths_per_100k_distance",
+    value: "deaths_by_100k_daily_21d",
     content: "Deaths per 100k inhab.",
   },
 ];
@@ -54,7 +56,7 @@ const Explorer = () => {
 
   const region = useMemo(() => (regionKey ? { [regionKey]: true } : {}), [regionKey]);
 
-  const aspect = useMemo(() => similarityOptions.find((opt) => opt.value === query.aspect)?.value ?? "deaths_distance", [query.aspect]);
+  const aspect = useMemo(() => similarityOptions.find((opt) => opt.value === query.aspect)?.value ?? "confirmed_daily_21d", [query.aspect]);
 
   const aspectOption = useMemo(() => similarityOptions.find((opt) => opt.value === aspect), [aspect]);
 
@@ -87,108 +89,62 @@ const Explorer = () => {
 
   const { data: metadata } = useMetadata();
 
-  const { data, status } = useQuery("region-clustering", () => csv(`${SIMILARITY_API}/api/v1/regions`));
-
-  const [dataByKey, dataByCluster] = useMemo(() => {
-    if (!data || !metadata) return [{}, {}];
-
-    const parsedData = data.flatMap((item) => {
-      const parsedItem = {
-        area_km: parseFloat(item.area_km || "0"),
-        cluster: item.cluster || "",
-        days: parseInt(item.days || "0"),
-        population: parseFloat(item.population || "0"),
-        population_density: parseFloat(item.population_density || "0"),
-        ...getByRegionId(metadata, item.key!),
-      };
-
-      if (parsedItem.days <= 0) {
-        return [];
-      }
-
-      return parsedItem;
-    });
-
-    return [keyBy(parsedData, "key"), groupBy(parsedData, "cluster")];
-  }, [data, metadata]);
-
-  const regionFilter = useCallback((key) => !!dataByKey[key], [dataByKey]);
-
   const currentRegion = useMemo(() => {
+    if (!metadata) return null;
     const selectedKey = first(Object.keys(region));
-    return selectedKey ? dataByKey[selectedKey] : null;
-  }, [region, dataByKey]);
+    return selectedKey ? getByRegionId(metadata, selectedKey) : null;
+  }, [region, metadata]);
 
-  const { data: topSimilarData, status: topSimilarDataStatus } = useQuery(["region-similar", currentRegion?.key], () =>
-    currentRegion ? csv(`${SIMILARITY_API}/api/v1/regions/${currentRegion.key}`) : Promise.resolve(null)
-  );
+  const { data: topSimilarData } = useQuery(currentRegion && ["region-similar", currentRegion?.key, aspect], () => {
+    return currentRegion ? makeGet(`/rank/${aspect}/${currentRegion.key}`, { limit: 25 }) : Promise.resolve(null);
+  });
 
-  useEffect(() => {
-    if (topSimilarDataStatus === "success" && topSimilarData?.length === 0) {
-      const timer = setInterval(() => queryCache.refetchQueries(["region-similar", currentRegion?.key], { force: true }), 5000);
-      return () => {
-        clearInterval(timer);
-      };
-    }
-  }, [currentRegion, topSimilarData, topSimilarDataStatus]);
+  const isIncidence = aspect.includes("100k");
 
-  useEffect(() => {
-    if (status === "success" && isEmpty(data)) {
-      const timer = setInterval(() => queryCache.refetchQueries("region-clustering", { force: true }), 1000);
-      return () => {
-        clearInterval(timer);
-      };
-    }
-  }, [status, data]);
+  const sortedTopSimilar: Array<{location_id: string, distance: number, location: ReturnType<typeof getByRegionId>}> = useMemo(() => {
+    if (!topSimilarData || !currentRegion || !metadata) return [];
 
-  const isIncidence = ["cases_per_100k_distance", "deaths_per_100k_distance"].includes(aspect);
+    // let effectiveTopSimilar = topSimilarData;
 
-  const sortedTopSimilar = useMemo(() => {
-    if (!topSimilarData || !currentRegion) return [];
+    // effectiveTopSimilar = orderBy(effectiveTopSimilar, (x) => Number(x[aspect]), "asc");
 
-    const { days } = currentRegion;
+    // const maxDistance = Math.max(...effectiveTopSimilar.map((i) => Number(i.distance ?? 0)));
 
-    let effectiveTopSimilar = topSimilarData.filter((row) => {
-      const region = dataByKey[row.region ?? ""];
-      if (!region) {
-        return false;
-      }
+    // const withSimilarity = orderBy(
+    //   effectiveTopSimilar.map((item) => {
+    //     const region = dataByKey[item.region!];
+    //     const similarity = 1 - Number(item[aspect] ?? 0) / maxDistance;
+    //     const daysFactor = Math.min(1, region.days / days);
 
-      return Number(region.days) >= days - 30;
-    });
+    //     item["similarity"] = `${similarity * daysFactor}`;
+    //     return item;
+    //   }),
+    //   (x) => Number(x.similarity),
+    //   "desc"
+    // );
 
-    effectiveTopSimilar = orderBy(effectiveTopSimilar, (x) => Number(x[aspect]), "asc");
+    return topSimilarData.map((x: { location_id: string, distance: number }) => ({
+      ...x,
+      location: getByRegionId(metadata, x.location_id),
+    }));
+  }, [currentRegion, metadata, topSimilarData]);
 
-    const maxDistance = Math.max(...effectiveTopSimilar.map((i) => Number(i[aspect] ?? 0)));
+  // const clusterBuddies = useMemo(() => {
+  //   if (!currentRegion || !topSimilarData) return [];
 
-    const withSimilarity = orderBy(
-      effectiveTopSimilar.map((item) => {
-        const region = dataByKey[item.region!];
-        const similarity = 1 - Number(item[aspect] ?? 0) / maxDistance;
-        const daysFactor = Math.min(1, region.days / days);
-
-        item["similarity"] = `${similarity * daysFactor}`;
-        return item;
-      }),
-      (x) => Number(x.similarity),
-      "desc"
-    );
-
-    return withSimilarity.filter((x) => Number(x.similarity) > 0.6);
-  }, [aspect, currentRegion, dataByKey, topSimilarData]);
-
-  const clusterBuddies = useMemo(() => {
-    if (!currentRegion || !topSimilarData) return [];
-
-    return orderBy(dataByCluster[currentRegion.cluster], (item) => dataByKey[item.key]?.displayName);
-  }, [currentRegion, dataByCluster, dataByKey, topSimilarData]);
+  //   return orderBy(dataByCluster[currentRegion.cluster], (item) => dataByKey[item.key]?.displayName);
+  // }, [currentRegion, dataByCluster, dataByKey, topSimilarData]);
 
   const secondaryRegion = useMemo(() => {
-    if (sortedTopSimilar && !(secondary in dataByKey)) {
-      return dataByKey[first(sortedTopSimilar)?.region!];
+    const secondaryData = sortedTopSimilar?.find((x: any) => x.location_id === secondary);
+    if (secondaryData) {
+      return secondaryData.location;
     }
-    return secondary ? dataByKey[secondary] : null;
-  }, [dataByKey, secondary, sortedTopSimilar]);
+    if (sortedTopSimilar?.length > 0) {
+      return (first(sortedTopSimilar) as any).location;
+    }
+    return null;
+  }, [secondary, sortedTopSimilar]);
 
   const chartRegions = useMemo(() => {
     if (!currentRegion || !secondaryRegion) {
@@ -205,6 +161,11 @@ const Explorer = () => {
     return [currentRegion.key, secondaryRegion.key];
   }, [currentRegion, secondaryRegion]);
 
+  const dataByKey = useMemo(() => {
+    if (!metadata) return {};
+    return Object.fromEntries(regionIds.map((id) => [id, getByRegionId(metadata, id)]));
+  }, [metadata, regionIds]);
+
   const { data: regionData } = useRegionData(regionIds);
 
   const timelineStats = useMemo(() => {
@@ -218,18 +179,20 @@ const Explorer = () => {
     }
 
     Object.entries(regionData).forEach(([key, timeline]) => {
-      const firstCase = timeline.find((row) => row.cases > 0);
+      const firstCase = timeline.find((row) => row.confirmed > 0);
       const firstDeath = timeline.find((row) => row.deaths > 0);
 
       const latestRow = last(timeline);
 
+      const locationData = dataByKey[key];
+
       stats[key] = {
         sinceFirstCase: firstCase ? differenceInDays(new Date(), firstCase.date) : 0,
         sinceFirstDeath: firstDeath ? differenceInDays(new Date(), firstDeath.date) : 0,
-        latestCases: latestRow?.cases ?? 0,
+        latestCases: latestRow?.confirmed ?? 0,
         latestDeaths: latestRow?.deaths ?? 0,
-        latestCasesPer100k: ((latestRow?.cases ?? 0) / dataByKey[key].population) * 100000,
-        latestDeathsPer100k: ((latestRow?.deaths ?? 0) / dataByKey[key].population) * 100000,
+        latestCasesPer100k: ((latestRow?.confirmed ?? 0) / (locationData?.population ?? 1)) * 100000,
+        latestDeathsPer100k: ((latestRow?.deaths ?? 0) / (locationData?.population ?? 1)) * 100000,
         latestDate: latestRow?.date ?? new Date(),
       };
     });
@@ -237,24 +200,14 @@ const Explorer = () => {
     return stats;
   }, [dataByKey, regionData]);
 
-  const isMaintenanceMode = true;
+  const isMaintenanceMode = false;
   if (isMaintenanceMode) {
     return <MaintenanceBanner />;
   }
 
-  if (isEmpty(data) || !metadata) {
-    return (
-      <div style={{ height: "350px", display: "flex", justifyContent: "center", alignItems: "center" }}>
-        <Loader active inline>
-          Loading latest data...
-        </Loader>
-      </div>
-    );
-  }
-
   const regionSelector = (
     <div style={{ width: "100%", maxWidth: "450px", margin: "0 auto" }}>
-      <RegionSelector value={region} onChange={setSelectedRegions} multiple={false} filter={regionFilter} />
+      <RegionSelector value={region} onChange={setSelectedRegions} multiple={false} />
     </div>
   );
 
@@ -342,15 +295,15 @@ const Explorer = () => {
                       href="#"
                       onClick={(evt) => {
                         evt.preventDefault();
-                        setSecondary(r.region!);
+                        setSecondary(r.location_id!);
                       }}
-                      key={r.region}
+                      key={r.location_id}
                     >
                       <div>
                         <span style={{ display: "inline-block", opacity: 0.8, color: "rgba(0,0,0,.87)", width: "20px", marginRight: 5 }}>{idx + 1}</span>
-                        <Flag name={dataByKey[r.region!].flag} />
-                        {dataByKey[r.region!].displayName}
-                        {dataByKey[r.region!].cluster === currentRegion.cluster && (
+                        <Flag name={r.location.flag} />
+                        {r.location.displayName}
+                        {/* {r.location.cluster === currentRegion.cluster && (
                           <>
                             {" "}
                             <Popup
@@ -359,17 +312,18 @@ const Explorer = () => {
                               content={`${dataByKey[r.region!].displayName} has similar attributes when compared to ${currentRegion.displayName}`}
                             />
                           </>
-                        )}{" "}
+                        )} */}
+                        {/* {" "}
                         <Label style={{ display: "none" }} size="tiny" color={getColor(r.similarity)}>
                           {displayNumberFormatter(parseFloat(r.similarity!) * 100)}%
-                        </Label>
+                        </Label> */}
                       </div>
                     </List.Item>
                   ))}
                 </List>
               </div>
 
-              <Header as="h3">
+              {/* <Header as="h3">
                 Cluster
                 <Header.Subheader>Regions with similar population and area</Header.Subheader>
               </Header>
@@ -396,7 +350,7 @@ const Explorer = () => {
                     )
                   )}
                 </List>
-              </div>
+              </div> */}
             </Segment>
           </div>
 
@@ -428,14 +382,14 @@ const Explorer = () => {
                       <Statistic.Value>{displayNumberFormatter(currentRegion.population)}</Statistic.Value>
                       <Statistic.Label>Population</Statistic.Label>
                     </Statistic>
-                    <Statistic>
+                    {/* <Statistic>
                       <Statistic.Value>{displayNumberFormatter(currentRegion.area_km)}</Statistic.Value>
                       <Statistic.Label>km²</Statistic.Label>
                     </Statistic>
                     <Statistic>
                       <Statistic.Value>{displayNumberFormatter(currentRegion.population_density)}</Statistic.Value>
                       <Statistic.Label>inhab/km²</Statistic.Label>
-                    </Statistic>
+                    </Statistic> */}
                     <Statistic>
                       <Statistic.Value>{displayNumberFormatter(timelineStats[currentRegion.key]?.sinceFirstCase)}</Statistic.Value>
                       <Statistic.Label>Days since first case</Statistic.Label>
@@ -492,7 +446,7 @@ const Explorer = () => {
                       </Statistic.Value>
                       <Statistic.Label>Population</Statistic.Label>
                     </Statistic>
-                    <Statistic>
+                    {/* <Statistic>
                       <Statistic.Value>
                         <DiffIndicator primaryValue={currentRegion.area_km} secondaryValue={secondaryRegion.area_km} /> {displayNumberFormatter(secondaryRegion.area_km)}
                       </Statistic.Value>
@@ -504,7 +458,7 @@ const Explorer = () => {
                         {displayNumberFormatter(secondaryRegion.population_density)}
                       </Statistic.Value>
                       <Statistic.Label>inhab/km²</Statistic.Label>
-                    </Statistic>
+                    </Statistic> */}
                     <Statistic>
                       <Statistic.Value>
                         <DiffIndicator primaryValue={timelineStats[currentRegion.key]?.sinceFirstCase} secondaryValue={timelineStats[secondaryRegion.key]?.sinceFirstCase} />{" "}
@@ -529,13 +483,14 @@ const Explorer = () => {
                 selectedRegions={chartRegions}
                 alignAt={1}
                 chartType="area"
-                isCumulative={true}
+                isCumulative={false}
                 height={250}
-                metric={"cases"}
+                metric={isIncidence ? 'confirmed_by_100k_daily_21d' : "confirmed_daily_21d"}
                 title={`Total Cases - Comparison between ${currentRegion?.displayName} and ${secondaryRegion?.displayName}`}
                 timeserieSlice={-1}
-                isIncidence={isIncidence}
+                isIncidence={false}
                 getPopulation={(key) => dataByKey[key].population}
+                isTrusted
               />
             </Segment>
             <Segment>
@@ -544,13 +499,14 @@ const Explorer = () => {
                 selectedRegions={chartRegions}
                 alignAt={1}
                 chartType="area"
-                isCumulative={true}
+                isCumulative={false}
                 height={250}
-                metric={"deaths"}
+                metric={isIncidence ? 'deaths_by_100k_daily_21d' : "deaths_daily_21d"}
                 title={`Total Deaths - Comparison between ${currentRegion?.displayName} and ${secondaryRegion?.displayName}`}
                 timeserieSlice={-1}
-                isIncidence={isIncidence}
+                isIncidence={false}
                 getPopulation={(key) => dataByKey[key].population}
+                isTrusted
               />
             </Segment>
             <Segment>
@@ -559,7 +515,7 @@ const Explorer = () => {
               </Header>
               <Grid columns={2} stackable>
                 <Grid.Column>
-                  <TrendChart {...DEFAULT_OPTIONS} selectedRegions={chartRegions} alignAt={1} height={250} metric={"cases"} title={``} />
+                  <TrendChart {...DEFAULT_OPTIONS} selectedRegions={chartRegions} alignAt={1} height={250} metric={"confirmed"} title={``} />
                 </Grid.Column>
                 <Grid.Column>
                   <TrendChart {...DEFAULT_OPTIONS} selectedRegions={chartRegions} alignAt={1} height={250} metric={"deaths"} title={``} />
@@ -599,18 +555,4 @@ function DiffIndicator({ primaryValue, secondaryValue }: { primaryValue: number;
   const isHugeDiff = Math.abs(diff) > secondaryValue || Math.abs(diff) > primaryValue;
 
   return <Icon name={`angle ${isHugeDiff ? "double " : ""}${diff > 0 ? "down" : "up"}` as SemanticICONS} color={diff > 0 ? "red" : "green"} />;
-}
-
-function getColor(similarity?: string) {
-  const n = parseFloat(similarity ?? "0");
-
-  if (n >= 0.9) {
-    return "green";
-  }
-
-  if (n >= 0.85) {
-    return "olive";
-  }
-
-  return "yellow";
 }

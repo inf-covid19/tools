@@ -11,7 +11,8 @@ import ValidationPrediction from "./ValidationPrediction";
 type SelectedCountriesMap = Record<string, boolean>;
 export type ChartOptions = {
   chartType: ChartType;
-  metric: MetricType;
+  metric: string;
+  metricSuffix?: string;
   isCumulative: boolean;
   alignAt: number;
   showDataLabels: boolean;
@@ -105,6 +106,7 @@ function Editor(props: EditorProps) {
   const {
     chartType,
     metric,
+    metricSuffix,
     scale,
     alignAt,
     isCumulative,
@@ -192,6 +194,7 @@ function Editor(props: EditorProps) {
                 isCumulative,
                 title,
                 metric,
+                metricSuffix,
                 showDataLabels,
                 dayInterval,
                 selectedRegions,
@@ -240,11 +243,14 @@ function Editor(props: EditorProps) {
                 {availableOptions.includes("isCumulative") && (
                   <Form.Select
                     label="Choose total or daily"
-                    value={isCumulative ? "total" : "daily"}
-                    onChange={(_, { value }) => setOptions({ ...options, isCumulative: value === "total" })}
+                    value={metricSuffix}
+                    onChange={(_, { value }) => setOptions({ ...options, isCumulative: value === "total", metricSuffix: `${value}` })}
                     options={[
                       { key: "total", text: "Total", value: "total" },
                       { key: "daily", text: "Daily", value: "daily" },
+                      { key: "daily_7d", text: "Moving Avg. (7d)", value: "daily_7d" },
+                      { key: "daily_14d", text: "Moving Avg. (14d)", value: "daily_14d" },
+                      { key: "daily_21d", text: "Moving Avg. (21d)", value: "daily_21d" },
                     ]}
                   />
                 )}

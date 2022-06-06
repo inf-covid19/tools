@@ -47,6 +47,7 @@ export function getByRegionId(metadata: Metadata, regionId: string) {
       displayName: regionId,
       name: regionId,
       isCountry: false,
+      population: 1,
     };
   }
 
@@ -58,6 +59,7 @@ export function getByRegionId(metadata: Metadata, regionId: string) {
       displayName: getDisplayNameFromLocation(location),
       name: getNameFromLocation(location),
       isCountry: true,
+      population: location.population,
     };
   }
 
@@ -69,6 +71,7 @@ export function getByRegionId(metadata: Metadata, regionId: string) {
     displayName: getDisplayNameFromLocation(location),
     name: getNameFromLocation(location),
     isCountry: false,
+    population: location.population,
   };
 }
 

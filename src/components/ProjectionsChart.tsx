@@ -15,6 +15,7 @@ import { median } from "../utils/math";
 import { getByRegionId } from "../utils/metadata";
 import { ChartOptions } from "./Editor";
 import { getSammonStress } from "../utils/sammonStress";
+import { get } from "lodash";
 
 const numberFormatter = d3.format(".2s");
 
@@ -196,7 +197,7 @@ function ProjectionsChart(props: ProjectionsChartProps, ref: React.Ref<any>) {
         y: {
           formatter: (_: number, point: any) => {
             const seriesData = projectionSeries[point.seriesIndex];
-            const total = seriesData?.[metric];
+            const total = get(seriesData, metric);
 
             return total >= 0 ? `${total} ${metric}` : "-";
           },

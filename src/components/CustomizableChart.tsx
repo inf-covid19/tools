@@ -24,6 +24,7 @@ const numberFormatter = d3.format(".2~s");
 type CustomizableChartProps = Omit<Props, "options" | "series" | "type"> &
   ChartOptions & {
     isIncidence?: boolean;
+    isTrusted?: boolean;
     getPopulation?: (key: string) => number;
   };
 
@@ -39,7 +40,9 @@ function CustomizableChart(props: CustomizableChartProps, ref: React.Ref<any>) {
     alignAt = 0,
     timeserieSlice,
     isIncidence,
+    isTrusted,
     getPopulation,
+    metricSuffix,
     ...rest
   } = props;
 
@@ -52,13 +55,18 @@ function CustomizableChart(props: CustomizableChartProps, ref: React.Ref<any>) {
     if (loading || !data || !metadata) {
       return [];
     }
-
     const earliestDate = subDays(startOfDay(new Date()), dayInterval);
     return Object.entries(data).flatMap(([region, regionData]) => {
       const displayName = getByRegionId(metadata, region)?.displayName || region;
 
       const getValue = (row: TimeseriesRow) => {
-        const value = isCumulative ? (metric === "confirmed" ? row.confirmed : row.deaths) : metric === "confirmed" ? row.confirmed_daily : row.deaths_daily;
+        if (isTrusted) {
+          return row[metric];
+        }
+
+        const value = isCumulative ? row[metric] : row[`${metric}_${metricSuffix}`];
+
+        
 
         if (isIncidence && getPopulation) {
           const population = getPopulation(region);
@@ -70,7 +78,7 @@ function CustomizableChart(props: CustomizableChartProps, ref: React.Ref<any>) {
       };
 
       if (alignAt > 0) {
-        const alignedIndex = regionData.findIndex((v) => v[metric] >= alignAt);
+        const alignedIndex = regionData.findIndex((v) => v[metric.includes('deaths') ? 'deaths' : 'confirmed'] >= alignAt);
         const alignedData = regionData.slice(alignedIndex);
 
         if (alignedData.length === 0) {
@@ -100,7 +108,7 @@ function CustomizableChart(props: CustomizableChartProps, ref: React.Ref<any>) {
         },
       ];
     });
-  }, [loading, data, metadata, dayInterval, alignAt, isCumulative, metric, isIncidence, getPopulation]);
+  }, [loading, data, metadata, metric, metricSuffix, dayInterval, alignAt, isTrusted, isCumulative, isIncidence, getPopulation]);
 
   const sortedSeries = useMemo(() => {
     return sortBy(
@@ -165,7 +173,7 @@ function CustomizableChart(props: CustomizableChartProps, ref: React.Ref<any>) {
         },
         title: {
           offsetX: 5,
-          text: chartType === "heatmap" ? undefined : `${isCumulative ? "Total" : "Daily"} Confirmed ${titleCase(metric)}${isIncidence ? " (per 100k inhab.)" : ""}`,
+          text: chartType === "heatmap" ? undefined : `${isCumulative ? "Total" : "Daily"} ${titleCase(metric)}${isIncidence ? " (per 100k inhab.)" : ""}`,
         },
       },
       dataLabels: {
@@ -183,6 +191,9 @@ function CustomizableChart(props: CustomizableChartProps, ref: React.Ref<any>) {
           colorScale,
         },
       },
+      stroke: {
+        width: 2,
+      }
     };
   }, [seriesColors, alignAt, chartType, isCumulative, metric, isIncidence, showDataLabels, title, colorScale]);
 

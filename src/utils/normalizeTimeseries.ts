@@ -1,23 +1,13 @@
 import { eachDayOfInterval, isAfter, isBefore, subDays } from "date-fns";
+import {first, mapValues }from 'lodash'
 
 
 
-
-export type TimeseriesRow = {
+export type TimeseriesRow = Record<string, number> & {
   date: Date;
-  confirmed: number;
-  confirmed_daily: number;
-  deaths: number;
-  deaths_daily: number;
-  vaccines?: number;
-  vaccines_daily?: number;
-  people_vaccinated?: number;
-  people_vaccinated_daily?: number;
-  people_fully_vaccinated?: number;
-  people_fully_vaccinated_daily?: number;
 };
 
-export function alignTimeseries(timeseries: TimeseriesRow[], earliestDate: Date) {
+export function alignTimeseries(timeseries: TimeseriesRow[], earliestDate: Date): TimeseriesRow[] {
   if (timeseries.length === 0) {
     return [];
   }
@@ -31,14 +21,15 @@ export function alignTimeseries(timeseries: TimeseriesRow[], earliestDate: Date)
     end: timeseries[0].date,
   });
 
+  const { date, ...rest } = first(timeseries)!;
+
   return [
-    ...missingDays.slice(0, -1).map((date) => ({
-      date,
-      confirmed: 0,
-      confirmed_daily: 0,
-      deaths: 0,
-      deaths_daily: 0,
-    })),
+    ...missingDays.slice(0, -1).map((date) => {
+      return ({
+        date,
+        ...mapValues(rest, () => 0)
+      }) as TimeseriesRow;
+    }),
     ...timeseries,
   ];
 }
