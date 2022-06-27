@@ -1,12 +1,13 @@
-import React, { useMemo } from "react";
-import styled from "styled-components";
-import { Loader } from "semantic-ui-react";
-import { useQuery } from "react-query";
-import { AUTOCOVS_API as API_URL } from "../../constants";
 import { get, keyBy } from "lodash";
+import React, { useMemo } from "react";
+import { useQuery } from "react-query";
+import { Dropdown, Loader } from "semantic-ui-react";
+import styled from "styled-components";
+import { AUTOCOVS_API as API_URL } from "../../constants";
 
-import ChartContainer from "./ChartContainer";
+import useStorageState from "../../hooks/useStorageState";
 import { titleCase } from "../../utils/string";
+import ChartContainer from "./ChartContainer";
 
 const apiGet = async (url, searchParams = {}) => {
   const qs = new URLSearchParams();
@@ -25,16 +26,6 @@ const apiGet = async (url, searchParams = {}) => {
 };
 
 const columns = [
-  "deaths",
-  "deaths_by_100k",
-  "deaths_daily",
-  "deaths_by_100k_daily",
-  "deaths_daily_7d",
-  "deaths_by_100k_daily_7d",
-  "deaths_daily_14d",
-  "deaths_by_100k_daily_14d",
-  "deaths_daily_21d",
-  "deaths_by_100k_daily_21d",
   "confirmed",
   "confirmed_by_100k",
   "confirmed_daily",
@@ -45,6 +36,16 @@ const columns = [
   "confirmed_by_100k_daily_14d",
   "confirmed_daily_21d",
   "confirmed_by_100k_daily_21d",
+  "deaths",
+  "deaths_by_100k",
+  "deaths_daily",
+  "deaths_by_100k_daily",
+  "deaths_daily_7d",
+  "deaths_by_100k_daily_7d",
+  "deaths_daily_14d",
+  "deaths_by_100k_daily_14d",
+  "deaths_daily_21d",
+  "deaths_by_100k_daily_21d",
 ];
 
 async function getByDate(currentLocation, otherLocations) {
@@ -137,6 +138,11 @@ function LocationComparisonChart({ compareType, currentLocation, otherLocations 
     return getByDate(currentLocation, otherLocations);
   });
 
+  const [visibleColumns, setVisibleColumns] = useStorageState(
+    "similarityDebugger__visibleColumns",
+    ["confirmed_daily_7d", "confirmed_by_100k_daily_7d", "deaths_daily_7d", "deaths_by_100k_daily_7d"].reduce((obj, key) => ({ ...obj, [key]: true }), {})
+  );
+
   const locationById = useMemo(() => keyBy(otherLocations.concat([currentLocation]), "id"), [currentLocation, otherLocations]);
 
   if (status === "loading") {
@@ -149,44 +155,61 @@ function LocationComparisonChart({ compareType, currentLocation, otherLocations 
 
   return (
     <div>
-      <h4>{titleCase("deaths_daily_7d")}</h4>
-      <ChartContainer
-        currentLocation={currentLocation}
-        attribute="deaths_daily_7d"
-        byAttribute={compareType === "since_first_case" ? "index" : "date"}
-        locationById={locationById}
-        dataByLocationId={data}
-      />
-      <h4>{titleCase("deaths_by_100k_daily_7d")}</h4>
-      <ChartContainer
-        currentLocation={currentLocation}
-        attribute="deaths_by_100k_daily_7d"
-        byAttribute={compareType === "since_first_case" ? "index" : "date"}
-        locationById={locationById}
-        dataByLocationId={data}
-      />
+      {columns.flatMap((column) => {
+        const isVisible = visibleColumns[column];
 
-      <h4>{titleCase("confirmed_daily_7d")}</h4>
-      <ChartContainer
-        currentLocation={currentLocation}
-        attribute="confirmed_daily_7d"
-        byAttribute={compareType === "since_first_case" ? "index" : "date"}
-        locationById={locationById}
-        dataByLocationId={data}
-      />
-      <h4>{titleCase("confirmed_by_100k_daily_7d")}</h4>
-      <ChartContainer
-        currentLocation={currentLocation}
-        attribute="confirmed_by_100k_daily_7d"
-        byAttribute={compareType === "since_first_case" ? "index" : "date"}
-        locationById={locationById}
-        dataByLocationId={data}
-      />
+        if (!isVisible) {
+          return [];
+        }
+
+        return (
+          <React.Fragment key={column}>
+            <h4>{titleCase(column)}</h4>
+            <ChartContainer
+              currentLocation={currentLocation}
+              attribute={column}
+              byAttribute={compareType === "since_first_case" ? "index" : "date"}
+              locationById={locationById}
+              dataByLocationId={data}
+            />
+          </React.Fragment>
+        );
+      })}
+
+      <FloatingButtonWrapper>
+        <Dropdown upward floating icon="plus" button className="icon" direction="left">
+          <Dropdown.Menu>
+            <Dropdown.Header content="Choose visible charts" />
+            <Dropdown.Divider />
+
+            {columns.map((column) => {
+              const isVisible = !!visibleColumns[column];
+
+              return (
+                <Dropdown.Item
+                  key={column}
+                  icon={isVisible ? "eye" : "eye slash"}
+                  active={isVisible}
+                  onClick={() => setVisibleColumns((mapping) => ({ ...mapping, [column]: !isVisible }))}
+                  text={titleCase(column)}
+                />
+              );
+            })}
+          </Dropdown.Menu>
+        </Dropdown>
+      </FloatingButtonWrapper>
     </div>
   );
 }
 
 export default LocationComparisonChart;
+
+const FloatingButtonWrapper = styled.div`
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  z-index: 1000;
+`;
 
 const LoaderWrapper = styled.div`
   height: 350px;

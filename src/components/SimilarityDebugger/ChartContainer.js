@@ -138,6 +138,7 @@ const baseOptions = {
   colors: d3.schemeTableau10,
   chart: {
     zoomType: "x",
+    height: 600,
   },
   title: {
     text: null,

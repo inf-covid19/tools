@@ -1,9 +1,10 @@
 import Fuse from "fuse.js";
-import { castArray, defaultTo, flatMap, groupBy, keyBy, sortBy } from "lodash";
+import { castArray, defaultTo, flatMap, groupBy, isEmpty, keyBy, sortBy, uniq } from "lodash";
 import debounce from "lodash/debounce";
 import first from "lodash/first";
-import React, { useCallback, useMemo, useState } from "react";
-import { Dropdown, Header } from "semantic-ui-react";
+import React, { Fragment, useCallback, useMemo, useState } from "react";
+import { Dropdown, Flag, Header } from "semantic-ui-react";
+import { DEFAULT_COUNTRIES, PLACE_TYPE_LABEL_MAPPING } from "../constants";
 import useMetadata, { Location } from "../hooks/useMetadata";
 import { getByRegionId, getDisplayNameFromLocation, getNameFromLocation } from "../utils/metadata";
 import "./RegionSelector.css";
@@ -26,7 +27,7 @@ export default function RegionSelector({ value, onChange, multiple = true, filte
   const selected = useMemo(() => Object.keys(value).filter((k) => value[k]), [value]);
   const { data: metadata, loading } = useMetadata();
 
-  const [regions] = useMemo(() => {
+  const [regions, groups] = useMemo(() => {
     if (!metadata) return [{}, {}];
 
     const groups: Record<string, Record<string, Array<{ value: string; name: string; parent: string; flag: string; text: string; country: string }>>> = {};
@@ -175,7 +176,7 @@ export default function RegionSelector({ value, onChange, multiple = true, filte
               />
             </Header>
           </div>
-          {/* 
+          
           <div>
             <Header as="h4" color="grey">
               <Dropdown selectOnNavigation={false} style={{ zIndex: 13 }} text="Select region group" inline scrolling>
@@ -206,7 +207,7 @@ export default function RegionSelector({ value, onChange, multiple = true, filte
                               <Dropdown.Item
                                 key={`${country}-${group}`}
                                 className="RegionSelector--group--item"
-                                onClick={() => setSelected(uniq(selected.concat(items.map((i) => i.value))))}
+                                onClick={() => setSelected(uniq(items.map((i) => i.value)))}
                               >
                                 {`${PLACE_TYPE_LABEL_MAPPING[type]} from ${groupName.replace(/_/g, " ")}`}
                               </Dropdown.Item>
@@ -218,7 +219,7 @@ export default function RegionSelector({ value, onChange, multiple = true, filte
                 </Dropdown.Menu>
               </Dropdown>
             </Header>
-          </div> */}
+          </div>
         </div>
       )}
       <Dropdown

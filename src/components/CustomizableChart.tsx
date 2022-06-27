@@ -66,8 +66,6 @@ function CustomizableChart(props: CustomizableChartProps, ref: React.Ref<any>) {
 
         const value = isCumulative ? row[metric] : row[`${metric}_${metricSuffix}`];
 
-        
-
         if (isIncidence && getPopulation) {
           const population = getPopulation(region);
 
@@ -78,7 +76,7 @@ function CustomizableChart(props: CustomizableChartProps, ref: React.Ref<any>) {
       };
 
       if (alignAt > 0) {
-        const alignedIndex = regionData.findIndex((v) => v[metric.includes('deaths') ? 'deaths' : 'confirmed'] >= alignAt);
+        const alignedIndex = regionData.findIndex((v) => v[metric.includes("deaths") ? "deaths" : "confirmed"] >= alignAt);
         const alignedData = regionData.slice(alignedIndex);
 
         if (alignedData.length === 0) {
@@ -124,6 +122,8 @@ function CustomizableChart(props: CustomizableChartProps, ref: React.Ref<any>) {
   const colorScale = useColorScale(sortedSeries);
 
   const chartOptions = useMemo(() => {
+    const effectiveMetric = isCumulative ? metric : `${metric}_${metricSuffix}`;
+
     return {
       chart: {
         fontFamily: "Lato, 'Helvetica Neue', Arial, Helvetica, sans-serif",
@@ -173,7 +173,7 @@ function CustomizableChart(props: CustomizableChartProps, ref: React.Ref<any>) {
         },
         title: {
           offsetX: 5,
-          text: chartType === "heatmap" ? undefined : `${isCumulative ? "Total" : "Daily"} ${titleCase(metric)}${isIncidence ? " (per 100k inhab.)" : ""}`,
+          text: chartType === "heatmap" ? undefined : `${titleCase(effectiveMetric)}${isIncidence ? " (per 100k inhab.)" : ""}`,
         },
       },
       dataLabels: {
@@ -193,9 +193,9 @@ function CustomizableChart(props: CustomizableChartProps, ref: React.Ref<any>) {
       },
       stroke: {
         width: 2,
-      }
+      },
     };
-  }, [seriesColors, alignAt, chartType, isCumulative, metric, isIncidence, showDataLabels, title, colorScale]);
+  }, [isCumulative, metric, metricSuffix, seriesColors, alignAt, chartType, isIncidence, showDataLabels, title, colorScale]);
 
   if (loading) {
     return (
