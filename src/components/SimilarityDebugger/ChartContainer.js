@@ -3,7 +3,9 @@ import { format } from "date-fns";
 import HighchartsReact from "highcharts-react-official";
 import { merge } from "lodash";
 import numeral from "numeral";
+import { Resizable } from "re-resizable";
 import React, { useMemo } from "react";
+import useStorageState from "../../hooks/useStorageState";
 import Highcharts from "../../utils/highcharts";
 import { titleCase } from "../../utils/string";
 
@@ -11,8 +13,16 @@ const ordinalFormattter = (n) => numeral(n).format("Oo");
 const formatNumber = d3.format(",.2f");
 
 function ChartContainer({ currentLocation, attribute, byAttribute, reversed = false, locationById, dataByLocationId }) {
+  const [size, setSize] = useStorageState(`similarityDebugger_chartContainerSize_${attribute}`, {
+    width: "100%",
+    height: 600,
+  });
+
   const chartOptions = useMemo(() => {
     return merge({}, baseOptions, {
+      chart: {
+        height: size.height,
+      },
       xAxis: {
         type: byAttribute === "date" ? "datetime" : "category",
         labels: {
@@ -123,12 +133,23 @@ function ChartContainer({ currentLocation, attribute, byAttribute, reversed = fa
         };
       }),
     });
-  }, [attribute, currentLocation, byAttribute, dataByLocationId, locationById, reversed]);
+  }, [size.height, byAttribute, attribute, reversed, currentLocation.name, dataByLocationId, locationById]);
 
   return (
-    <div>
+    <Resizable
+      size={size}
+      minHeight={400}
+      enable={{ bottom: true }}
+      onResizeStop={(e, direction, ref, d) => {
+        setSize({
+          width: size.width + d.width,
+          height: size.height + d.height,
+        });
+      }}
+      grid={[5, 5]}
+    >
       <HighchartsReact key={`${attribute}:${byAttribute}`} highcharts={Highcharts} options={chartOptions} />
-    </div>
+    </Resizable>
   );
 }
 
@@ -138,7 +159,6 @@ const baseOptions = {
   colors: d3.schemeTableau10,
   chart: {
     zoomType: "x",
-    height: 600,
   },
   title: {
     text: null,

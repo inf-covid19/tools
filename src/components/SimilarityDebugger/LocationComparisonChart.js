@@ -1,7 +1,7 @@
 import { get, keyBy } from "lodash";
 import React, { useMemo } from "react";
 import { useQuery } from "react-query";
-import { Dropdown, Loader } from "semantic-ui-react";
+import { Dropdown, Loader, Segment } from "semantic-ui-react";
 import styled from "styled-components";
 import { AUTOCOVS_API as API_URL } from "../../constants";
 
@@ -163,7 +163,7 @@ function LocationComparisonChart({ compareType, currentLocation, otherLocations 
         }
 
         return (
-          <React.Fragment key={column}>
+          <Segment key={column}>
             <h4>{titleCase(column)}</h4>
             <ChartContainer
               currentLocation={currentLocation}
@@ -172,7 +172,7 @@ function LocationComparisonChart({ compareType, currentLocation, otherLocations 
               locationById={locationById}
               dataByLocationId={data}
             />
-          </React.Fragment>
+          </Segment>
         );
       })}
 
