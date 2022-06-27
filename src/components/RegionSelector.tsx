@@ -1,5 +1,5 @@
 import Fuse from "fuse.js";
-import { castArray, defaultTo, flatMap, groupBy, isEmpty, keyBy, sortBy, uniq } from "lodash";
+import { castArray, defaultTo, flatMap, groupBy, isEmpty, keyBy, orderBy, sortBy, uniq } from "lodash";
 import debounce from "lodash/debounce";
 import first from "lodash/first";
 import React, { Fragment, useCallback, useMemo, useState } from "react";
@@ -152,6 +152,17 @@ export default function RegionSelector({ value, onChange, multiple = true, filte
     [setSelected]
   );
 
+  const sortedGroups = useMemo(() => {
+    if (!metadata) {
+      return [];
+    }
+
+    return orderBy(Object.entries(groups), ([country]) => {
+      const { name } = getByRegionId(metadata, country);
+      return name;
+    });
+  }, [groups, metadata]);
+
   return (
     <div>
       {multiple && (
@@ -176,7 +187,7 @@ export default function RegionSelector({ value, onChange, multiple = true, filte
               />
             </Header>
           </div>
-          
+
           <div>
             <Header as="h4" color="grey">
               <Dropdown selectOnNavigation={false} style={{ zIndex: 13 }} text="Select region group" inline scrolling>
@@ -188,7 +199,7 @@ export default function RegionSelector({ value, onChange, multiple = true, filte
                     </Dropdown.Item>
                   </Fragment>
                   {metadata &&
-                    Object.entries(groups).flatMap(([country, regions]) => {
+                    sortedGroups.flatMap(([country, regions]) => {
                       if (isEmpty(regions)) {
                         return null;
                       }
@@ -204,11 +215,7 @@ export default function RegionSelector({ value, onChange, multiple = true, filte
                             const [groupName, type] = group.split(":", 2);
 
                             return (
-                              <Dropdown.Item
-                                key={`${country}-${group}`}
-                                className="RegionSelector--group--item"
-                                onClick={() => setSelected(uniq(items.map((i) => i.value)))}
-                              >
+                              <Dropdown.Item key={`${country}-${group}`} className="RegionSelector--group--item" onClick={() => setSelected(uniq(items.map((i) => i.value)))}>
                                 {`${PLACE_TYPE_LABEL_MAPPING[type]} from ${groupName.replace(/_/g, " ")}`}
                               </Dropdown.Item>
                             );
