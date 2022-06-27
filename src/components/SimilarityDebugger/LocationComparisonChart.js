@@ -6,6 +6,7 @@ import { AUTOCOVS_API as API_URL } from "../../constants";
 import { get, keyBy } from "lodash";
 
 import ChartContainer from "./ChartContainer";
+import { titleCase } from "../../utils/string";
 
 const apiGet = async (url, searchParams = {}) => {
   const qs = new URLSearchParams();
@@ -148,7 +149,7 @@ function LocationComparisonChart({ compareType, currentLocation, otherLocations 
 
   return (
     <div>
-      <h4>Deaths | 7-day moving average</h4>
+      <h4>{titleCase("deaths_daily_7d")}</h4>
       <ChartContainer
         currentLocation={currentLocation}
         attribute="deaths_daily_7d"
@@ -156,7 +157,7 @@ function LocationComparisonChart({ compareType, currentLocation, otherLocations 
         locationById={locationById}
         dataByLocationId={data}
       />
-      <h4>Deaths | 7-day moving average per 100k inhab.</h4>
+      <h4>{titleCase("deaths_by_100k_daily_7d")}</h4>
       <ChartContainer
         currentLocation={currentLocation}
         attribute="deaths_by_100k_daily_7d"
@@ -165,7 +166,7 @@ function LocationComparisonChart({ compareType, currentLocation, otherLocations 
         dataByLocationId={data}
       />
 
-      <h4>Confirmed | 7-day moving average</h4>
+      <h4>{titleCase("confirmed_daily_7d")}</h4>
       <ChartContainer
         currentLocation={currentLocation}
         attribute="confirmed_daily_7d"
@@ -173,7 +174,7 @@ function LocationComparisonChart({ compareType, currentLocation, otherLocations 
         locationById={locationById}
         dataByLocationId={data}
       />
-      <h4>Confirmed | 7-day moving average per 100k inhab.</h4>
+      <h4>{titleCase("confirmed_by_100k_daily_7d")}</h4>
       <ChartContainer
         currentLocation={currentLocation}
         attribute="confirmed_by_100k_daily_7d"

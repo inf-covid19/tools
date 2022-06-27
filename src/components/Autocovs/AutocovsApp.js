@@ -5,6 +5,7 @@ import useLocationFromURL from "../../hooks/useLocationFromURL";
 import useMetadata from "../../hooks/useMetadata";
 import useStorageState from "../../hooks/useStorageState";
 import { getByRegionId } from "../../utils/metadata";
+import { titleCase } from "../../utils/string";
 import RegionSelector from "../RegionSelector";
 import RegionChart from "./RegionChart";
 
@@ -150,6 +151,9 @@ function App() {
     return getByRegionId(metadata, regionId);
   }, [metadata, secondRegion]);
 
+  const casesAttr = 'confirmed_by_100k_daily_7d'
+  const deathsAttr = 'deaths_by_100k_daily_7d'
+
   return (
     <>
       <Container style={{ marginBottom: 20 }}>
@@ -238,29 +242,29 @@ function App() {
               {regionData && (
                 <Grid.Row>
                   <Grid.Column md={14}>
-                    <h5>{regionData.displayName} - Daily Confirmed (21d)</h5>
+                    <h5>{regionData.displayName} - {titleCase(casesAttr)}</h5>
                     <RegionChart
                       key={regionData.key}
                       regionData={regionData}
                       region={regionData.key}
                       secondRegionData={secondRegionData}
                       secondRegion={secondRegionData?.key}
-                      attribute={"confirmed_by_100k_daily_7d"}
-                      title="Daily Confirmed (21d)"
+                      attribute={casesAttr}
+                      title={titleCase(casesAttr)}
                       config={effectiveConfig}
                       withInsights
                     />
                   </Grid.Column>
                   <Grid.Column md={14}>
-                    <h5>{regionData.displayName} - Daily Deaths (21d)</h5>
+                    <h5>{regionData.displayName} - {titleCase(deathsAttr)}</h5>
                     <RegionChart
                       key={regionData.key}
                       regionData={regionData}
                       region={regionData.key}
                       secondRegionData={secondRegionData}
                       secondRegion={secondRegionData?.key}
-                      attribute={"deaths_daily_21d"}
-                      title="Daily Deaths (21d)"
+                      attribute={deathsAttr}
+                      title={titleCase(deathsAttr)}
                       config={effectiveConfig}
                     />
                   </Grid.Column>

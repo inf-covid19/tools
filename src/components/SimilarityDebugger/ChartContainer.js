@@ -1,10 +1,11 @@
 import * as d3 from "d3";
-import HighchartsReact from "highcharts-react-official";
-import { merge, startCase } from "lodash";
-import React, { useMemo } from "react";
-import numeral from "numeral";
-import Highcharts from "../../utils/highcharts";
 import { format } from "date-fns";
+import HighchartsReact from "highcharts-react-official";
+import { merge } from "lodash";
+import numeral from "numeral";
+import React, { useMemo } from "react";
+import Highcharts from "../../utils/highcharts";
+import { titleCase } from "../../utils/string";
 
 const ordinalFormattter = (n) => numeral(n).format("Oo");
 const formatNumber = d3.format(",.2f");
@@ -25,7 +26,7 @@ function ChartContainer({ currentLocation, attribute, byAttribute, reversed = fa
       },
       yAxis: {
         title: {
-          text: startCase(attribute),
+          text: titleCase(attribute),
         },
         reversed,
         plotBands: [

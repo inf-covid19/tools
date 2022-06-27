@@ -15,10 +15,11 @@ import useMetadata from "../../hooks/useMetadata";
 import useQueryString from "../../hooks/useQueryString";
 import useRegionData from "../../hooks/useRegionData";
 import { getByRegionId } from "../../utils/metadata";
+import { titleCase } from "../../utils/string";
 import { makeGet } from "../Storytelling/utils/api";
+import VisibilityControl from "../VisibilityControl";
 import "./Explorer.css";
 import MaintenanceBanner from "./MaintenanceBanner";
-
 
 const displayNumberFormatter = format(",.2~f");
 
@@ -101,7 +102,7 @@ const Explorer = () => {
 
   const isIncidence = aspect.includes("100k");
 
-  const sortedTopSimilar: Array<{location_id: string, distance: number, location: ReturnType<typeof getByRegionId>}> = useMemo(() => {
+  const sortedTopSimilar: Array<{ location_id: string; distance: number; location: ReturnType<typeof getByRegionId> }> = useMemo(() => {
     if (!topSimilarData || !currentRegion || !metadata) return [];
 
     // let effectiveTopSimilar = topSimilarData;
@@ -123,7 +124,7 @@ const Explorer = () => {
     //   "desc"
     // );
 
-    return topSimilarData.map((x: { location_id: string, distance: number }) => ({
+    return topSimilarData.map((x: { location_id: string; distance: number }) => ({
       ...x,
       location: getByRegionId(metadata, x.location_id),
     }));
@@ -477,51 +478,63 @@ const Explorer = () => {
                 </Grid.Column>
               </Grid>
             </Segment>
-            <Segment>
-              <CustomizableChart
-                {...DEFAULT_OPTIONS}
-                selectedRegions={chartRegions}
-                alignAt={1}
-                chartType="area"
-                isCumulative={false}
-                height={250}
-                metric={isIncidence ? 'confirmed_by_100k_daily_21d' : "confirmed_daily_21d"}
-                title={`Total Cases - Comparison between ${currentRegion?.displayName} and ${secondaryRegion?.displayName}`}
-                timeserieSlice={-1}
-                isIncidence={false}
-                getPopulation={(key) => dataByKey[key].population}
-                isTrusted
-              />
-            </Segment>
-            <Segment>
-              <CustomizableChart
-                {...DEFAULT_OPTIONS}
-                selectedRegions={chartRegions}
-                alignAt={1}
-                chartType="area"
-                isCumulative={false}
-                height={250}
-                metric={isIncidence ? 'deaths_by_100k_daily_21d' : "deaths_daily_21d"}
-                title={`Total Deaths - Comparison between ${currentRegion?.displayName} and ${secondaryRegion?.displayName}`}
-                timeserieSlice={-1}
-                isIncidence={false}
-                getPopulation={(key) => dataByKey[key].population}
-                isTrusted
-              />
-            </Segment>
-            <Segment>
+            <RelativeSegment>
+              <Header as="h3">{`${titleCase(isIncidence ? "confirmed_by_100k_daily_21d" : "confirmed_daily_21d")} - Comparison between ${currentRegion?.displayName} and ${
+                secondaryRegion?.displayName
+              }`}</Header>
+              <VisibilityControl>
+                <CustomizableChart
+                  {...DEFAULT_OPTIONS}
+                  selectedRegions={chartRegions}
+                  alignAt={1}
+                  chartType="area"
+                  isCumulative={false}
+                  title=""
+                  height={600}
+                  metric={isIncidence ? "confirmed_by_100k_daily_21d" : "confirmed_daily_21d"}
+                  timeserieSlice={-1}
+                  isIncidence={false}
+                  getPopulation={(key) => dataByKey[key].population}
+                  isTrusted
+                />
+              </VisibilityControl>
+            </RelativeSegment>
+            <RelativeSegment>
+              <Header as="h3">{`${titleCase(isIncidence ? "deaths_by_100k_daily_21d" : "deaths_daily_21d")} - Comparison between ${currentRegion?.displayName} and ${
+                secondaryRegion?.displayName
+              }`}</Header>
+              <VisibilityControl>
+                <CustomizableChart
+                  {...DEFAULT_OPTIONS}
+                  selectedRegions={chartRegions}
+                  alignAt={1}
+                  chartType="area"
+                  isCumulative={false}
+                  height={600}
+                  metric={isIncidence ? "deaths_by_100k_daily_21d" : "deaths_daily_21d"}
+                  title={""}
+                  timeserieSlice={-1}
+                  isIncidence={false}
+                  getPopulation={(key) => dataByKey[key].population}
+                  isTrusted
+                />
+              </VisibilityControl>
+            </RelativeSegment>
+            <RelativeSegment>
               <Header as="h3">
                 Trend comparison between {currentRegion?.displayName} and {secondaryRegion?.displayName}
               </Header>
-              <Grid columns={2} stackable>
-                <Grid.Column>
-                  <TrendChart {...DEFAULT_OPTIONS} selectedRegions={chartRegions} alignAt={1} height={250} metric={"confirmed"} title={``} />
-                </Grid.Column>
-                <Grid.Column>
-                  <TrendChart {...DEFAULT_OPTIONS} selectedRegions={chartRegions} alignAt={1} height={250} metric={"deaths"} title={``} />
-                </Grid.Column>
-              </Grid>
-            </Segment>
+              <VisibilityControl>
+                <Grid columns={2} stackable>
+                  <Grid.Column>
+                    <TrendChart {...DEFAULT_OPTIONS} selectedRegions={chartRegions} alignAt={1} height={600} metric={"confirmed"} title={``} />
+                  </Grid.Column>
+                  <Grid.Column>
+                    <TrendChart {...DEFAULT_OPTIONS} selectedRegions={chartRegions} alignAt={1} height={600} metric={"deaths"} title={``} />
+                  </Grid.Column>
+                </Grid>
+              </VisibilityControl>
+            </RelativeSegment>
           </div>
         </Container>
       ) : (
@@ -556,3 +569,7 @@ function DiffIndicator({ primaryValue, secondaryValue }: { primaryValue: number;
 
   return <Icon name={`angle ${isHugeDiff ? "double " : ""}${diff > 0 ? "down" : "up"}` as SemanticICONS} color={diff > 0 ? "red" : "green"} />;
 }
+
+const RelativeSegment = styled(Segment)`
+  position: relative;
+`;

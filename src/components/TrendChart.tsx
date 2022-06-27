@@ -169,7 +169,7 @@ function TrendChart(props: TrendChartProps, ref: React.Ref<any>) {
         },
         title: {
           text: `Total Confirmed ${metric === 'confirmed' ? 'Cases': 'Deaths'}`,
-          offsetY: 10,
+          // offsetY: 10,
         },
         tooltip: {
           enabled: false,
