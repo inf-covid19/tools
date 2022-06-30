@@ -1,7 +1,7 @@
 import * as d3 from "d3";
 import { format } from "date-fns";
 import HighchartsReact from "highcharts-react-official";
-import { merge } from "lodash";
+import { merge, orderBy } from "lodash";
 import numeral from "numeral";
 import { Resizable } from "re-resizable";
 import React, { useMemo } from "react";
@@ -100,21 +100,22 @@ function ChartContainer({ currentLocation, attribute, byAttribute, reversed = fa
             }
           }
 
-          const formatPoints = (points) =>
-            points
+          const formatPoints = (points, sortDirection = 'asc') => {
+            return orderBy(points, 'y', sortDirection)
               .flatMap(({ point }) => {
                 if (!point.source) return [];
 
                 return `\t${point.series.name}: <b>${formatNumber(point.source[attribute])} (${formatNumber(point.y)})</b>`;
               })
               .join("<br>");
+          };
 
           return `<div>
             <b>${byAttribute === "index" ? `${ordinalFormattter(this.x)} day since the first case in ${currentLocation.name}` : format(this.x, "PPP")}</b>
             <br>
             🔵 Reference scenario: <br>${formatPoints([currentLocationPoint])}<br><br>
             ${samePoints.length > 0 ? `🟡 Same scenario: <br>${formatPoints(samePoints)}<br><br>` : ``}
-            ${worstPoints.length > 0 ? `🔴 Worst scenario: <br>${formatPoints(worstPoints)}<br><br>` : ``}
+            ${worstPoints.length > 0 ? `🔴 Worst scenario: <br>${formatPoints(worstPoints, 'desc')}<br><br>` : ``}
             ${betterPoints.length > 0 ? `🟢 Better scenario: <br>${formatPoints(betterPoints)}<br><br>` : ``}
           </div>`;
         },
