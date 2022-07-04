@@ -1,10 +1,10 @@
 import * as d3 from "d3";
 import { format } from "date-fns";
 import HighchartsReact from "highcharts-react-official";
-import { merge, orderBy } from "lodash";
+import { mapValues, merge, orderBy } from "lodash";
 import numeral from "numeral";
 import { Resizable } from "re-resizable";
-import React, { useMemo } from "react";
+import React, { useMemo, useCallback } from "react";
 import useStorageState from "../../hooks/useStorageState";
 import Highcharts from "../../utils/highcharts";
 import { titleCase } from "../../utils/string";
@@ -17,6 +17,76 @@ function ChartContainer({ currentLocation, attribute, byAttribute, reversed = fa
     width: "100%",
     height: 600,
   });
+
+  const xGetter = useCallback((record) => (byAttribute === "date" ? new Date(record.date).getTime() : record[byAttribute]), [byAttribute]);
+  const yGetter = useCallback((record) => record[attribute], [attribute]);
+
+  const tooltipByX = useMemo(() => {
+    const dataByX = {};
+
+    for (let [locationId, rawData] of Object.entries(dataByLocationId)) {
+      for (let record of rawData) {
+        const x = xGetter(record);
+        const { source } = record;
+
+        if (x in dataByX) {
+          dataByX[x].push({ x, y: yGetter(record), source, locationId });
+        } else {
+          dataByX[x] = [{ x, y: yGetter(record), source, locationId }];
+        }
+      }
+    }
+
+    return mapValues(dataByX, (points, key) => {
+      let currentLocationPoint = null;
+      let samePoints = [];
+      let betterPoints = [];
+      let worstPoints = [];
+
+      for (const x of points) {
+        if (x.locationId === currentLocation.id) {
+          currentLocationPoint = x;
+          continue;
+        }
+
+        if (x.y === 0) {
+          samePoints.push(x);
+          continue;
+        }
+
+        if (x.y > 0) {
+          worstPoints.push(x);
+          continue;
+        }
+
+        if (x.y < 0) {
+          betterPoints.push(x);
+          continue;
+        }
+      }
+
+      const formatPoints = (points, sortDirection = "asc") => {
+        return orderBy(points, "y", sortDirection)
+          .flatMap((point) => {
+            if (!point.source) return [];
+
+            const location = locationById[point.locationId];
+
+            return `\t${location.name}: <b>${formatNumber(point.source[attribute])} (${formatNumber(point.y)})</b>`;
+          })
+          .join("<br>");
+      };
+
+      return `<div>
+            <b>${byAttribute === "index" ? `${ordinalFormattter(currentLocationPoint.x)} day since the first case in ${currentLocation.name}` : format(currentLocationPoint.x, "PPP")}</b>
+            <br>
+            🔵 Reference scenario: <br>${formatPoints([currentLocationPoint])}<br><br>
+            ${samePoints.length > 0 ? `🟡 Same scenario: <br>${formatPoints(samePoints)}<br><br>` : ``}
+            ${worstPoints.length > 0 ? `🔴 Worst scenario: <br>${formatPoints(worstPoints, "desc")}<br><br>` : ``}
+            ${betterPoints.length > 0 ? `🟢 Better scenario: <br>${formatPoints(betterPoints)}<br><br>` : ``}
+          </div>`;
+    });
+  }, [attribute, byAttribute, currentLocation.id, currentLocation.name, dataByLocationId, locationById, xGetter, yGetter]);
 
   const chartOptions = useMemo(() => {
     return merge({}, baseOptions, {
@@ -74,50 +144,7 @@ function ChartContainer({ currentLocation, attribute, byAttribute, reversed = fa
       },
       tooltip: {
         formatter() {
-          let currentLocationPoint = null;
-          let samePoints = [];
-          let betterPoints = [];
-          let worstPoints = [];
-
-          for (const x of this.points) {
-            if (x.series.name === currentLocation.name) {
-              currentLocationPoint = x;
-              continue;
-            }
-
-            if (x.y === 0) {
-              samePoints.push(x);
-              continue;
-            }
-
-            if (x.y > 0) {
-              worstPoints.push(x);
-              continue;
-            }
-            if (x.y < 0) {
-              betterPoints.push(x);
-              continue;
-            }
-          }
-
-          const formatPoints = (points, sortDirection = 'asc') => {
-            return orderBy(points, 'y', sortDirection)
-              .flatMap(({ point }) => {
-                if (!point.source) return [];
-
-                return `\t${point.series.name}: <b>${formatNumber(point.source[attribute])} (${formatNumber(point.y)})</b>`;
-              })
-              .join("<br>");
-          };
-
-          return `<div>
-            <b>${byAttribute === "index" ? `${ordinalFormattter(this.x)} day since the first case in ${currentLocation.name}` : format(this.x, "PPP")}</b>
-            <br>
-            🔵 Reference scenario: <br>${formatPoints([currentLocationPoint])}<br><br>
-            ${samePoints.length > 0 ? `🟡 Same scenario: <br>${formatPoints(samePoints)}<br><br>` : ``}
-            ${worstPoints.length > 0 ? `🔴 Worst scenario: <br>${formatPoints(worstPoints, 'desc')}<br><br>` : ``}
-            ${betterPoints.length > 0 ? `🟢 Better scenario: <br>${formatPoints(betterPoints)}<br><br>` : ``}
-          </div>`;
+          return tooltipByX[this.x];
         },
       },
       series: Object.entries(dataByLocationId).map(([locationId, rawData]) => {
@@ -126,15 +153,15 @@ function ChartContainer({ currentLocation, attribute, byAttribute, reversed = fa
           type: "spline",
           data: rawData.map((x) => {
             return {
-              x: byAttribute === "date" ? new Date(x.date).getTime() : x[byAttribute],
-              y: x[attribute],
+              x: xGetter(x),
+              y: yGetter(x),
               source: x.source,
             };
           }),
         };
       }),
     });
-  }, [size.height, byAttribute, attribute, reversed, currentLocation.name, dataByLocationId, locationById]);
+  }, [size.height, byAttribute, attribute, reversed, currentLocation.name, dataByLocationId, tooltipByX, locationById, xGetter, yGetter]);
 
   return (
     <Resizable
