@@ -4,7 +4,9 @@ import HighchartsReact from "highcharts-react-official";
 import { mapValues, merge, orderBy } from "lodash";
 import numeral from "numeral";
 import { Resizable } from "re-resizable";
-import React, { useMemo, useCallback } from "react";
+import React, { useMemo, useCallback, useState } from "react";
+import { Header, Table } from "semantic-ui-react";
+import styled from "styled-components";
 import useStorageState from "../../hooks/useStorageState";
 import Highcharts from "../../utils/highcharts";
 import { titleCase } from "../../utils/string";
@@ -49,7 +51,7 @@ function ChartContainer({ currentLocation, attribute, byAttribute, reversed = fa
           continue;
         }
 
-        if (x.y === 0) {
+        if (formatNumber(x.y) === formatNumber(0)) {
           samePoints.push(x);
           continue;
         }
@@ -65,28 +67,41 @@ function ChartContainer({ currentLocation, attribute, byAttribute, reversed = fa
         }
       }
 
-      const formatPoints = (points, sortDirection = "asc") => {
-        return orderBy(points, "y", sortDirection)
-          .flatMap((point) => {
-            if (!point.source) return [];
-
-            const location = locationById[point.locationId];
-
-            return `\t${location.name}: <b>${formatNumber(point.source[attribute])} (${formatNumber(point.y)})</b>`;
-          })
-          .join("<br>");
+      return {
+        header:
+          byAttribute === "index" ? `${ordinalFormattter(currentLocationPoint.x)} day since the first case in ${currentLocation.name}` : format(currentLocationPoint.x, "PPP"),
+        currentLocationPoint,
+        samePoints: orderBy(samePoints, "y", "asc"),
+        worstPoints: orderBy(worstPoints, "y", "desc"),
+        betterPoints: orderBy(betterPoints, "y", "asc"),
       };
 
-      return `<div>
-            <b>${byAttribute === "index" ? `${ordinalFormattter(currentLocationPoint.x)} day since the first case in ${currentLocation.name}` : format(currentLocationPoint.x, "PPP")}</b>
-            <br>
-            🔵 Reference scenario: <br>${formatPoints([currentLocationPoint])}<br><br>
-            ${samePoints.length > 0 ? `🟡 Same scenario: <br>${formatPoints(samePoints)}<br><br>` : ``}
-            ${worstPoints.length > 0 ? `🔴 Worst scenario: <br>${formatPoints(worstPoints, "desc")}<br><br>` : ``}
-            ${betterPoints.length > 0 ? `🟢 Better scenario: <br>${formatPoints(betterPoints)}<br><br>` : ``}
-          </div>`;
+      // const formatPoints = (points, sortDirection = "asc") => {
+      //   return orderBy(points, "y", sortDirection)
+      //     .flatMap((point) => {
+      //       if (!point.source) return [];
+
+      //       const location = locationById[point.locationId];
+
+      //       return `\t${location.name}: <b>${formatNumber(point.source[attribute])} (${formatNumber(point.y)})</b>`;
+      //     })
+      //     .join("<br>");
+      // };
+
+      // return `<div>
+      //       <b>${
+
+      //       }</b>
+      //       <br>
+      //       🔵 Reference scenario: <br>${formatPoints([currentLocationPoint])}<br><br>
+      //       ${samePoints.length > 0 ? `🟡 Same scenario: <br>${formatPoints(samePoints)}<br><br>` : ``}
+      //       ${worstPoints.length > 0 ? `🔴 Worst scenario: <br>${formatPoints(worstPoints, "desc")}<br><br>` : ``}
+      //       ${betterPoints.length > 0 ? `🟢 Better scenario: <br>${formatPoints(betterPoints)}<br><br>` : ``}
+      //     </div>`;
     });
-  }, [attribute, byAttribute, currentLocation.id, currentLocation.name, dataByLocationId, locationById, xGetter, yGetter]);
+  }, [byAttribute, currentLocation.id, currentLocation.name, dataByLocationId, xGetter, yGetter]);
+
+  const [selectedX, setSelectedX] = useState();
 
   const chartOptions = useMemo(() => {
     return merge({}, baseOptions, {
@@ -103,6 +118,13 @@ function ChartContainer({ currentLocation, attribute, byAttribute, reversed = fa
                 }
               : undefined,
         },
+        plotLines: [
+          {
+            label: { text: "" },
+            value: null,
+            color: "red",
+          },
+        ],
       },
       yAxis: {
         title: {
@@ -143,25 +165,102 @@ function ChartContainer({ currentLocation, attribute, byAttribute, reversed = fa
         ],
       },
       tooltip: {
-        formatter() {
-          return tooltipByX[this.x];
-        },
+        shared: false,
+        valueDecimals: 2,
+
+        ...(byAttribute === "index" ? { headerFormat: `<div>{point.key} days after the first case in ${currentLocation.name}</div><br/><br/>` } : {}),
+        // footerFormat: '<br><br><div style="text-align: center;">Click to compare</div>',
       },
       series: Object.entries(dataByLocationId).map(([locationId, rawData]) => {
         return {
           name: locationById[locationId].name,
-          type: "spline",
-          data: rawData.map((x) => {
-            return {
-              x: xGetter(x),
-              y: yGetter(x),
-              source: x.source,
-            };
-          }),
+          type: "line",
+          data: rawData.map((x) => [xGetter(x), yGetter(x)]),
         };
       }),
+      plotOptions: {
+        series: {
+          cursor: "pointer",
+          marker: {
+            enabled: false,
+          },
+          point: {
+            events: {
+              mouseOver() {
+                if (this.series.halo) {
+                  this.series.halo
+                    .attr({
+                      class: "highcharts-tracker",
+                    })
+                    .toFront();
+                }
+              },
+              click() {
+                setSelectedX(this.x);
+                this.series.chart.xAxis[0].options.plotLines[0].value = this.x;
+                this.series.chart.xAxis[0].options.plotLines[0].label.text =
+                  byAttribute === "index" ? `${ordinalFormattter(this.x)} day since the first case in ${currentLocation.name}` : format(this.x, "PPP");
+                this.series.chart.xAxis[0].update();
+              },
+            },
+          },
+        },
+      },
     });
-  }, [size.height, byAttribute, attribute, reversed, currentLocation.name, dataByLocationId, tooltipByX, locationById, xGetter, yGetter]);
+  }, [size.height, byAttribute, attribute, reversed, currentLocation.name, dataByLocationId, locationById, xGetter, yGetter]);
+
+  const renderTable = (title, points, props = {}) => {
+    const hasPoints = points?.length > 0;
+    if (!hasPoints) {
+      return null;
+    }
+
+    return (
+      <Table compact="very" {...props}>
+        <Table.Header>
+          <Table.Row>
+            <Table.HeaderCell colSpan={2}>{title}</Table.HeaderCell>
+          </Table.Row>
+        </Table.Header>
+
+        <Table.Body>
+          {points.flatMap((point) => {
+            if (!point.source) {
+              return [];
+            }
+            const location = locationById[point.locationId];
+
+            return (
+              <Table.Row key={point.locationId}>
+                <Table.Cell>{location.name}</Table.Cell>
+                <Table.Cell>
+                  <b>{`${formatNumber(point.source[attribute])} (${formatNumber(point.y)})`}</b>
+                </Table.Cell>
+              </Table.Row>
+            );
+          })}
+        </Table.Body>
+      </Table>
+    );
+  };
+
+  const renderPanelContent = () => {
+    if (!selectedX) {
+      return <Message>Click on the chart to see the comparison</Message>;
+    }
+
+    const { header, currentLocationPoint, samePoints, worstPoints, betterPoints } = tooltipByX[selectedX] || {};
+
+    return (
+      <>
+        <Header as="h5">{header}</Header>
+        {renderTable("Reference scenario", [currentLocationPoint])}
+        {renderTable("Same scenario", samePoints, { color: "blue" })}
+        {renderTable("Worst scenario", worstPoints, { color: "red" })}
+        {renderTable("Better scenario", betterPoints, { color: "green" })}
+      </>
+    );
+  };
 
   return (
     <Resizable
@@ -176,14 +275,48 @@ function ChartContainer({ currentLocation, attribute, byAttribute, reversed = fa
       }}
       grid={[5, 5]}
     >
-      <HighchartsReact key={`${attribute}:${byAttribute}`} highcharts={Highcharts} options={chartOptions} />
+      <GridContainer>
+        <HighchartsReact key={`${attribute}:${byAttribute}`} highcharts={Highcharts} options={chartOptions} />
+        <Panel>{renderPanelContent()}</Panel>
+      </GridContainer>
     </Resizable>
   );
 }
 
 export default ChartContainer;
 
+const GridContainer = styled.div`
+  display: grid;
+  grid-template-columns: 1fr 350px;
+  height: 100%;
+
+  .highcharts-tracker {
+    fill: red;
+    cursor: pointer;
+  }
+`;
+
+const Panel = styled.div`
+  padding: 10px;
+  overflow-y: auto;
+  height: 100%;
+`;
+
+const Message = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  height: 100%;
+  color: #0c0c0c;
+`;
+
 const baseOptions = {
+  boost: {
+    useGPUTranslations: true,
+    // Chart-level boost when there are more than 5 series in the chart
+    seriesThreshold: 5,
+  },
   colors: d3.schemeTableau10,
   chart: {
     zoomType: "x",
@@ -231,11 +364,11 @@ const baseOptions = {
     shared: true,
   },
   legend: {
-    enabled: true,
-    layout: "vertical",
-    align: "right",
+    enabled: false,
+    layout: "horizontal",
+    align: "center",
     // x: 100,
-    verticalAlign: "top",
+    // verticalAlign: "top",
     // y: 15,
     // floating: true,
     backgroundColor:
