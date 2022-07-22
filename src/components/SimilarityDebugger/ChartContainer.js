@@ -4,7 +4,7 @@ import HighchartsReact from "highcharts-react-official";
 import { mapValues, merge, orderBy } from "lodash";
 import numeral from "numeral";
 import { Resizable } from "re-resizable";
-import React, { useMemo, useCallback, useState } from "react";
+import React, { useMemo, useCallback, useState, useRef, useEffect } from "react";
 import { Header, Table } from "semantic-ui-react";
 import styled from "styled-components";
 import useStorageState from "../../hooks/useStorageState";
@@ -15,6 +15,8 @@ const ordinalFormattter = (n) => numeral(n).format("Oo");
 const formatNumber = d3.format(",.2f");
 
 function ChartContainer({ currentLocation, attribute, byAttribute, reversed = false, locationById, dataByLocationId }) {
+  const [selectedLocation, setSelectedLocation] = useState("");
+
   const [size, setSize] = useStorageState(`similarityDebugger_chartContainerSize_${attribute}`, {
     width: "100%",
     height: 600,
@@ -107,6 +109,7 @@ function ChartContainer({ currentLocation, attribute, byAttribute, reversed = fa
     return merge({}, baseOptions, {
       chart: {
         height: size.height,
+        ignoreHiddenSeries: false,
       },
       xAxis: {
         type: byAttribute === "date" ? "datetime" : "category",
@@ -173,6 +176,7 @@ function ChartContainer({ currentLocation, attribute, byAttribute, reversed = fa
       },
       series: Object.entries(dataByLocationId).map(([locationId, rawData]) => {
         return {
+          locationId,
           name: locationById[locationId].name,
           type: "line",
           data: rawData.map((x) => [xGetter(x), yGetter(x)]),
@@ -216,7 +220,7 @@ function ChartContainer({ currentLocation, attribute, byAttribute, reversed = fa
     }
 
     return (
-      <Table compact="very" {...props}>
+      <Table compact="very" selectable {...props}>
         <Table.Header>
           <Table.Row>
             <Table.HeaderCell colSpan={2}>{title}</Table.HeaderCell>
@@ -231,7 +235,11 @@ function ChartContainer({ currentLocation, attribute, byAttribute, reversed = fa
             const location = locationById[point.locationId];
 
             return (
-              <Table.Row key={point.locationId}>
+              <Table.Row
+                key={point.locationId}
+                active={selectedLocation === point.locationId}
+                onClick={() => setSelectedLocation((curr) => (curr === point.locationId ? "" : point.locationId))}
+              >
                 <Table.Cell>{location.name}</Table.Cell>
                 <Table.Cell>
                   <b>{`${formatNumber(point.source[attribute])} (${formatNumber(point.y)})`}</b>
@@ -262,6 +270,20 @@ function ChartContainer({ currentLocation, attribute, byAttribute, reversed = fa
     );
   };
 
+  const chartRef = useRef();
+
+  useEffect(() => {
+    const chart = chartRef.current?.chart;
+
+    if (chart) {
+      chart.series.forEach((x) => {
+        const isSelected = selectedLocation ? x.options.locationId === selectedLocation : true;
+        x.setVisible(isSelected, false);
+      });
+      chart.redraw();
+    }
+  }, [selectedLocation]);
+
   return (
     <Resizable
       size={size}
@@ -276,7 +298,7 @@ function ChartContainer({ currentLocation, attribute, byAttribute, reversed = fa
       grid={[5, 5]}
     >
       <GridContainer>
-        <HighchartsReact key={`${attribute}:${byAttribute}`} highcharts={Highcharts} options={chartOptions} />
+        <HighchartsReact key={`${attribute}:${byAttribute}`} ref={chartRef} highcharts={Highcharts} options={chartOptions} />
         <Panel>{renderPanelContent()}</Panel>
       </GridContainer>
     </Resizable>
