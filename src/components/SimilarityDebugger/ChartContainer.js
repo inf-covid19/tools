@@ -110,6 +110,33 @@ function ChartContainer({ currentLocation, attribute, byAttribute, reversed = fa
       chart: {
         height: size.height,
         ignoreHiddenSeries: false,
+        events: {
+          load() {
+            const chart = this;
+
+            const points = chart.series[0].points;
+            const p = 0
+
+            console.log(`path`,['M', points[p].plotX + chart.plotLeft, points[p].plotY + chart.plotTop, 'L', points[p].plotX + chart.plotLeft, chart.plotTop])
+            console.log(`values`,points[p].plotX,chart.plotLeft, points[p].plotY, chart.plotTop, )
+            console.log(`values`,points[p].plotX,chart.plotLeft, points[p].plotY, chart )
+            
+
+
+            chart.renderer.path(['M', chart.plotLeft, chart.plotTop+chart.plotHeight, 'L', chart.plotLeft, chart.plotTop+points[p].plotY])
+              .attr({
+                'stroke-width': 2,
+                stroke: '#38C477'
+              }).add()
+            
+              chart.renderer.path(['M', chart.plotLeft, points[p].plotY + chart.plotTop, 'L', chart.plotLeft, chart.plotTop])
+              .attr({
+                'stroke-width': 2,
+                stroke: '#F2543D'
+              }).add()
+
+          }
+        }
       },
       xAxis: {
         type: byAttribute === "date" ? "datetime" : "category",
@@ -117,8 +144,8 @@ function ChartContainer({ currentLocation, attribute, byAttribute, reversed = fa
           formatter:
             byAttribute === "index"
               ? function () {
-                  return ordinalFormattter(this.value);
-                }
+                return ordinalFormattter(this.value);
+              }
               : undefined,
         },
         plotLines: [
@@ -127,6 +154,19 @@ function ChartContainer({ currentLocation, attribute, byAttribute, reversed = fa
             value: null,
             color: "red",
           },
+          // {
+          //   label: { text: ``},
+          //   value: xGetter(dataByLocationId[currentLocation.id][0]),
+          //   color: {
+          //     linearGradient: [0, 0, 1, 1],
+          //     stops: [
+          //         [0, '#F2543D'], // start
+          //         [0.49, '#F2543D'], // middle
+          //         [0.5, '#38C477'], // middle
+          //         [1, '#38C477'] // end
+          //     ]
+          // }
+          // }
         ],
       },
       yAxis: {
@@ -134,38 +174,38 @@ function ChartContainer({ currentLocation, attribute, byAttribute, reversed = fa
           text: titleCase(attribute),
         },
         reversed,
-        plotBands: [
-          {
-            from: 0,
-            to: Number.POSITIVE_INFINITY,
-            color: "rgba(240, 52, 52, 0.2)",
-            label: {
-              text: `Worst than ${currentLocation.name}`,
-              align: "right",
-              verticalAlign: "top",
-              x: -30,
-              y: 30,
-              style: {
-                color: "#606060",
-              },
-            },
-          },
-          {
-            from: 0,
-            to: Number.NEGATIVE_INFINITY,
-            color: "rgba(0, 177, 106, 0.2)",
-            label: {
-              text: `Better than ${currentLocation.name}`,
-              align: "right",
-              verticalAlign: "bottom",
-              x: -30,
-              y: -30,
-              style: {
-                color: "#606060",
-              },
-            },
-          },
-        ],
+          // plotBands: [
+          //   {
+          //     from: 0,
+          //     to: Number.POSITIVE_INFINITY,
+          //     color: "rgba(240, 52, 52, 0.2)",
+          //     label: {
+          //       text: `Worst than ${currentLocation.name}`,
+          //       align: "right",
+          //       verticalAlign: "top",
+          //       x: -30,
+          //       y: 30,
+          //       style: {
+          //         color: "#606060",
+          //       },
+          //     },
+          //   },
+          //   {
+          //     from: 0,
+          //     to: Number.NEGATIVE_INFINITY,
+          //     color: "rgba(0, 177, 106, 0.2)",
+          //     label: {
+          //       text: `Better than ${currentLocation.name}`,
+          //       align: "right",
+          //       verticalAlign: "bottom",
+          //       x: -30,
+          //       y: -30,
+          //       style: {
+          //         color: "#606060",
+          //       },
+          //     },
+          //   },
+          // ],
       },
       tooltip: {
         shared: false,
@@ -200,10 +240,18 @@ function ChartContainer({ currentLocation, attribute, byAttribute, reversed = fa
                 }
               },
               click() {
-                setSelectedX(this.x);
-                this.series.chart.xAxis[0].options.plotLines[0].value = this.x;
-                this.series.chart.xAxis[0].options.plotLines[0].label.text =
-                  byAttribute === "index" ? `${ordinalFormattter(this.x)} day since the first case in ${currentLocation.name}` : format(this.x, "PPP");
+                setSelectedX((prevX) => {
+                  if (prevX === this.x) {
+                    this.series.chart.xAxis[0].options.plotLines[0].value = null;
+                    this.series.chart.xAxis[0].options.plotLines[0].label.text = "";
+                    return null;
+                  }
+
+                  this.series.chart.xAxis[0].options.plotLines[0].value = this.x;
+                  this.series.chart.xAxis[0].options.plotLines[0].label.text =
+                    byAttribute === "index" ? `${ordinalFormattter(this.x)} day since the first case in ${currentLocation.name}` : format(this.x, "PPP");
+                  return this.x;
+                });
                 this.series.chart.xAxis[0].update();
               },
             },
@@ -278,11 +326,15 @@ function ChartContainer({ currentLocation, attribute, byAttribute, reversed = fa
     if (chart) {
       chart.series.forEach((x) => {
         const isSelected = selectedLocation ? x.options.locationId === selectedLocation : true;
-        x.setVisible(isSelected, false);
+
+        const isRef = currentLocation.id === x.options.locationId;
+        x.setVisible(isSelected || isRef, false);
+        x.options.lineWidth = selectedLocation ? 5 : 2;
       });
+
       chart.redraw();
     }
-  }, [selectedLocation]);
+  }, [currentLocation.id, selectedLocation]);
 
   return (
     <Resizable
