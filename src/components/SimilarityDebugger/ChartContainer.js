@@ -14,6 +14,30 @@ import { titleCase } from "../../utils/string";
 const ordinalFormattter = (n) => numeral(n).format("Oo");
 const formatNumber = d3.format(",.2f");
 
+const addColoredLines = (chart) => {
+  if (chart.coloredLines) {
+    chart.coloredLines.forEach(x => x.destroy());
+  }
+
+  const series = chart.series.find(x => x.options.isRef);
+  const points = series.points;
+  const p = 0
+
+  const positiveLine = chart.renderer.path(['M', chart.plotLeft, chart.plotTop + chart.plotHeight, 'L', chart.plotLeft, chart.plotTop + points[p].plotY])
+    .attr({
+      'stroke-width': 2,
+      stroke: '#38C477'
+    }).add()
+
+  const negativeLine = chart.renderer.path(['M', chart.plotLeft, points[p].plotY + chart.plotTop, 'L', chart.plotLeft, chart.plotTop])
+    .attr({
+      'stroke-width': 2,
+      stroke: '#F2543D'
+    }).add()
+
+  chart.coloredLines = [positiveLine, negativeLine]
+}
+
 function ChartContainer({ currentLocation, attribute, byAttribute, reversed = false, locationById, dataByLocationId }) {
   const [selectedLocation, setSelectedLocation] = useState("");
 
@@ -113,28 +137,11 @@ function ChartContainer({ currentLocation, attribute, byAttribute, reversed = fa
         events: {
           load() {
             const chart = this;
-
-            const points = chart.series[0].points;
-            const p = 0
-
-            console.log(`path`,['M', points[p].plotX + chart.plotLeft, points[p].plotY + chart.plotTop, 'L', points[p].plotX + chart.plotLeft, chart.plotTop])
-            console.log(`values`,points[p].plotX,chart.plotLeft, points[p].plotY, chart.plotTop, )
-            console.log(`values`,points[p].plotX,chart.plotLeft, points[p].plotY, chart )
-            
-
-
-            chart.renderer.path(['M', chart.plotLeft, chart.plotTop+chart.plotHeight, 'L', chart.plotLeft, chart.plotTop+points[p].plotY])
-              .attr({
-                'stroke-width': 2,
-                stroke: '#38C477'
-              }).add()
-            
-              chart.renderer.path(['M', chart.plotLeft, points[p].plotY + chart.plotTop, 'L', chart.plotLeft, chart.plotTop])
-              .attr({
-                'stroke-width': 2,
-                stroke: '#F2543D'
-              }).add()
-
+            addColoredLines(chart)
+          },
+          redraw() {
+            const chart = this;
+            addColoredLines(chart)
           }
         }
       },
@@ -154,19 +161,6 @@ function ChartContainer({ currentLocation, attribute, byAttribute, reversed = fa
             value: null,
             color: "red",
           },
-          // {
-          //   label: { text: ``},
-          //   value: xGetter(dataByLocationId[currentLocation.id][0]),
-          //   color: {
-          //     linearGradient: [0, 0, 1, 1],
-          //     stops: [
-          //         [0, '#F2543D'], // start
-          //         [0.49, '#F2543D'], // middle
-          //         [0.5, '#38C477'], // middle
-          //         [1, '#38C477'] // end
-          //     ]
-          // }
-          // }
         ],
       },
       yAxis: {
@@ -174,38 +168,38 @@ function ChartContainer({ currentLocation, attribute, byAttribute, reversed = fa
           text: titleCase(attribute),
         },
         reversed,
-          // plotBands: [
-          //   {
-          //     from: 0,
-          //     to: Number.POSITIVE_INFINITY,
-          //     color: "rgba(240, 52, 52, 0.2)",
-          //     label: {
-          //       text: `Worst than ${currentLocation.name}`,
-          //       align: "right",
-          //       verticalAlign: "top",
-          //       x: -30,
-          //       y: 30,
-          //       style: {
-          //         color: "#606060",
-          //       },
-          //     },
-          //   },
-          //   {
-          //     from: 0,
-          //     to: Number.NEGATIVE_INFINITY,
-          //     color: "rgba(0, 177, 106, 0.2)",
-          //     label: {
-          //       text: `Better than ${currentLocation.name}`,
-          //       align: "right",
-          //       verticalAlign: "bottom",
-          //       x: -30,
-          //       y: -30,
-          //       style: {
-          //         color: "#606060",
-          //       },
-          //     },
-          //   },
-          // ],
+        // plotBands: [
+        //   {
+        //     from: 0,
+        //     to: Number.POSITIVE_INFINITY,
+        //     color: "rgba(240, 52, 52, 0.2)",
+        //     label: {
+        //       text: `Worst than ${currentLocation.name}`,
+        //       align: "right",
+        //       verticalAlign: "top",
+        //       x: -30,
+        //       y: 30,
+        //       style: {
+        //         color: "#606060",
+        //       },
+        //     },
+        //   },
+        //   {
+        //     from: 0,
+        //     to: Number.NEGATIVE_INFINITY,
+        //     color: "rgba(0, 177, 106, 0.2)",
+        //     label: {
+        //       text: `Better than ${currentLocation.name}`,
+        //       align: "right",
+        //       verticalAlign: "bottom",
+        //       x: -30,
+        //       y: -30,
+        //       style: {
+        //         color: "#606060",
+        //       },
+        //     },
+        //   },
+        // ],
       },
       tooltip: {
         shared: false,
@@ -220,11 +214,13 @@ function ChartContainer({ currentLocation, attribute, byAttribute, reversed = fa
           name: locationById[locationId].name,
           type: "line",
           data: rawData.map((x) => [xGetter(x), yGetter(x)]),
+          isRef: locationId === currentLocation.id,
         };
       }),
       plotOptions: {
         series: {
           cursor: "pointer",
+          lineWidth: 2,
           marker: {
             enabled: false,
           },
@@ -259,7 +255,7 @@ function ChartContainer({ currentLocation, attribute, byAttribute, reversed = fa
         },
       },
     });
-  }, [size.height, byAttribute, attribute, reversed, currentLocation.name, dataByLocationId, locationById, xGetter, yGetter]);
+  }, [size.height, byAttribute, attribute, reversed, currentLocation, dataByLocationId, locationById, xGetter, yGetter]);
 
   const renderTable = (title, points, props = {}) => {
     const hasPoints = points?.length > 0;
@@ -325,16 +321,16 @@ function ChartContainer({ currentLocation, attribute, byAttribute, reversed = fa
 
     if (chart) {
       chart.series.forEach((x) => {
-        const isSelected = selectedLocation ? x.options.locationId === selectedLocation : true;
+        const { locationId, isRef } = x.options;
 
-        const isRef = currentLocation.id === x.options.locationId;
+        const isSelected = selectedLocation ? locationId === selectedLocation : true;
+
         x.setVisible(isSelected || isRef, false);
-        x.options.lineWidth = selectedLocation ? 5 : 2;
       });
 
       chart.redraw();
     }
-  }, [currentLocation.id, selectedLocation]);
+  }, [selectedLocation]);
 
   return (
     <Resizable
@@ -388,8 +384,7 @@ const Message = styled.div`
 const baseOptions = {
   boost: {
     useGPUTranslations: true,
-    // Chart-level boost when there are more than 5 series in the chart
-    seriesThreshold: 5,
+    seriesThreshold: 10,
   },
   colors: d3.schemeTableau10,
   chart: {
@@ -403,37 +398,10 @@ const baseOptions = {
     crosshair: true,
   },
   yAxis: {
-    // Primary yAxis
-    labels: {
-      // format: "{value}°C",
-      // style: {
-      //   color: Highcharts.getOptions().colors[2],
-      // },
-    },
     title: {
       text: "Daily Confirmed Cases (per 100k inhabitants)",
-      // style: {
-      //   color: Highcharts.getOptions().colors[2],
-      // },
     },
   },
-  // {
-  //   // Secondary yAxis
-  //   //   gridLineWidth: 0,
-  //   title: {
-  //     text: "Daily Confirmed Deaths (per 100k inhabitants)",
-  //     // style: {
-  //     //   color: Highcharts.getOptions().colors[0],
-  //     // },
-  //   },
-  //   labels: {
-  //     // format: "{value} mm",
-  //     // style: {
-  //     //   color: Highcharts.getOptions().colors[0],
-  //     // },
-  //   },
-  //   opposite: true,
-  // },
   tooltip: {
     shared: true,
   },
