@@ -41,6 +41,8 @@ const addColoredLines = (chart) => {
 function ChartContainer({ currentLocation, attribute, byAttribute, reversed = false, locationById, dataByLocationId }) {
   const [selectedLocation, setSelectedLocation] = useState("");
 
+  const [seriesThreshold,] = useStorageState(`similarityDebugger_boost_seriesThreshold`, 10);
+
   const [size, setSize] = useStorageState(`similarityDebugger_chartContainerSize_${attribute}`, {
     width: "100%",
     height: 600,
@@ -131,6 +133,9 @@ function ChartContainer({ currentLocation, attribute, byAttribute, reversed = fa
 
   const chartOptions = useMemo(() => {
     return merge({}, baseOptions, {
+      boost: {
+        seriesThreshold
+      },
       chart: {
         height: size.height,
         ignoreHiddenSeries: false,
@@ -255,7 +260,7 @@ function ChartContainer({ currentLocation, attribute, byAttribute, reversed = fa
         },
       },
     });
-  }, [size.height, byAttribute, attribute, reversed, currentLocation, dataByLocationId, locationById, xGetter, yGetter]);
+  }, [size.height, seriesThreshold, byAttribute, attribute, reversed, currentLocation, dataByLocationId, locationById, xGetter, yGetter]);
 
   const renderTable = (title, points, props = {}) => {
     const hasPoints = points?.length > 0;
@@ -328,11 +333,11 @@ function ChartContainer({ currentLocation, attribute, byAttribute, reversed = fa
         x.setVisible(isSelected || isRef, false);
       });
 
-      chart.options.boost.seriesThreshold = selectedLocation ? 1000 : 10;
+      chart.options.boost.seriesThreshold = selectedLocation ? 10000 : seriesThreshold;
 
       chart.redraw();
     }
-  }, [selectedLocation]);
+  }, [selectedLocation, seriesThreshold]);
 
   return (
     <Resizable
