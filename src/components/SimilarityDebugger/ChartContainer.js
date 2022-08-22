@@ -328,6 +328,8 @@ function ChartContainer({ currentLocation, attribute, byAttribute, reversed = fa
         x.setVisible(isSelected || isRef, false);
       });
 
+      chart.options.boost.seriesThreshold = selectedLocation ? 1000 : 10;
+
       chart.redraw();
     }
   }, [selectedLocation]);
