@@ -67,7 +67,7 @@ const MENU_ITEMS = [
   {
     name: "Brazil Dashboard",
     path: "/brazil",
-    external: "https://covid19.ufrgs.dev/dashboard/",
+    external: "https://inf-covid19.github.io/dashboard/",
     icon: "window restore outline",
   },
 ];
