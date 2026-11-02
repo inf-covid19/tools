@@ -2,6 +2,7 @@ import * as d3 from "d3";
 import HighchartsReact from "highcharts-react-official";
 import { get, merge, startCase } from "lodash";
 import React, { useMemo } from "react";
+import { trimPaddedRecords } from "../../utils/frozenData";
 import Highcharts from "../../utils/highcharts";
 import { getUnifiedRestrictionPoints, getVacinationMilestones } from "./utils/functions";
 
@@ -117,7 +118,8 @@ function LocationChart({ records, featuredConfirmedPeriods, featuredDeathsPeriod
             },
           },
           labels: Object.entries(get(covidVariants, location.isCountry ? location.name : location.country, {})).flatMap(([label, date]) => {
-            if (label.includes(".")) {
+            // variants can be detected after the last record of this location
+            if (label.includes(".") || !recordByDate[date]) {
               return [];
             }
 
@@ -144,7 +146,9 @@ function LocationChart({ records, featuredConfirmedPeriods, featuredDeathsPeriod
         {
           name: attribute === "confirmed" ? "Confirmed Cases" : startCase(attribute),
           type: "spline",
-          data: records.map((x) => ({
+          // points are objects and locations have more than the default threshold of 1000 rows
+          turboThreshold: 0,
+          data: trimPaddedRecords(records, [attribute]).map((x) => ({
             x: new Date(x.date).getTime(),
             y: x[attrY],
             total: x[attrTotal],

@@ -2,6 +2,7 @@ import sortBy from "lodash/sortBy";
 import { useCallback, useMemo, useRef } from "react";
 import { useQuery } from "react-query";
 import { AUTOCOVS_API } from "../constants";
+import { trimPaddedRecords } from "../utils/frozenData";
 import { TimeseriesRow } from "../utils/normalizeTimeseries";
 import useMetadata from "./useMetadata";
 
@@ -25,7 +26,7 @@ export default function useRegionData(regionIds: string[]) {
 
       const data = await Promise.all(uncachedKeys.map((id) => fetch(`${AUTOCOVS_API}/location/${id}`).then((r) => r.json())));
       data.forEach((raw, index) => {
-        dataByKey[uncachedKeys[index]] = raw.map((x: any) => ({...x, date: new Date(x.date)}));
+        dataByKey[uncachedKeys[index]] = trimPaddedRecords(raw).map((x: any) => ({...x, date: new Date(x.date)})) as TimeseriesRow[];
       });
 
       cachedKeys.forEach((key) => {

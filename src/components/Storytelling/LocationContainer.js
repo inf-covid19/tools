@@ -3,6 +3,7 @@ import React from "react";
 import { useQuery } from "react-query";
 import { Loader } from "semantic-ui-react";
 import styled from "styled-components";
+import { clampPeriods, trimPaddedRecords } from "../../utils/frozenData";
 import Legend from "./Legend";
 import LocationChart from "./LocationChart";
 import LocationRestrictions from "./LocationRestrictions";
@@ -20,13 +21,16 @@ async function fetchLocationDataset(locationId) {
   };
 
   const [records, featuredConfirmedPeriods, featuredDeathsPeriods, covidVariants] = await Promise.all([
-    makeGet(`/records/${locationId}`),
+    makeGet(`/records/${locationId}`).then(trimPaddedRecords),
     makeGet(`/featured_periods/${locationId}`, { ...featuredPeriodConfig, target_column: "confirmed_daily_21d" }),
     makeGet(`/featured_periods/${locationId}`, { ...featuredPeriodConfig, target_column: "deaths_daily_21d" }),
     makeGet(`/covid_variants`),
   ]);
 
-  return { records, featuredConfirmedPeriods, featuredDeathsPeriods, covidVariants };
+  const lastTime = records.length > 0 ? new Date(records[records.length - 1].date).getTime() : Infinity;
+  const clamp = (x) => ({ ...x, featured_periods: clampPeriods(x.featured_periods, lastTime) });
+
+  return { records, featuredConfirmedPeriods: clamp(featuredConfirmedPeriods), featuredDeathsPeriods: clamp(featuredDeathsPeriods), covidVariants };
 }
 
 function LocationContainer({ location }) {
