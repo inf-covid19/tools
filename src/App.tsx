@@ -17,7 +17,6 @@ import useMetadata from "./hooks/useMetadata";
 import styled from "styled-components";
 import first from "lodash/first";
 
-import AutocovsApp from "./components/Autocovs/AutocovsApp";
 import StorytellingContainer from "./components/Storytelling/StorytellingContainer";
 import SimilarityDebuggerContainer from "./components/SimilarityDebugger/SimilarityDebuggerContainer";
 
@@ -76,13 +75,14 @@ const MENU_ITEMS = [
     icon: "find",
     external: false,
   },
-  {
-    name: "Waves Debugger",
-    path: "/waves-and-measurements/:region?",
-    component: AutocovsApp,
-    icon: "sliders horizontal",
-    external: false,
-  },
+  // Hidden until it computes in the browser: https://github.com/inf-covid19/tools/issues/48
+  // {
+  //   name: "Waves Debugger",
+  //   path: "/waves-and-measurements/:region?",
+  //   component: AutocovsApp,
+  //   icon: "sliders horizontal",
+  //   external: false,
+  // },
   // {
   //   name: "COVID-19 Literature",
   //   path: "/literature",
