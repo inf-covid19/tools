@@ -6,6 +6,7 @@ import * as d3 from "d3";
 
 import { AUTOCOVS_API as API_URL } from "../../constants";
 
+import { clampFeaturedPeriods, trimPaddedRecords } from "../../utils/frozenData";
 import { computeFeaturedPeriods } from "../../utils/waves";
 import Highcharts from "../../utils/highcharts";
 import HighchartsReact from "highcharts-react-official";
@@ -151,17 +152,20 @@ async function fetchRecords(region) {
   return response.json();
 }
 
-function useFeaturedPeriods(records, attribute, config) {
+// Computed over the padded rows, as the API did: Otsu's bins depend on the length of the series.
+function useFeaturedPeriods(rawRecords, records, attribute, config) {
   return useMemo(() => {
-    if (!records) {
+    if (!rawRecords) {
       return {};
     }
     try {
-      return { featuredPeriods: computeFeaturedPeriods(records, { ...config, target_column: attribute }) };
+      const lastTime = records.length > 0 ? new Date(records[records.length - 1].date).getTime() : Infinity;
+      const featured = computeFeaturedPeriods(rawRecords, { ...config, target_column: attribute });
+      return { featuredPeriods: clampFeaturedPeriods(featured, lastTime) };
     } catch (error) {
       return { error };
     }
-  }, [records, attribute, config]);
+  }, [rawRecords, records, attribute, config]);
 }
 
 function useTimelineOptions({ records, region, regionData }, { records: secondRecords, region: secondRegion, regionData: secondRegionData } = {}) {
@@ -370,11 +374,14 @@ function useChartOptions({ attribute, title, records, featuredPeriods, regionDat
 }
 
 function RegionChart({ region, regionData, secondRegion, secondRegionData, attribute, title, config = {}, withInsights = false }) {
-  const { data: records, status: recordsStatus } = useQuery(region && ["records", region], () => fetchRecords(region));
-  const { data: secondRecords, status: secondRecordsStatus } = useQuery(secondRegion && ["records", secondRegion], () => fetchRecords(secondRegion));
+  const { data: rawRecords, status: recordsStatus } = useQuery(region && ["records", region], () => fetchRecords(region));
+  const { data: secondRawRecords, status: secondRecordsStatus } = useQuery(secondRegion && ["records", secondRegion], () => fetchRecords(secondRegion));
 
-  const { featuredPeriods, error: featuredPeriodsError } = useFeaturedPeriods(records, attribute, config);
-  const { featuredPeriods: secondFeaturedPeriods, error: secondFeaturedPeriodsError } = useFeaturedPeriods(secondRecords, attribute, config);
+  const records = useMemo(() => rawRecords && trimPaddedRecords(rawRecords), [rawRecords]);
+  const secondRecords = useMemo(() => secondRawRecords && trimPaddedRecords(secondRawRecords), [secondRawRecords]);
+
+  const { featuredPeriods, error: featuredPeriodsError } = useFeaturedPeriods(rawRecords, records, attribute, config);
+  const { featuredPeriods: secondFeaturedPeriods, error: secondFeaturedPeriodsError } = useFeaturedPeriods(secondRawRecords, secondRecords, attribute, config);
 
   const isLoading = [recordsStatus, secondRecordsStatus].includes("loading");
 
