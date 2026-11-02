@@ -1,4 +1,4 @@
-import { Loader } from "semantic-ui-react";
+import { Loader, Message } from "semantic-ui-react";
 import { useQuery } from "react-query";
 import styled from "styled-components";
 import React, { useMemo } from "react";
@@ -6,6 +6,7 @@ import * as d3 from "d3";
 
 import { AUTOCOVS_API as API_URL } from "../../constants";
 
+import { computeFeaturedPeriods } from "../../utils/waves";
 import Highcharts from "../../utils/highcharts";
 import HighchartsReact from "highcharts-react-official";
 import { transparentize } from "polished";
@@ -149,18 +150,18 @@ async function fetchRecords(region) {
   }
   return response.json();
 }
-async function fetchFeaturedPeriods(region, options) {
-  const qa = new URLSearchParams();
 
-  Object.entries(options).forEach(([key, value]) => {
-    qa.append(key, typeof value === "object" ? JSON.stringify(value) : value);
-  });
-
-  const response = await fetch(`${API_URL}/featured_periods/${region}?${qa.toString()}`);
-  if (!response.ok) {
-    throw new Error("Network response was not ok");
-  }
-  return response.json();
+function useFeaturedPeriods(records, attribute, config) {
+  return useMemo(() => {
+    if (!records) {
+      return {};
+    }
+    try {
+      return { featuredPeriods: computeFeaturedPeriods(records, { ...config, target_column: attribute }) };
+    } catch (error) {
+      return { error };
+    }
+  }, [records, attribute, config]);
 }
 
 function useTimelineOptions({ records, region, regionData }, { records: secondRecords, region: secondRegion, regionData: secondRegionData } = {}) {
@@ -372,20 +373,10 @@ function RegionChart({ region, regionData, secondRegion, secondRegionData, attri
   const { data: records, status: recordsStatus } = useQuery(region && ["records", region], () => fetchRecords(region));
   const { data: secondRecords, status: secondRecordsStatus } = useQuery(secondRegion && ["records", secondRegion], () => fetchRecords(secondRegion));
 
-  const { data: featuredPeriods, status: featuredPeriodsStatus } = useQuery(region && ["featured_periods", region, attribute, config], () =>
-    fetchFeaturedPeriods(region, {
-      ...config,
-      target_column: attribute,
-    })
-  );
+  const { featuredPeriods, error: featuredPeriodsError } = useFeaturedPeriods(records, attribute, config);
+  const { featuredPeriods: secondFeaturedPeriods, error: secondFeaturedPeriodsError } = useFeaturedPeriods(secondRecords, attribute, config);
 
-  const { data: secondFeaturedPeriods, status: secondFeaturedPeriodsStatus } = useQuery(secondRegion && ["featured_periods", secondRegion, attribute, config], () =>
-    fetchFeaturedPeriods(secondRegion, {
-      ...config,
-      target_column: attribute,
-    })
-  );
-  const isLoading = [recordsStatus, featuredPeriodsStatus, secondRecordsStatus, secondFeaturedPeriodsStatus].includes("loading");
+  const isLoading = [recordsStatus, secondRecordsStatus].includes("loading");
 
   const timelineOptions = useTimelineOptions(
     { records, region, regionData },
@@ -405,7 +396,11 @@ function RegionChart({ region, regionData, secondRegion, secondRegionData, attri
 
   return (
     <div>
-      {withInsights && (
+      {[featuredPeriodsError, secondFeaturedPeriodsError].filter(Boolean).map((error, index) => (
+        <Message negative key={index} header="Could not compute the wave periods" content={error.message} />
+      ))}
+
+      {withInsights && featuredPeriods && (
         <Container>
           <RegionInsights regionData={regionData} featuredPeriods={featuredPeriods} attribute={attribute} />
         </Container>
