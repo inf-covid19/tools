@@ -80,5 +80,4 @@ export const PLACE_TYPE_LABEL_MAPPING: Record<string, string> = {
   lower_tier_local_authority: "LTLAs",
 };
 
-export const SIMILARITY_API = `${process.env.REACT_APP_SIMILARITY_API}`;
 export const PREDICTIONS_API = `${process.env.REACT_APP_PREDICTIONS_API}`;

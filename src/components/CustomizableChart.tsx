@@ -9,6 +9,7 @@ import { Loader } from "semantic-ui-react";
 import useMetadata from "../hooks/useMetadata";
 import useRegionData from "../hooks/useRegionData";
 import useSeriesColors from "../hooks/useSeriesColors";
+import { getCommonEndDate } from "../utils/frozenData";
 import { getByRegionId } from "../utils/metadata";
 import { alignTimeseries, TimeseriesRow } from "../utils/normalizeTimeseries";
 import { ChartOptions } from "./Editor";
@@ -55,7 +56,8 @@ function CustomizableChart(props: CustomizableChartProps, ref: React.Ref<any>) {
     if (loading || !data || !metadata) {
       return [];
     }
-    const earliestDate = subDays(startOfDay(new Date()), dayInterval);
+    const endDate = getCommonEndDate(data) ?? new Date();
+    const earliestDate = subDays(startOfDay(endDate), dayInterval);
     return Object.entries(data).flatMap(([region, regionData]) => {
       const displayName = getByRegionId(metadata, region)?.displayName || region;
 
@@ -99,7 +101,7 @@ function CustomizableChart(props: CustomizableChartProps, ref: React.Ref<any>) {
         {
           name: displayName,
           key: region,
-          data: alignTimeseries(regionData, earliestDate).map((row) => ({
+          data: alignTimeseries(regionData, earliestDate).filter((row) => row.date <= endDate).map((row) => ({
             x: row.date.getTime(),
             y: getValue(row),
           })),
@@ -122,7 +124,7 @@ function CustomizableChart(props: CustomizableChartProps, ref: React.Ref<any>) {
   const colorScale = useColorScale(sortedSeries);
 
   const chartOptions = useMemo(() => {
-    const effectiveMetric = isCumulative ? metric : `${metric}_${metricSuffix}`;
+    const effectiveMetric = isTrusted || isCumulative ? metric : `${metric}_${metricSuffix}`;
 
     return {
       chart: {
@@ -195,7 +197,7 @@ function CustomizableChart(props: CustomizableChartProps, ref: React.Ref<any>) {
         width: 2,
       },
     };
-  }, [isCumulative, metric, metricSuffix, seriesColors, alignAt, chartType, isIncidence, showDataLabels, title, colorScale]);
+  }, [isTrusted, isCumulative, metric, metricSuffix, seriesColors, alignAt, chartType, isIncidence, showDataLabels, title, colorScale]);
 
   if (loading) {
     return (

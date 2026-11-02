@@ -1,10 +1,12 @@
-import { endOfToday, format, isBefore, parse } from "date-fns";
+import { endOfToday, isBefore, parse } from "date-fns";
 import { startOfToday } from "date-fns/esm";
 import React, { useMemo, useState } from "react";
 import { Form, Header, Icon, Loader, Segment } from "semantic-ui-react";
 import styled from "styled-components/macro";
 import useLocationFromURL from "../../hooks/useLocationFromURL";
 import useMetadata from "../../hooks/useMetadata";
+import useRegionData from "../../hooks/useRegionData";
+import { getCommonEndDate } from "../../utils/frozenData";
 import { getByRegionId } from "../../utils/metadata";
 import RegionSelector from "../RegionSelector";
 import CaseFatalityChart from "./charts/CaseFatalityChart";
@@ -23,7 +25,11 @@ function Metrics() {
 
   const { data: metadata } = useMetadata();
 
-  const maxDate = useMemo(() => format(new Date(), "yyyy-MM-dd"), []);
+  const regionIds = useMemo(() => (regionKey ? [regionKey] : []), [regionKey]);
+  const { data: regionData } = useRegionData(regionIds);
+
+  // dates from the API are UTC midnight, formatting them in local time would lose the last day west of UTC
+  const maxDate = useMemo(() => ((regionData && getCommonEndDate(regionData)) ?? new Date()).toISOString().slice(0, 10), [regionData]);
 
   const dateRange = useMemo(() => {
     if (startDate && endDate) {

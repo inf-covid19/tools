@@ -188,8 +188,8 @@ const Explorer = () => {
       const locationData = dataByKey[key];
 
       stats[key] = {
-        sinceFirstCase: firstCase ? differenceInDays(new Date(), firstCase.date) : 0,
-        sinceFirstDeath: firstDeath ? differenceInDays(new Date(), firstDeath.date) : 0,
+        sinceFirstCase: firstCase && latestRow ? differenceInDays(latestRow.date, firstCase.date) : 0,
+        sinceFirstDeath: firstDeath && latestRow ? differenceInDays(latestRow.date, firstDeath.date) : 0,
         latestCases: latestRow?.confirmed ?? 0,
         latestDeaths: latestRow?.deaths ?? 0,
         latestCasesPer100k: ((latestRow?.confirmed ?? 0) / (locationData?.population ?? 1)) * 100000,

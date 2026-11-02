@@ -5,6 +5,7 @@ import { Loader } from "semantic-ui-react";
 import styled from "styled-components/macro";
 import useMetadata from "../../../hooks/useMetadata";
 import useRegionData from "../../../hooks/useRegionData";
+import { trimPaddedRecords } from "../../../utils/frozenData";
 import ChartWrapper from "../ChartWrapper";
 import { average } from "../../../utils/math";
 import { DateRange, filterByDateRange } from "./utils";
@@ -18,7 +19,7 @@ function DeathsChart({ regionId, dateRange }: { regionId: string, dateRange?: Da
   const series = useMemo(() => {
     if (!data || !metadata) return null;
 
-    const timeseries =filterByDateRange(data[regionId], dateRange).filter((row) => row.deaths > 0);
+    const timeseries =filterByDateRange(trimPaddedRecords(data[regionId], ["deaths"]), dateRange).filter((row) => row.deaths > 0);
 
     return [
       {

@@ -1,4 +1,4 @@
-import { get, keyBy } from "lodash";
+import { get, keyBy, last } from "lodash";
 import React, { useMemo } from "react";
 import { useQuery } from "react-query";
 import { Dropdown, Loader, Segment } from "semantic-ui-react";
@@ -6,6 +6,7 @@ import styled from "styled-components";
 import { AUTOCOVS_API as API_URL } from "../../constants";
 
 import useStorageState from "../../hooks/useStorageState";
+import { trimPaddedRecords } from "../../utils/frozenData";
 import { titleCase } from "../../utils/string";
 import ChartContainer from "./ChartContainer";
 
@@ -24,6 +25,8 @@ const apiGet = async (url, searchParams = {}) => {
   }
   return response.json();
 };
+
+const getRecords = (id) => apiGet(`/records/${id}`).then(trimPaddedRecords);
 
 const columns = [
   "confirmed",
@@ -50,8 +53,8 @@ const columns = [
 
 async function getByDate(currentLocation, otherLocations) {
   const [currentLocationRecords, ...otherLocationRecords] = await Promise.all([
-    apiGet(`/records/${currentLocation.id}`),
-    ...otherLocations.map(({ id }) => apiGet(`/records/${id}`).then((data) => keyBy(data, "date"))),
+    getRecords(currentLocation.id),
+    ...otherLocations.map(({ id }) => getRecords(id)),
   ]);
 
   return Object.fromEntries(
@@ -70,9 +73,12 @@ async function getByDate(currentLocation, otherLocations) {
       ],
     ].concat(
       otherLocations.map(({ id: locationId }, index) => {
-        const locationRecordsByDate = otherLocationRecords[index];
+        const locationRecords = otherLocationRecords[index];
+        const locationRecordsByDate = keyBy(locationRecords, "date");
+        const lastDate = get(last(locationRecords), "date", -Infinity);
 
-        const data = currentLocationRecords.map((record) => {
+        // stop where the other location's data ends, missing rows are not zeros
+        const data = currentLocationRecords.filter((record) => record.date <= lastDate).map((record) => {
           const locationRecord = locationRecordsByDate[record.date];
           const output = { date: record.date, source: locationRecord };
 
@@ -91,8 +97,8 @@ async function getByDate(currentLocation, otherLocations) {
 
 async function getByFirstCase(currentLocation, otherLocations) {
   const [currentLocationRecords, ...otherLocationRecords] = await Promise.all([
-    apiGet(`/records/${currentLocation.id}`),
-    ...otherLocations.map(({ id }) => apiGet(`/records/${id}`)),
+    getRecords(currentLocation.id),
+    ...otherLocations.map(({ id }) => getRecords(id)),
   ]);
 
   return Object.fromEntries(
@@ -113,7 +119,7 @@ async function getByFirstCase(currentLocation, otherLocations) {
       otherLocations.map(({ id: locationId }, index) => {
         const locationRecordsByIndex = otherLocationRecords[index];
 
-        const data = currentLocationRecords.map((record, recordIndex) => {
+        const data = currentLocationRecords.slice(0, locationRecordsByIndex.length).map((record, recordIndex) => {
           const locationRecord = locationRecordsByIndex[recordIndex];
           const output = { date: record.date, index: recordIndex, source: locationRecord };
 

@@ -5,6 +5,7 @@ import { Loader } from "semantic-ui-react";
 import styled from "styled-components/macro";
 import useMetadata from "../../../hooks/useMetadata";
 import useRegionData from "../../../hooks/useRegionData";
+import { trimPaddedRecords } from "../../../utils/frozenData";
 import { average } from "../../../utils/math";
 import ChartWrapper from "../ChartWrapper";
 import { DateRange, filterByDateRange } from "./utils";
@@ -18,7 +19,7 @@ function CasesChart({ regionId, dateRange }: { regionId: string,  dateRange?: Da
   const series = useMemo(() => {
     if (!data || !metadata) return null;
 
-    const timeseries = filterByDateRange(data[regionId], dateRange).filter((row) => row.confirmed > 0);
+    const timeseries = filterByDateRange(trimPaddedRecords(data[regionId], ["confirmed"]), dateRange).filter((row) => row.confirmed > 0);
 
     return [
       {

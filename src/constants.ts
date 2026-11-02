@@ -73,8 +73,6 @@ export const PLACE_TYPE_LABEL_MAPPING: Record<string, string> = {
   administrative_area_level_3: "Administrative Area Level 3",
 };
 
-export const SIMILARITY_API = `${process.env.REACT_APP_SIMILARITY_API}`;
-
 export const PREDICTIONS_API = `${process.env.REACT_APP_PREDICTIONS_API}`;
 
 export const AUTOCOVS_API = `${process.env.REACT_APP_AUTOCOVS_API}`;
