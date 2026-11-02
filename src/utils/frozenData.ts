@@ -15,6 +15,16 @@ export function clampPeriods<T extends { start: number; end: number }>(periods: 
   return periods.filter((period) => period.start < lastTime).map((period) => ({ ...period, end: Math.min(period.end, lastTime) }));
 }
 
+export function clampFeaturedPeriods<P extends { start: number; end: number }, R extends { date: number | null }>(
+  featured: { featured_periods: P[]; records: R[] },
+  lastTime: number
+) {
+  return {
+    featured_periods: clampPeriods(featured.featured_periods, lastTime),
+    records: featured.records.filter((record) => (record.date as number) <= lastTime),
+  };
+}
+
 // Locations stopped at different dates, so the last date with data for all of them is the one that
 // keeps every location visible and comparable in a fixed window.
 export function getCommonEndDate(dataByRegion: Record<string, Array<{ date: Date }>>): Date | undefined {

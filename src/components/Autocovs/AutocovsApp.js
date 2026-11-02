@@ -185,7 +185,7 @@ function App() {
                     </select>
                   </Form.Field>
 
-                  {Object.entries(Config[config.method ?? "linear"]).map(([fieldId, fieldConfig]) => (
+                  {Object.entries(Config[config.method ?? "linear"] ?? {}).map(([fieldId, fieldConfig]) => (
                     <Form.Field key={fieldId} className="mb-3">
                       <label>{fieldConfig.label}</label>
                       <input
@@ -209,7 +209,7 @@ function App() {
                     </select>
                   </Form.Field>
 
-                  {Object.entries(SmoothParamsByFunction[config.smooth_fn ?? "simple_moving_average"]).map(([paramId, paramConfig]) => (
+                  {Object.entries(SmoothParamsByFunction[config.smooth_fn ?? "simple_moving_average"] ?? {}).map(([paramId, paramConfig]) => (
                     <Form.Field key={paramId} className="mb-3">
                       <label>{paramConfig.label}</label>
                       <input

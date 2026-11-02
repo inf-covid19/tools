@@ -1,4 +1,4 @@
-import { clampPeriods, getCommonEndDate, trimPaddedRecords } from "./frozenData";
+import { clampFeaturedPeriods, clampPeriods, getCommonEndDate, trimPaddedRecords } from "./frozenData";
 
 const row = (date: string, confirmed: number, deaths = 0, extra = {}) => ({ date, confirmed, deaths, ...extra });
 
@@ -41,6 +41,27 @@ describe("trimPaddedRecords with columns", () => {
     const records = [row("a", 1, 0, { vaccines: 1 }), row("b", 2, 0, { vaccines: 2 }), row("c", 2, 0, { vaccines: 3 })];
 
     expect(trimPaddedRecords(records, ["confirmed"]).map((x) => x.date)).toEqual(["a", "b"]);
+  });
+});
+
+describe("clampFeaturedPeriods", () => {
+  const featured = {
+    featured_periods: [
+      { id: "id_1", start: 1, end: 5 },
+      { id: "id_2", start: 5, end: 20 },
+      { id: "id_3", start: 20, end: 30 },
+    ],
+    records: [{ date: 5 }, { date: 10 }, { date: 11 }],
+  };
+
+  test("cuts periods and smoothed records at the last real date", () => {
+    expect(clampFeaturedPeriods(featured, 10)).toEqual({
+      featured_periods: [
+        { id: "id_1", start: 1, end: 5 },
+        { id: "id_2", start: 5, end: 10 },
+      ],
+      records: [{ date: 5 }, { date: 10 }],
+    });
   });
 });
 
